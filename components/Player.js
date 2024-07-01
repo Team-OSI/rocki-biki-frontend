@@ -133,3 +133,5 @@ export function Player({ position, landmarks }) {
 
 // 모델 미리 로드
 useGLTF.preload('/models/head.glb');
+useGLTF.preload('/models/left-hand.glb');
+useGLTF.preload('/models/right-hand.glb');
