@@ -1,0 +1,13 @@
+export function calculateRotation(point1, point2) {
+    return Math.atan2(point2.y - point1.y, point2.x - point1.x)
+}
+
+export function calculateHandRotation(wrist, indexBase, pinkyBase) {
+    const wristToIndex = calculateRotation(wrist, indexBase)
+    const wristToPinky = calculateRotation(wrist, pinkyBase)
+    return (wristToIndex + wristToPinky) / 2
+}
+
+export function calculateHeadRotation(leftEye, rightEye) {
+    return calculateRotation(leftEye, rightEye)
+}
