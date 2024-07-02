@@ -8,7 +8,7 @@ import {
     isHandMovementValid
 } from '@/lib/mediapipe/holistic'
 
-export function useMotionCapture(videoRef, setLandmarks) {
+export function useMotionCapture(localVideoRef, setLandmarks) {
     const holisticRef = useRef(null)
     const previousLandmarks = useRef({leftHand: null, rightHand: null})
 
@@ -40,11 +40,11 @@ export function useMotionCapture(videoRef, setLandmarks) {
                 }
             })
 
-            if (videoRef.current) {
-                const camera = new cam.Camera(videoRef.current, {
+            if (localVideoRef.current) {
+                const camera = new cam.Camera(localVideoRef.current, {
                     onFrame: async () => {
                         if (isMounted && holisticRef.current) {
-                            await holisticRef.current.send({ image: videoRef.current })
+                            await holisticRef.current.send({ image: localVideoRef.current })
                         }
                     },
                     width: 640,
@@ -64,10 +64,10 @@ export function useMotionCapture(videoRef, setLandmarks) {
             if (holisticRef.current) {
                 holisticRef.current.close()
             }
-            if (videoRef.current && videoRef.current.srcObject) {
-                const tracks = videoRef.current.srcObject.getTracks()
+            if (localVideoRef.current && localVideoRef.current.srcObject) {
+                const tracks = localVideoRef.current.srcObject.getTracks()
                 tracks.forEach(track => track.stop())
             }
         }
-    }, [videoRef, setLandmarks])
+    }, [localVideoRef, setLandmarks])
 }
