@@ -4,8 +4,7 @@ import { useParams } from 'next/navigation'
 
 export default function Game() {
     const { roomId } = useParams()
-
     return (
-        <GameCanvas roomdId={roomId}/>
+        <GameCanvas roomId={roomId}/>
     )
 }
