@@ -10,11 +10,10 @@ import { useMotionCapture } from '@/hooks/useMotionCapture';
 import { useWebRTCConnection } from '@/hooks/useWebRTCConnection';
 // import { useGameLogic } from '../hooks/useGameLogic';
 // import { useWebSocket } from '../hooks/useWebSocket';
-
 function Scene({localVideoRef, remoteVideoRef, roomId}) {
 //   const { gameState, updateGameState } = useGameLogic();
 //   const { sendMessage, lastMessage } = useWebSocket();
-  const [receivedPoseData, setReceivedPoseData] = useState([]);
+  const [receivedPoseData, setReceivedPoseData] = useState({});
   const [landmarks, setLandmarks] = useState({
     nose: null,
     leftEye: null,
@@ -22,27 +21,34 @@ function Scene({localVideoRef, remoteVideoRef, roomId}) {
     leftHand: null,
     rightHand: null,
   })
-  useMotionCapture(localVideoRef, setLandmarks);
+  const landmarksRef = useRef(landmarks)
+
+  useEffect(() => {
+    landmarksRef.current = landmarks;
+  }, [landmarks])
+
+  useMotionCapture(localVideoRef, setLandmarks)
 
   //webRTC receive
-    const {  connectionState, remoteVideoRef: connectedRemoteVideoRef } = useWebRTCConnection(
+    useWebRTCConnection(
       (receivedData) => {
         console.log('Received data:', receivedData);
         if (receivedData.type === 'pose') {
           setReceivedPoseData(receivedData.pose);
         }
       },
-      () => landmarks,
+      () => landmarksRef.current,
       remoteVideoRef,
       roomId
     );
     
-  // useFrame((state, delta) => {
+  useFrame((state, delta) => {
+    console.log('===>',receivedPoseData)
     // 게임 상태 업데이트 로직
     // updateGameState(delta);
     // 필요한 경우 WebSocket을 통해 상태 전송
     // sendMessage(gameState);
-  // });
+  });
 
   return (
     <>

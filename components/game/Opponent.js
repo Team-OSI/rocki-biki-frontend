@@ -89,7 +89,7 @@ export function Opponent({ position, opponentData }) {
   const rotations = calculateRotations(opponentData)
 
   return (
-    <group ref={groupRef} position={position}>
+    <group ref={groupRef} position={position} >
         <OpponentHead
           ref={headRef}
           position={opponentData.nose}
