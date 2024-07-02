@@ -4,7 +4,7 @@
 
 @layer base {
   a{
-      @apply text-orange-500;
+      @apply text-slate-500;
   }
 }
 
@@ -16,7 +16,7 @@
 
 @layer components {
       .primary-btn {
-      @apply w-full bg-orange-500 font-semibold rounded-md hover:bg-orange-400 transition-colors
+      @apply w-full bg-slate-500 font-semibold rounded-md hover:bg-slate-400 transition-colors
       text-white text-center py-2.5
   }
 } 
