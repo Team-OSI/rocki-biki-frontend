@@ -2,9 +2,9 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Stats, PerspectiveCamera, OrbitControls } from '@react-three/drei';
+import { Stats, PerspectiveCamera, OrbitControls, Environment } from '@react-three/drei';
 import { Player } from './Player';
-// import { Opponent } from './Opponent';
+import { Opponent } from './Opponent';
 // import { Ring } from './Ring';
 import { useMotionCapture } from '../hooks/useMotionCapture';
 // import { useGameLogic } from '../hooks/useGameLogic';
@@ -22,6 +22,36 @@ function Scene({videoRef}) {
   })
   useMotionCapture(videoRef, setLandmarks);
 
+  // Opponent를 위한 변형된 데이터 생성
+  const opponentData = React.useMemo(() => {
+    if (!landmarks.nose) return landmarks;
+    
+    const transformLandmark = (landmark) => {
+      if (!landmark) return null;
+      return {
+        x: landmark.x, // X 좌표를 반전
+        y: landmark.y,
+        z: -landmark.z
+      };
+    };
+
+    return {
+      nose: transformLandmark(landmarks.nose),
+      leftEye: transformLandmark(landmarks.leftEye),
+      rightEye: transformLandmark(landmarks.rightEye),
+      leftHand: landmarks.rightHand ? {
+        wrist: transformLandmark(landmarks.rightHand.wrist),
+        indexBase: transformLandmark(landmarks.rightHand.indexBase),
+        pinkyBase: transformLandmark(landmarks.rightHand.pinkyBase)
+      } : null,
+      rightHand: landmarks.leftHand ? {
+        wrist: transformLandmark(landmarks.leftHand.wrist),
+        indexBase: transformLandmark(landmarks.leftHand.indexBase),
+        pinkyBase: transformLandmark(landmarks.leftHand.pinkyBase)
+      } : null,
+    };
+  }, [landmarks]);
+    
   // useFrame((state, delta) => {
     // 게임 상태 업데이트 로직
     // updateGameState(delta);
@@ -31,10 +61,11 @@ function Scene({videoRef}) {
 
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} />
-      <Player position={[0, 0, 0]} landmarks={landmarks} />
-      {/* <Opponent position={[2, 0, 0]} /> */}
+      <ambientLight intensity={0.7} />
+      <pointLight position={[10, 10, 10]} intensity={1}/>
+      <Player position={[0, 0, -2.6]} landmarks={landmarks} />
+      <Opponent position={[0, 0, 3]} opponentData={opponentData}/>
+      <Environment files="/images/metro_noord_4k.hdr" background/>
       {/* <Ring /> */}
     </>
   );
@@ -48,10 +79,9 @@ export function GameCanvas() {
       <Canvas shadows>
         <color attach='background' args={["gray"]} />
         <ambientLight />
-        <PerspectiveCamera makeDefault fov={40} position={[0, 0, 6]} />
+        <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
         <Scene videoRef={videoRef}/>
         <OrbitControls />
-        <gridHelper />
         <Stats />
       </Canvas>
     </div>
