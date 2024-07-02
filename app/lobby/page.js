@@ -1,28 +1,31 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Room from '@/components/lobby/Room';
 import RoomButton from '@/components/lobby/RoomButton';
 import RoomModal from '@/components/lobby/RoomModal';
+import useSocket from '../../hooks/useSocket';
 
-export default function App() {
+export default function Lobby() {
   const router = useRouter();
-  const [login, setLogin] = useState(false);
-  const [rooms, setRooms] = useState([
-    { title: '너만오면 고', participants: '1/2 byongjun', status: '참가하기' },
-    { title: '나랑 싸울래...', participants: '2/2 태욱짱짱맨 vs 수미니미니', status: '경기중' },
-    { title: '초보만 ㅋㅋ', participants: '1/2 tmdgh', status: '참가하기' },
-  ]);
+  const { rooms, addRoom, joinRoom } = useSocket('http://localhost:7777');
   const [showRoomModal, setShowRoomModal] = useState(false);
 
-  const addRoom = (newRoom) => {
-    setRooms([...rooms, newRoom]);
+  useEffect(() => {
+    console.log('Rooms updated', rooms); 
+  }, [rooms]);
+
+  const goGame = (roomId) => {
+    joinRoom(roomId);
+    router.push(`/wait?roomId=${roomId}`);
   };
 
-  const goGame = (participants) => {
-    router.push('/wait');
-  }
+  const handleCreateRoom = (roomData) => {
+    addRoom(roomData, (newRoom) => {
+      goGame(newRoom.roomId);
+    });
+  };
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/img/ring.jpg')" }}>
@@ -41,9 +44,9 @@ export default function App() {
               <Room 
                 key={index} 
                 title={room.title} 
-                participants={room.participants} 
-                status={room.status} 
-                onClick={() => goGame(room.participants)} 
+                participants={`${room.participants}/2`} 
+                status={room.status || '참가하기'} 
+                onClick={() => goGame(room.roomId)} 
               />
             ))}
           </div>
@@ -53,7 +56,7 @@ export default function App() {
       {showRoomModal && (
         <RoomModal
           onClose={() => setShowRoomModal(false)}
-          onCreate={addRoom}
+          onCreate={handleCreateRoom}
         />
       )}
     </div>

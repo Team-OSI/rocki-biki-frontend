@@ -17,7 +17,7 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name }, ref) => {
         position: localRef.current?.position,
         rotation: localRef.current?.rotation,
       }),
-      [localRef], 
+      [localRef], //qwjeqkjwekw
     )
      useEffect(() => {
        Object.values(materials).forEach((material) => {
