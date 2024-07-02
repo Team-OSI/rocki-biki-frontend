@@ -1,11 +1,12 @@
 'use client';
 
-import React, { forwardRef, useRef, useEffect, useImperativeHandle } from 'react'
+import React, { forwardRef, useRef, useEffect, useImperativeHandle, useMemo, useCallback } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
-import { Vector3 } from 'three';
+import * as THREE from 'three';
 import { calculateHandRotation, calculateHeadRotation} from '@/lib/utils/calc_rotation'
 
+// player 머리 불러오기
 const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/head.glb')
@@ -40,11 +41,39 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
   
   const leftHandModel = '/models/left-hand.glb'
   const rightHandModel = '/models/right-hand.glb'
-  
-const Hand = forwardRef(({ position, rotation, scale, name }, ref) => {
+
+// player 손 불러오기
+const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref) => {
     const localRef = useRef()
-    const { scene } = useGLTF(name === 'leftHand' ? leftHandModel : rightHandModel)
-  
+    const { scene: originalScene } = useGLTF(name === 'leftHand' ? leftHandModel : rightHandModel)
+    const colorChangedRef = useRef(false)
+
+    // scene을 복제하고 메모이제이션
+    const scene = useMemo(() => originalScene.clone(), [originalScene])
+
+    // 색상 변경 함수를 메모이제이션
+    const changeColor = useCallback(() => {
+      if (colorChangedRef.current) return; // 이미 색상이 변경되었다면 중단
+
+      scene.traverse((child) => {
+          if (child.isMesh) {
+              if (child.material.color) {
+                  child.material = child.material.clone(); // 재질 복제
+                  child.material.color.set(color);
+                  child.material.transparent = true;
+                  child.material.needsUpdate = true;
+              }
+          }
+      });
+
+      colorChangedRef.current = true; // 색상 변경 완료 표시
+  }, [scene, color]);
+
+  // 색상 변경 효과
+  useEffect(() => {
+      changeColor();
+  }, [changeColor]);
+
     useFrame(() => {
       if (localRef.current && position) {
         if (rotation) {
@@ -59,12 +88,12 @@ const Hand = forwardRef(({ position, rotation, scale, name }, ref) => {
   
 function CameraControls({target}){
   const { camera } = useThree()
-  const cameraPosition = useRef(new Vector3(0,0,10))
+  const cameraPosition = useRef(new THREE.Vector3(0,0,10))
   useFrame(()=> {
     if (target && target.current && target.current.position) {
     const targetPosition = target.current.position.clone()
-    targetPosition.z -=4.2
-    targetPosition.y +=0.1
+    targetPosition.z -=3.9
+    targetPosition.y +=0.2
   
     // 부드러운 카메라 이동
     cameraPosition.current.lerp(targetPosition,0.1)
@@ -79,7 +108,6 @@ function CameraControls({target}){
 export function Player({ position, landmarks }) {
   const groupRef = useRef(null)
   const headRef = useRef(null)
-  // console.log("==>",landmarks.leftHand)
 
   const calculateRotations = (data) => {
     if (!data) return {head:0, leftHand:0, rightHand:0}
@@ -116,6 +144,7 @@ export function Player({ position, landmarks }) {
             rotation={rotations.rightHand}
             scale={0.33}
             name='rightHand'
+            color = 'blue'
           />
         )}
         {landmarks.leftHand?.wrist && (
@@ -124,6 +153,7 @@ export function Player({ position, landmarks }) {
             rotation={rotations.leftHand}
             scale={0.33}
             name='leftHand'
+            color = 'blue'
           />
         )}
       </group>
