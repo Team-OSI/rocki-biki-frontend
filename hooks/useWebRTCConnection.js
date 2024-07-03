@@ -1,51 +1,78 @@
-import { useRef, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 
-export const useWebRTCConnection = (onDataReceived, getLandmarks, remoteVideoRef, roomId) => {
+const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
+  const [socket, setSocket] = useState(null);
+  const [connectionState, setConnectionsState] = useState('disconnected');
   const peerConnection = useRef();
-  const socket = useRef();
+
   const localStream = useRef();
   const dataChannel = useRef();
   const intervalId = useRef();
 
-  const [connectionState, setConnectionsState] = useState('disconnected')
-
   useEffect(() => {
-    socket.current = io('http://localhost:7777');
-    socket.current.emit('join room', roomId);
+    const newSocket = io('http://localhost:7777');
+    setSocket(newSocket);
 
-    socket.current.on('offer', (data) => handleOffer(data.offer));
-    socket.current.on('answer', (data) => handleAnswer(data.answer));
-    socket.current.on('candidate', (data) => handleCandidate(data.candidate));
+    newSocket.emit('join room', roomId);
+    // console.log('Joined room:', roomId);
 
-    // 미디어 스트림 얻기
-    // navigator : window.navigator 읽기 전용 속성으로 접근할 수 있다.
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => {
-          // 스트림을 가져온다.
-          localStream.current = stream;
-          // RTCPeerConnection 생성
-          startCall();
-        })
-        .catch(error => {
-          console.error('Error accessing media devices.', error);
-          setConnectionsState('error');
-        });
-    } else {
-      console.error('getUserMedia not supported on this browser!');
-      setConnectionsState('error');
-    }
+    newSocket.on('offer', (data) => {
+      console.log('Offer received:', data.offer);
+      if (!data.offer) {
+        console.error('Received offer is null or undefined');
+        return;
+      }
+      handleOffer(data.offer, newSocket);
+    });
+
+    newSocket.on('answer', (data) => {
+      console.log('Answer received:', data.answer);
+      if (!data.answer) {
+        console.error('Received answer is null or undefined');
+        return;
+      }
+      handleAnswer(data.answer, newSocket);
+    });
+
+    newSocket.on('candidate', (data) => {
+      console.log('Candidate received:', data.candidate);
+      if (!data.candidate) {
+        console.error('Received candidate is null or undefined');
+        return;
+      }
+      handleCandidate(data.candidate, newSocket);
+    });
+
+    newSocket.on('connect', () => {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+          .then(stream => {
+            localStream.current = stream;
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = stream;
+            }
+            startCall(newSocket); // 소켓이 초기화된 후에 startCall 호출
+          })
+          .catch(error => {
+            console.error('Error accessing media devices.', error);
+            setConnectionsState('error');
+          });
+      } else {
+        console.error('getUserMedia not supported on this browser!');
+        setConnectionsState('error');
+      }
+    });
+
     return () => {
-      socket.current.disconnect();
+      newSocket.close();
       if (intervalId.current) {
         clearInterval(intervalId.current);
       }
     };
   }, [roomId]);
 
-  const createPeerConnection = () => {
-    // peerConnection 객체생성
+  const createPeerConnection = (socket) => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
@@ -61,63 +88,92 @@ export const useWebRTCConnection = (onDataReceived, getLandmarks, remoteVideoRef
       const channel = event.channel;
       channel.onopen = () => {
         console.log('Data channel opened:', channel);
-        setConnectionsState('connected')
+        setConnectionsState('connected');
       };
       channel.onmessage = (event) => {
         const receivedData = JSON.parse(event.data);
         onDataReceived(receivedData);
       };
     };
-    // ICE candidate 처리
+
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        // candidate를 시그널링 서버를 통해 상대방에게 전송
-        socket.current.emit('candidate', { roomId, candidate: event.candidate});
+        socket.emit('candidate', { candidate: event.candidate, roomId });
       }
     };
-    // 원격 스트림 처리
+
     pc.ontrack = (event) => {
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = event.streams[0];
-        setConnectionsState('connected')
+        setConnectionsState('connected');
       }
     };
 
     return pc;
   };
 
-  const handleOffer = async (offer) => {
+  const handleOffer = async (offer, socket) => {
     if (!peerConnection.current) {
-      peerConnection.current = createPeerConnection();
+      peerConnection.current = createPeerConnection(socket);
     }
-    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await peerConnection.current.createAnswer();
-    await peerConnection.current.setLocalDescription(answer);
-    socket.current.emit('answer', {roomId, answer});
+    if (!offer || !offer.type) {
+      console.error('Invalid offer received:', offer);
+      return;
+    }
+    try {
+      await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await peerConnection.current.createAnswer();
+      await peerConnection.current.setLocalDescription(answer);
+      socket.emit('answer', { type: answer.type, sdp: answer.sdp, roomId });
+    } catch (error) {
+      console.error('Error handling offer:', error);
+    }
   };
 
-  const handleAnswer = async (answer) => {
-    if (peerConnection.current.signalingState === 'have-local-offer') {
-      await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
+  const handleAnswer = async (answer, socket) => {
+    if (!peerConnection.current) {
+      console.error('PeerConnection not initialized.');
+      return;
+    }
+    if (!answer || !answer.type) {
+      console.error('Invalid answer received:', answer);
+      return;
+    }
+    try {
+      if (peerConnection.current.signalingState === 'have-local-offer') {
+        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
+      }
+    } catch (error) {
+      console.error('Error handling answer:', error);
     }
   };
 
-  const handleCandidate = async (candidate) => {
+  const handleCandidate = async (candidate, socket) => {
+    if (!peerConnection.current) {
+      console.error('PeerConnection not initialized.');
+      return;
+    }
     try {
       await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
     } catch (error) {
-      console.error('Error adding received ice candidate', error);
+      console.error('Error adding received ice candidate:', error);
     }
   };
 
-  const startCall = async () => {
-    peerConnection.current = createPeerConnection();
+  const startCall = async (socket) => {
+    if (!peerConnection.current) {
+      peerConnection.current = createPeerConnection(socket);
+    }
     const stream = localStream.current;
     if (stream) {
       stream.getTracks().forEach(track => peerConnection.current.addTrack(track, stream));
-      const offer = await peerConnection.current.createOffer();
-      await peerConnection.current.setLocalDescription(offer);
-      socket.current.emit('offer', {roomId, offer});
+      try {
+        const offer = await peerConnection.current.createOffer();
+        await peerConnection.current.setLocalDescription(offer);
+        socket.emit('offer', { type: offer.type, sdp: offer.sdp, roomId });
+      } catch (error) {
+        console.error('Error starting call:', error);
+      }
     }
   };
 
@@ -134,7 +190,10 @@ export const useWebRTCConnection = (onDataReceived, getLandmarks, remoteVideoRef
           dataChannel.current.send(JSON.stringify(message));
         }
       }
-    }, 1000 / 10);
+    }, 1000 / 30);
   };
-  return { connectionState, remoteVideoRef}
+
+  return { socket, localStream, peerConnection, connectionState };
 };
+
+export default useWebRTCConnection;
