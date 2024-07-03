@@ -134,7 +134,7 @@ export const useWebRTCConnection = (onDataReceived, getLandmarks, remoteVideoRef
           dataChannel.current.send(JSON.stringify(message));
         }
       }
-    }, 1000 / 10);
+    }, 1000 / 24);
   };
   return { connectionState, remoteVideoRef}
 };
