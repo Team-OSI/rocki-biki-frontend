@@ -85,6 +85,7 @@ const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref
   
     return <primitive ref={localRef} object={scene} scale={scale} name={name} />
   })
+  Hand.displayName = "Hand";
   
 function CameraControls({target}){
   const { camera } = useThree()
