@@ -66,8 +66,27 @@ export function GameCanvas() {
 
   return (
     <div className="w-full h-screen">
-      <video className="fixed scale-x-[-1] right-5 top-5 z-10 rounded-[50px] opacity-80" ref={localVideoRef} style={{ width: '200px', height: '150px' }} />
-      {connectionState === 'connected' ? <video className="fixed scale-x-[-1] left-5 top-5 z-10 rounded-[50px] opacity-80" ref={remoteVideoRef} style={{ width: '200px', height: '150px' }} /> : <div className="fixed scale-x-[-1] left-5 bg-slate-400 top-5 z-10 rounded-[50px] opacity-80" style={{ width: '200px', height: '150px' }} />}
+      <video
+        className="fixed scale-x-[-1] right-5 top-5 z-10 rounded-[50px] opacity-80"
+        ref={localVideoRef}
+        style={{ width: '200px', height: '150px' }}
+        autoPlay
+        playsInline
+      />
+      {connectionState === 'connected' ? (
+        <video
+          className="fixed scale-x-[-1] left-5 top-5 z-10 rounded-[50px] opacity-80"
+          ref={remoteVideoRef}
+          style={{ width: '200px', height: '150px' }}
+          autoPlay
+          playsInline
+        />
+      ) : (
+        <div
+          className="fixed scale-x-[-1] left-5 bg-slate-400 top-5 z-10 rounded-[50px] opacity-80"
+          style={{ width: '200px', height: '150px' }}
+        />
+      )}
       <Canvas shadows>
         <color attach="background" args={["gray"]} />
         <ambientLight />

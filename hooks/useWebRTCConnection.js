@@ -5,7 +5,6 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
   const [socket, setSocket] = useState(null);
   const [connectionState, setConnectionsState] = useState('disconnected');
   const peerConnection = useRef();
-
   const localStream = useRef();
   const dataChannel = useRef();
   const intervalId = useRef();
@@ -19,28 +18,14 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
 
     newSocket.on('offer', (data) => {
       console.log('Offer received:', data.offer);
-      if (!data.offer) {
-        console.error('Received offer is null or undefined');
-        return;
-      }
       handleOffer(data.offer, newSocket);
     });
-
     newSocket.on('answer', (data) => {
       console.log('Answer received:', data.answer);
-      if (!data.answer) {
-        console.error('Received answer is null or undefined');
-        return;
-      }
       handleAnswer(data.answer, newSocket);
     });
-
     newSocket.on('candidate', (data) => {
       console.log('Candidate received:', data.candidate);
-      if (!data.candidate) {
-        console.error('Received candidate is null or undefined');
-        return;
-      }
       handleCandidate(data.candidate, newSocket);
     });
 
