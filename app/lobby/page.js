@@ -18,7 +18,7 @@ export default function Lobby() {
 
   const goGame = (roomId) => {
     joinRoom(roomId);
-    router.push(`/wait?roomId=${roomId}`);
+    router.push(`/game?roomId=${roomId}`);
   };
 
   const handleCreateRoom = (roomData) => {

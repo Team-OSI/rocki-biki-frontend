@@ -17,7 +17,7 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name }, ref) => {
         position: localRef.current?.position,
         rotation: localRef.current?.rotation,
       }),
-      [localRef], //qwjeqkjwekw
+      [localRef], 
     )
      useEffect(() => {
        Object.values(materials).forEach((material) => {
@@ -89,7 +89,7 @@ export function Opponent({ position, opponentData }) {
   const rotations = calculateRotations(opponentData)
 
   return (
-    <group ref={groupRef} position={position}>
+    <group ref={groupRef} position={position} rotation={[0, Math.PI, 0]}>
         <OpponentHead
           ref={headRef}
           position={opponentData.nose}

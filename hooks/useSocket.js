@@ -29,7 +29,7 @@ const useSocket = (url) => {
 
   const joinRoom = (roomId) => {
     if (socket) {
-      socket.emit('JOIN_ROOM', roomId);
+      socket.emit('join room', roomId);
     }
   };
 
