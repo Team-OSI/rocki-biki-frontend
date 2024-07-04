@@ -43,7 +43,7 @@ function Scene({ localVideoRef, remoteVideoRef }) {
   );
 
   useFrame((state, delta) => {
-    // console.log('===>', receivedPoseData);
+    console.log('===>', landmarks);
   });
 
   return (

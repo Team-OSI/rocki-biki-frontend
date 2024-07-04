@@ -175,7 +175,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
           dataChannel.current.send(JSON.stringify(message));
         }
       }
-    }, 1000 / 30);
+    }, 1000 / 20);
   };
 
   return { socket, localStream, peerConnection, connectionState };

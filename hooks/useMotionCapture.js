@@ -1,68 +1,84 @@
-import { useEffect, useRef } from 'react';
-import * as cam from '@mediapipe/camera_utils';
-import {
-    createHolistic,
-    initializeHolistic,
-    processHandLandmarks
-} from '@/lib/mediapipe/holistic';
+import { useEffect, useRef, useCallback } from 'react';
+import { Camera } from '@mediapipe/camera_utils';
+import { initializeDetectors } from '@/lib/mediapipe/tasksVision';
 
 export function useMotionCapture(localVideoRef, setLandmarks) {
-    const holisticRef = useRef(null)
-    const previousLandmarks = useRef({leftHand: null, rightHand: null})
+    const resultRef = useRef(null);
+    const cameraRef = useRef(null);
+
+    const processLandmarks = useCallback((faceResult, handResult) => {
+        if (!faceResult.faceLandmarks?.[0] || !handResult.landmarks) return;
+
+        const face = faceResult.faceLandmarks[0];
+        const hands = handResult.landmarks;
+
+        const newLandmarks = {
+            nose: face[1],
+            leftEye: face[159],
+            rightEye: face[386],
+            leftHand: hands[0] ? {
+                wrist: hands[0][10],
+                indexBase: hands[0][1], // 5
+                pinkyBase: hands[0][17]
+            } : null,
+            rightHand: hands[1] ? {
+                wrist: hands[1][10],
+                indexBase: hands[1][1], // 5
+                pinkyBase: hands[1][17]
+            } : null
+        };
+
+        setLandmarks(newLandmarks);
+    }, [setLandmarks]);
+
+    const detectFrame = useCallback(async () => {
+        if (!resultRef.current || !localVideoRef.current) return;
+
+        const timestamp = performance.now();
+        const faceResult = resultRef.current.faceLandmarker.detectForVideo(localVideoRef.current, timestamp);
+        const handResult = resultRef.current.handLandmarker.detectForVideo(localVideoRef.current, timestamp);
+        
+        processLandmarks(faceResult, handResult);
+    }, [processLandmarks, localVideoRef]);
 
     useEffect(() => {
         let isMounted = true;
 
-        const initHolistic = async () => {
-            holisticRef.current = createHolistic();
-            await initializeHolistic(holisticRef.current);
+        const initMediapipe = async () => {
+            try {
+                resultRef.current = await initializeDetectors();
 
-            holisticRef.current.onResults((results) => {
-                if (isMounted) {
-                    const newLandmarks = {
-                        nose: results.faceLandmarks ? results.faceLandmarks[4] : null,
-                        leftEye: results.faceLandmarks ? results.faceLandmarks[33] : null,
-                        rightEye: results.faceLandmarks ? results.faceLandmarks[263] : null,
-                        leftHand: processHandLandmarks(results.leftHandLandmarks, 'leftHand', previousLandmarks),
-                        rightHand: processHandLandmarks(results.rightHandLandmarks, 'rightHand', previousLandmarks)
-                    };
+                if (localVideoRef.current && isMounted) {
+                    cameraRef.current = new Camera(localVideoRef.current, {
+                        onFrame: detectFrame,
+                        width: 320,
+                        height: 240,
+                        frameRate: 30
+                    });
 
-                    setLandmarks(newLandmarks);
-                    previousLandmarks.current = {
-                        leftHand: newLandmarks.leftHand,
-                        rightHand: newLandmarks.rightHand
-                    };
+                    await cameraRef.current.start();
                 }
-            });
-
-            if (localVideoRef.current) {
-                const camera = new cam.Camera(localVideoRef.current, {
-                    onFrame: async () => {
-                        if (isMounted && holisticRef.current) {
-                            await holisticRef.current.send({ image: localVideoRef.current })
-                        }
-                    },
-                    width: 640,
-                    height: 480
-                });
-
-                camera.start().catch((error) => {
-                    console.error('Failed to start camera:', error);
-                });
+            } catch (error) {
+                console.error('Error in initMediapipe:', error);
             }
         };
 
-        initHolistic();
+        initMediapipe();
 
         return () => {
             isMounted = false;
-            if (holisticRef.current) {
-                holisticRef.current.close();
+            if (cameraRef.current) {
+                cameraRef.current.stop();
+                cameraRef.current = null;
+            }
+            if (resultRef.current) {
+                resultRef.current = null;
             }
             if (localVideoRef.current && localVideoRef.current.srcObject) {
-                const tracks = localVideoRef.current.srcObject.getTracks()
-                tracks.forEach(track => track.stop())
+                localVideoRef.current.srcObject.getTracks().forEach(track => track.stop());
             }
-        }
-    }, [localVideoRef, setLandmarks])
+        };
+    }, [detectFrame, localVideoRef]);
+
+    return null;
 }
