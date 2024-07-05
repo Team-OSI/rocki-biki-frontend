@@ -1,7 +1,8 @@
-import { GameCanvas } from "@/components/game/GameCanvas"
+import GameMain from "@/components/game/GameMain"
+import ReadyCanvas from "@/components/game/ReadyCanvas"
 
 export default function Game() {
     return (
-            <GameCanvas />
+            <GameMain />
     )
 }
