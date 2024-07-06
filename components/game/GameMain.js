@@ -49,13 +49,15 @@ export default function GameMain() {
     );
 
     const handleReady = () => {
-        setIsGameStarted(true);
+        if (isReady) {
+            setIsGameStarted(true);
+        }
     };
 
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
-        width: isGameStarted ? '200px' : 'calc(40vw - 10px)', // 좀 더 좁게 설정
+        width: isGameStarted ? '200px' : 'calc(40vw - 10px)', 
         height: isGameStarted ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
         zIndex: 10,
         ...(isGameStarted
@@ -78,12 +80,29 @@ export default function GameMain() {
         position: 'absolute',
         bottom: 0,
         left: '50%',
-        width: '70%',
-        height: '70%',
+        width: '100%',
+        height: '100%',
         opacity: 0.5,
         pointerEvents: 'none',
         transition: 'opacity 0.5s ease-in-out',
     };
+
+    const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const updateCanvasSize = () => {
+            if (canvasRef.current) {
+              const { width, height } = canvasRef.current.getBoundingClientRect();
+              setCanvasSize({ width, height });
+            }
+        };
+
+        updateCanvasSize();
+        window.addEventListener('resize', updateCanvasSize);
+
+        return () => window.removeEventListener('resize', updateCanvasSize);
+    }, []);
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
@@ -97,7 +116,7 @@ export default function GameMain() {
                 />
                 {!isGameStarted && (
                     <Image
-                        src="/images/ready_pose.png"
+                        src="/images/ready_pose.webp"
                         alt="Ready Pose"
                         layout="fill"
                         objectFit="cover"
@@ -117,7 +136,7 @@ export default function GameMain() {
                         />
                         {!isGameStarted && (
                             <Image
-                                src="/images/ready_pose.png"
+                                src="/images/ready_pose.webp"
                                 alt="Ready Pose"
                                 layout="fill"
                                 objectFit="cover"
@@ -134,10 +153,12 @@ export default function GameMain() {
                     </div>
                 )}
             </div>
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0" ref={canvasRef}>
                 {!isGameStarted ? (
                     <ReadyCanvas 
                         onReady={handleReady}
+                        landmarks={landmarks}
+                        canvasSize={canvasSize}
                     />
                 ) : (
                     <GameCanvas 
