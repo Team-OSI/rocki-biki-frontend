@@ -31,13 +31,21 @@ export default function LoginDiv({ onClose, onLogin }) {
         Login
       </button>
       <p className="my-4 text-dark">or</p>
-      <button className="w-full bg-yellow-400 text-white py-2 rounded-md hover:bg-yellow-700 transition duration-300">
-        Kakao Login
-      </button>
+      <div className="flex justify-center gap-2 w-full">
+        <button className="flex-1 bg-yellow-400 text-white py-2 rounded-md hover:bg-yellow-700 transition duration-300">
+          Kakao 
+        </button>
+        <button className="flex-1 bg-white text-black py-2 rounded-md hover:bg-gray-400 transition duration-300 border border-black">
+          Google 
+        </button>
+        <button className="flex-1 bg-green-500 text-white py-2 rounded-md hover:bg-green-800 transition duration-300">
+          Naver 
+        </button>
+      </div>
       <div className="mt-4">
         계정이 없다면?
-        <button onClick={() => setShowSignupModal(true)} className='hover:underline text-blue-600'>
-        Sign Up
+        <button onClick={() => setShowSignupModal(true)} className="hover:underline text-blue-600 ml-1">
+          Sign Up
         </button>
       </div>
       {showSignupModal && <SignupModal onClose={() => setShowSignupModal(false)} />}

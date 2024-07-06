@@ -8,6 +8,7 @@ import { Opponent } from './Opponent';
 import { useSearchParams } from 'next/navigation';
 import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
+import { startRecognition, getRecognition } from '@/api/stt/api';
 
 function Scene({ localVideoRef, remoteVideoRef }) {
   const searchParams = useSearchParams();
@@ -28,13 +29,11 @@ function Scene({ localVideoRef, remoteVideoRef }) {
 
   useMotionCapture(localVideoRef, setLandmarks);
 
-  // WebRTC 연결 설정
   useWebRTCConnection(
     roomId,
     localVideoRef,
     remoteVideoRef,
     (receivedData) => {
-      // console.log('Received data:', receivedData);
       if (receivedData.type === 'pose') {
         setReceivedPoseData(receivedData.pose);
       }
@@ -42,9 +41,7 @@ function Scene({ localVideoRef, remoteVideoRef }) {
     () => landmarksRef.current
   );
 
-  useFrame((state, delta) => {
-    // console.log('===>', receivedPoseData);
-  });
+  useFrame((state, delta) => {});
 
   return (
     <>
@@ -60,8 +57,33 @@ function Scene({ localVideoRef, remoteVideoRef }) {
 export function GameCanvas() {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const [receivedText, setReceivedText] = useState("");
+  const [textTimeout, setTextTimeout] = useState(null);
 
-  // 임시코드
+  const handleStartRecognition = async () => {
+    try {
+      const data = await startRecognition();
+      console.log(data);
+    }catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  const handleGetRecognition = async () => {
+    try {
+      const data = await getRecognition();
+      setReceivedText(data.message);
+      console.log(data.message);
+
+      const timeoutId = setTimeout(() => {
+        setReceivedText("");
+      }, 7000);
+      setTextTimeout(timeoutId);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   const connectionState = 'connected';
 
   return (
@@ -78,8 +100,6 @@ export function GameCanvas() {
           className="fixed scale-x-[-1] left-5 top-5 z-10 rounded-[50px] opacity-80"
           ref={remoteVideoRef}
           style={{ width: '200px', height: '150px' }}
-          autoPlay
-          playsInline
         />
       ) : (
         <div
@@ -94,6 +114,17 @@ export function GameCanvas() {
         <Scene localVideoRef={localVideoRef} remoteVideoRef={remoteVideoRef} />
         <Stats />
       </Canvas>
+      <button onClick={handleGetRecognition} className="fixed bottom-20 right-5 z-20 p-3 bg-blue-500 text-white rounded">
+        Get Recognition
+      </button>
+      <button onClick={handleStartRecognition} className="fixed bottom-5 right-5 z-20 p-3 bg-blue-500 text-white rounded">
+        Start Recognition
+      </button>
+      {receivedText && (
+        <div className="fixed bottom-5 left-5 z-20 p-3 bg-white text-black rounded">
+          {receivedText}
+        </div>
+      )}
     </div>
   );
 }
