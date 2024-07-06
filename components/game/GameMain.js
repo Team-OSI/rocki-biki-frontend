@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { GameCanvas } from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
-import { useSearchParams } from 'next/navigation';
 import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
+import Image from 'next/image';
 
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
@@ -74,6 +74,17 @@ export default function GameMain() {
         borderRadius: '25px',
     };
 
+    const overlayStyle = {
+        position: 'absolute',
+        bottom: 0,
+        left: '50%',
+        width: '70%',
+        height: '70%',
+        opacity: 0.5,
+        pointerEvents: 'none',
+        transition: 'opacity 0.5s ease-in-out',
+    };
+
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
             <div style={videoContainerStyle(true)}>
@@ -84,16 +95,36 @@ export default function GameMain() {
                     autoPlay
                     playsInline
                 />
+                {!isGameStarted && (
+                    <Image
+                        src="/images/ready_pose.png"
+                        alt="Ready Pose"
+                        layout="fill"
+                        objectFit="cover"
+                        style={overlayStyle}
+                    />
+                )}
             </div>
             <div style={videoContainerStyle(false)}>
                 {remoteVideoRef.current ? (
-                    <video
-                        className="scale-x-[-1] opacity-80"
-                        ref={remoteVideoRef}
-                        style={videoStyle}
-                        autoPlay
-                        playsInline
-                    />
+                    <>
+                        <video
+                            className="scale-x-[-1] opacity-80"
+                            ref={remoteVideoRef}
+                            style={videoStyle}
+                            autoPlay
+                            playsInline
+                        />
+                        {!isGameStarted && (
+                            <Image
+                                src="/images/ready_pose.png"
+                                alt="Ready Pose"
+                                layout="fill"
+                                objectFit="cover"
+                                style={overlayStyle}
+                            />
+                        )}
+                    </>
                 ) : (
                     <div
                         className="bg-slate-400 opacity-80 flex items-center justify-center text-white"
