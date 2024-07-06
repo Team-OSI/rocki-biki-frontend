@@ -9,7 +9,8 @@ import useSocket from '../../hooks/useSocket';
 
 export default function Lobby() {
   const router = useRouter();
-  const { rooms, addRoom, joinRoom } = useSocket('http://localhost:7777');
+  // const { rooms, addRoom, joinRoom } = useSocket('http://localhost:7777');
+  const { rooms, addRoom, joinRoom } = useSocket('//rocki-biki.com:4000');
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
