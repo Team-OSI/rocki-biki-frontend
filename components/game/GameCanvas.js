@@ -8,6 +8,7 @@ import { Opponent } from './Opponent';
 import { useSearchParams } from 'next/navigation';
 import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
+import { startRecognition, getRecognition } from '@/api/stt/api';
 
 function Scene({ localVideoRef, remoteVideoRef }) {
   const searchParams = useSearchParams();
@@ -61,28 +62,22 @@ export function GameCanvas() {
 
   const handleStartRecognition = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/start_recognition', {
-        method: 'POST',
-      });
-      const data = await response.json();
-      console.log(data.message);
-    } catch (error) {
+      const data = await startRecognition();
+      console.log(data);
+    }catch (error) {
       console.error('Error:', error);
     }
-  };
+  }
 
   const handleGetRecognition = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/get_text', {
-        method: 'POST',
-      });
-      const data = await response.json();
+      const data = await getRecognition();
       setReceivedText(data.message);
       console.log(data.message);
+
       const timeoutId = setTimeout(() => {
         setReceivedText("");
       }, 7000);
-
       setTextTimeout(timeoutId);
     } catch (error) {
       console.error('Error:', error);
