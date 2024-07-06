@@ -11,7 +11,8 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
   const intervalId = useRef();
 
   useEffect(() => {
-    const newSocket = io('http://localhost:7777');
+    // const newSocket = io('http://localhost:7777');
+    const newSocket = io('//rocki-biki.com:4000');
     setSocket(newSocket);
 
     newSocket.emit('join room', roomId);
