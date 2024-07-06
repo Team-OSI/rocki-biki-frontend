@@ -1,32 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 
+// WebRTC 연결을 설정하는 커스텀 훅
 const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
   const [socket, setSocket] = useState(null);
-  const [connectionState, setConnectionsState] = useState('disconnected');
+  const [connectionState, setConnectionState] = useState('disconnected');
   const peerConnection = useRef();
   const localStream = useRef();
   const dataChannel = useRef();
   const intervalId = useRef();
 
   useEffect(() => {
-    const newSocket = io('//rocki-biki.com:4000');
     // const newSocket = io('http://localhost:7777');
+    const newSocket = io('//rocki-biki.com:4000');
     setSocket(newSocket);
 
     newSocket.emit('join room', roomId);
-    // console.log('Joined room:', roomId);
 
     newSocket.on('offer', (data) => {
-      console.log('Offer received:', data.offer);
       handleOffer(data.offer, newSocket);
     });
     newSocket.on('answer', (data) => {
-      console.log('Answer received:', data.answer);
       handleAnswer(data.answer, newSocket);
     });
     newSocket.on('candidate', (data) => {
-      console.log('Candidate received:', data.candidate);
       handleCandidate(data.candidate, newSocket);
     });
 
@@ -38,15 +35,13 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             if (localVideoRef.current) {
               localVideoRef.current.srcObject = stream;
             }
-            startCall(newSocket); // 소켓이 초기화된 후에 startCall 호출
+            startCall(newSocket);
           })
           .catch(error => {
-            console.error('Error accessing media devices.', error);
-            setConnectionsState('error');
+            setConnectionState('error');
           });
       } else {
-        console.error('getUserMedia not supported on this browser!');
-        setConnectionsState('error');
+        setConnectionState('error');
       }
     });
 
@@ -64,7 +59,9 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     });
 
     dataChannel.current = pc.createDataChannel('dataChannel');
-    dataChannel.current.onopen = startSendingData;
+    dataChannel.current.onopen = () => {
+      startSendingData();
+    };
     dataChannel.current.onmessage = (event) => {
       const receivedData = JSON.parse(event.data);
       onDataReceived(receivedData);
@@ -73,8 +70,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     pc.ondatachannel = (event) => {
       const channel = event.channel;
       channel.onopen = () => {
-        console.log('Data channel opened:', channel);
-        setConnectionsState('connected');
+        setConnectionState('connected');
       };
       channel.onmessage = (event) => {
         const receivedData = JSON.parse(event.data);
@@ -88,10 +84,10 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
       }
     };
 
-    pc.ontrack = (event) => {
+    pc.ontrack = (event) => {;
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = event.streams[0];
-        setConnectionsState('connected');
+        setConnectionState('connected');
       }
     };
 
@@ -101,10 +97,6 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
   const handleOffer = async (offer, socket) => {
     if (!peerConnection.current) {
       peerConnection.current = createPeerConnection(socket);
-    }
-    if (!offer || !offer.type) {
-      console.error('Invalid offer received:', offer);
-      return;
     }
     try {
       await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
@@ -119,10 +111,6 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
   const handleAnswer = async (answer, socket) => {
     if (!peerConnection.current) {
       console.error('PeerConnection not initialized.');
-      return;
-    }
-    if (!answer || !answer.type) {
-      console.error('Invalid answer received:', answer);
       return;
     }
     try {
@@ -152,7 +140,9 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     }
     const stream = localStream.current;
     if (stream) {
-      stream.getTracks().forEach(track => peerConnection.current.addTrack(track, stream));
+      stream.getTracks().forEach(track => {
+        peerConnection.current.addTrack(track, stream);
+      });
       try {
         const offer = await peerConnection.current.createOffer();
         await peerConnection.current.setLocalDescription(offer);
@@ -170,13 +160,12 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         if (landmarks) {
           const message = {
             type: 'pose',
-            timestamp: new Date().toISOString(),
             pose: landmarks
           };
           dataChannel.current.send(JSON.stringify(message));
         }
       }
-    }, 1000 / 30);
+    }, 1000 / 30); // 30 FPS
   };
 
   return { socket, localStream, peerConnection, connectionState };
