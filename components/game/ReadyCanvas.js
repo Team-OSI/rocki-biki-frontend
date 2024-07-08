@@ -4,10 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const canvasRef = useRef(null);
+  const timerRef = useRef(null);
   const [similarityResult, setSimilarityResult] = useState(null);
   const [isReadyPose, setIsReadyPose] = useState(false);
+  const [remainingTime, setRemainingTime] = useState(5);
   const keypoints = ['nose', 'leftShoulder', 'rightShoulder'];
-  const similarityThreshold = 0.80;
+  const similarityThreshold = 0.70;
 
   const targetPose = useRef({
     nose: { x: 0.5, y: 0.45 },
@@ -48,17 +50,43 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
     return similarity;
   }, [keypoints]);
 
+  const startTimer = useCallback(() => {
+    if (timerRef.current) return;
+    
+    setRemainingTime(5); // 타이머 초기화
+    timerRef.current = setInterval(() => {
+      setRemainingTime((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+          setIsReadyPose(true);
+          onReady();
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+  }, [onReady]);
+
   const checkReadyPose = useCallback(() => {
     if (landmarks && canvasRef.current) {
       const requiredLandmarks = extractRequiredLandmarks(landmarks);
       const similarity = calculatePoseSimilarity(requiredLandmarks, targetPose.current);
       setSimilarityResult(similarity);
-      setIsReadyPose(similarity >= similarityThreshold);
+  
       if (similarity >= similarityThreshold) {
-        onReady();
+        if (!timerRef.current) {
+          startTimer(); // 타이머가 실행 중이 아닐 때만 시작
+        }
+      } else {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+          setRemainingTime(5);
+        }
       }
     }
-  }, [landmarks, calculatePoseSimilarity, similarityThreshold, onReady, extractRequiredLandmarks]);
+  }, [landmarks, calculatePoseSimilarity, similarityThreshold, extractRequiredLandmarks, startTimer]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -73,7 +101,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
     const startX = canvas.width / 2 + 5;  // 화면 중앙에서 약간 오른쪽
     const startY = (canvas.height - drawingAreaHeight) / 2;
 
-    // 그리기 영역 표시 (디버깅용)
+    // 캔버스 영역 표시 (디버깅용)
     ctx.strokeStyle = 'white';
     ctx.strokeRect(startX, startY, drawingAreaWidth, drawingAreaHeight);
 
@@ -89,12 +117,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
       ctx.fillStyle = 'yellow';
       ctx.fill();
     }
-    ctx.beginPath();
-    ctx.moveTo(startX + targetPose.current.leftShoulder.x * drawingAreaWidth, startY + targetPose.current.leftShoulder.y * drawingAreaHeight);
-    ctx.lineTo(startX + targetPose.current.nose.x * drawingAreaWidth, startY + targetPose.current.nose.y * drawingAreaHeight);
-    ctx.lineTo(startX + targetPose.current.rightShoulder.x * drawingAreaWidth, startY + targetPose.current.rightShoulder.y * drawingAreaHeight);
-    ctx.stroke();
-  }, [landmarks, canvasSize, extractRequiredLandmarks]);
+  }, [landmarks, canvasSize]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -107,7 +130,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
     checkReadyPose();
     draw();
   }, [landmarks, checkReadyPose, draw]);
-  
+
   // 디버깅 용
   useEffect(() => {
     const requiredLandmarks = extractRequiredLandmarks(landmarks);
@@ -129,31 +152,24 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
     }
   }, [landmarks, keypoints, extractRequiredLandmarks]);
 
-  const readyMessageStyle = {
-    position: 'absolute',
-    top: '10%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    backgroundColor: 'rgba(0, 255, 0, 0.7)',
-    color: 'white',
-    padding: '10px 20px',
-    borderRadius: '20px',
-    fontSize: '24px',
-    fontWeight: 'bold',
-    zIndex: 100,
-  };
-
   return (
     <div className="relative w-full h-full">
       <canvas ref={canvasRef} className="absolute inset-0" />
       {isReadyPose && (
-        <div style={readyMessageStyle}>
+        <div className="ready-message">
           준비 완료!
         </div>
       )}
-      <div style={{ position: 'absolute', bottom: '10px', left: '10px', color: 'white' }}>
+      <div className="similarity-info">
         Similarity: {similarityResult ? similarityResult.toFixed(2) : 'N/A'}
       </div>
+      {(timerRef.current && remainingTime <= 4) && (
+        <div className="countdown-container">
+          <div className="countdown-text">
+            {remainingTime === 1 ? 'GO!' : remainingTime - 1}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
