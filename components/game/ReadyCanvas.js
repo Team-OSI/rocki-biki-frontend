@@ -91,32 +91,29 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const drawingAreaWidth = canvas.width * 0.4;  // 40vw
     const drawingAreaHeight = drawingAreaWidth * 3/4;  // 4:3 ratio
     const startX = canvas.width / 2 + 5;  // 화면 중앙에서 약간 오른쪽
     const startY = (canvas.height - drawingAreaHeight) / 2;
 
-    // 캔버스 영역 표시 (디버깅용)
-    ctx.strokeStyle = 'white';
-    ctx.strokeRect(startX, startY, drawingAreaWidth, drawingAreaHeight);
+    // // 캔버스 영역 표시 (디버깅용)
+    // ctx.strokeStyle = 'white';
+    // ctx.strokeRect(startX, startY, drawingAreaWidth, drawingAreaHeight);
 
-    // 타겟 포즈 그리기
-    ctx.strokeStyle = 'yellow';
-    ctx.lineWidth = 2;
-    for (const [key, point] of Object.entries(targetPose.current)) {
-      const x = startX + point.x * drawingAreaWidth;
-      const y = startY + point.y * drawingAreaHeight;
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, 2 * Math.PI);
-      ctx.stroke();
-      ctx.fillStyle = 'yellow';
-      ctx.fill();
-    }
+    // // 타겟 포즈 그리기
+    // ctx.strokeStyle = 'yellow';
+    // ctx.lineWidth = 2;
+    // for (const [key, point] of Object.entries(targetPose.current)) {
+    //   const x = startX + point.x * drawingAreaWidth;
+    //   const y = startY + point.y * drawingAreaHeight;
+    //   ctx.beginPath();
+    //   ctx.arc(x, y, 5, 0, 2 * Math.PI);
+    //   ctx.stroke();
+    //   ctx.fillStyle = 'yellow';
+    //   ctx.fill();
+    // }
   }, [landmarks, canvasSize]);
 
   useEffect(() => {
@@ -131,43 +128,35 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
     draw();
   }, [landmarks, checkReadyPose, draw]);
 
-  // 디버깅 용
+  const [headerText, setHeaderText] = useState("점선에 어깨와 머리를 맞춰주세요");
+  const [headerColor, setHeaderColor] = useState('white');
+
   useEffect(() => {
-    const requiredLandmarks = extractRequiredLandmarks(landmarks);
-    if (requiredLandmarks) {
-      const landmarkCoordinates = {};
-      
-      for (const keypoint of keypoints) {
-        if (requiredLandmarks[keypoint] && requiredLandmarks[keypoint] !== null) {
-          landmarkCoordinates[keypoint] = {
-            x: Math.round(requiredLandmarks[keypoint].x * 100) / 100,
-            y: Math.round(requiredLandmarks[keypoint].y * 100) / 100
-          };
-        } else {
-          console.log(`Missing or null keypoint: ${keypoint}`);
-        }
-      }
+    if (timerRef.current) {
+      setHeaderText("거리를 유지해주세요");
     } else {
-      console.log('No landmarks detected');
+      setHeaderText("점선에 어깨와 머리를 맞춰주세요");
     }
-  }, [landmarks, keypoints, extractRequiredLandmarks]);
+  }, [timerRef.current]);
+
+  useEffect(() => {
+    if (similarityResult >= 0.7) setHeaderColor('green');
+    else if (similarityResult >= 0.5) setHeaderColor('yellow');
+    else setHeaderColor('red');
+  }, [similarityResult]);
 
   return (
     <div className="relative w-full h-full">
+      <div className="ready-header" style={{ '--header-color': headerColor }}>
+        {headerText}
+      </div>
       <canvas ref={canvasRef} className="absolute inset-0" />
-      {isReadyPose && (
-        <div className="ready-message">
-          준비 완료!
-        </div>
-      )}
       <div className="similarity-info">
         Similarity: {similarityResult ? similarityResult.toFixed(2) : 'N/A'}
       </div>
       {(timerRef.current && remainingTime <= 4) && (
-        <div className="countdown-container">
-          <div className="countdown-text">
-            {remainingTime === 1 ? 'GO!' : remainingTime - 1}
-          </div>
+        <div className="countdown-text">
+          {remainingTime === 1 ? 'GO!' : remainingTime - 1}
         </div>
       )}
     </div>

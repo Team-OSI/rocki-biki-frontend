@@ -127,7 +127,7 @@ export default function GameMain() {
                 {remoteVideoRef.current ? (
                     <>
                         <video
-                            className="scale-x-[-1] opacity-80"
+                            className="scale-x-[-1] opacity-80 z-10"
                             ref={remoteVideoRef}
                             style={videoStyle}
                             autoPlay
@@ -152,7 +152,7 @@ export default function GameMain() {
                     </div>
                 )}
             </div>
-            <div className="absolute inset-0 z-0" ref={canvasRef}>
+            <div className="absolute inset-0 z-20" ref={canvasRef}>
                 {!isGameStarted ? (
                     <ReadyCanvas 
                         onReady={handleReady}
