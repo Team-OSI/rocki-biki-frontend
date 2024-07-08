@@ -23,9 +23,8 @@ export default function GameMain() {
         rightEye: null,
         leftHand: null,
         rightHand: null,
-        leftShoulder: null,
-        rightShoulder: null,
     });
+    const [poseLandmarks, setPoseLandmarks] = useState(null);
     const landmarksRef = useRef(landmarks);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
@@ -34,7 +33,7 @@ export default function GameMain() {
         landmarksRef.current = landmarks;
     }, [landmarks]);
     
-    useMotionCapture(localVideoRef, setLandmarks);
+    useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks);
 
     // WebRTC 연결 설정
     useWebRTCConnection(
@@ -157,7 +156,7 @@ export default function GameMain() {
                 {!isGameStarted ? (
                     <ReadyCanvas 
                         onReady={handleReady}
-                        landmarks={landmarks}
+                        landmarks={poseLandmarks}
                         canvasSize={canvasSize}
                     />
                 ) : (

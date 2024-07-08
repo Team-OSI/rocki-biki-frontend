@@ -2,23 +2,20 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Camera } from '@mediapipe/camera_utils';
 import { initializeDetectors, processPoseLandmarks } from '@/lib/mediapipe/tasksVision';
 
-export function useMotionCapture(localVideoRef, setLandmarks) {
+export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) {
     const resultRef = useRef(null);
     const cameraRef = useRef(null);
 
     const processLandmarks = useCallback((faceResult, handResult, poseResult) => {
-        if (!faceResult.faceLandmarks?.[0] || !handResult.landmarks || !poseResult.landmarks) return;
+        if (!faceResult.faceLandmarks?.[0] || !handResult.landmarks) return;
 
         const face = faceResult.faceLandmarks[0];
         const hands = handResult.landmarks;
-        const pose = processPoseLandmarks(poseResult.landmarks[0]);
 
         const newLandmarks = {
             nose: face[1],
             leftEye: face[159],
             rightEye: face[386],
-            leftShoulder: pose ? pose.leftShoulder : null,
-            rightShoulder: pose ? pose.rightShoulder : null,
             leftHand: hands[0] ? {
                 wrist: hands[0][10],
                 indexBase: hands[0][1], // 5
@@ -32,7 +29,13 @@ export function useMotionCapture(localVideoRef, setLandmarks) {
         };
 
         setLandmarks(newLandmarks);
-    }, [setLandmarks]);
+
+        // 로컬에서만 사용할 포즈 데이터
+        if (poseResult.landmarks && poseResult.landmarks[0]) {
+            const poseLandmarks = processPoseLandmarks(poseResult.landmarks[0]);
+            setPoseLandmarks(poseLandmarks);
+        }
+    }, [setLandmarks, setPoseLandmarks]);
 
     const detectFrame = useCallback(async () => {
         if (!resultRef.current || !localVideoRef.current) return;
