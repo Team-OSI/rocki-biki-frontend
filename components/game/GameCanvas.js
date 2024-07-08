@@ -14,9 +14,9 @@ function Scene({receivedPoseData, landmarks}) {
     <>
       <ambientLight intensity={0.7} />
       <pointLight position={[10, 10, 10]} intensity={1} />
-      <Player position={[0, 0, -2.6]} landmarks={landmarks} />
-      <Opponent position={[0, 0, 3]} opponentData={receivedPoseData} />
-      <Environment files="/images/metro_noord_4k.hdr" background />
+      <Player position={[0, 0, -5]} landmarks={landmarks} />
+      <Opponent position={[0, 0, 1]} opponentData={receivedPoseData} />
+      <Environment preset='sunset' background />
     </>
   );
 }

@@ -28,7 +28,7 @@ export default function App() {
   }
 
   return (
-    <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/img/ring.jpg')" }}>
+    <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
       <div className="absolute top-16 w-full flex flex-col items-center gap-4 font-bold">
         <h1 className="text-8xl">ROCKY</h1>
         <h1 className="text-8xl">BIKI</h1>

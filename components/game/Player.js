@@ -4,7 +4,6 @@ import React, { forwardRef, useRef, useEffect, useImperativeHandle, useMemo, use
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three';
-import { calculateHandRotation, calculateHeadRotation} from '@/lib/utils/calc_rotation'
 
 // player 머리 불러오기
 const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
@@ -29,9 +28,9 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
   
     useFrame(() => {
       if (localRef.current && position) {
-        localRef.current.position.set((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -(position.z+0.01) * 25)
+        localRef.current.position.set((position.x - 0.5) * 5, - (position.y - 0.5) * 5, - (position.z+0.01) * 15)
         if (rotation) {
-          localRef.current.rotation.z = -rotation
+          localRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
         }
       }
     })
@@ -39,8 +38,8 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
   })
   Head.displayName = "Head";
   
-  const leftHandModel = '/models/left-hand.glb'
-  const rightHandModel = '/models/right-hand.glb'
+  const leftHandModel = '/models/left-hand.glb';
+  const rightHandModel = '/models/right-hand.glb';
 
 // player 손 불러오기
 const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref) => {
@@ -71,15 +70,16 @@ const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref
 
   // 색상 변경 효과
   useEffect(() => {
-      changeColor();
+    changeColor();
   }, [changeColor]);
 
     useFrame(() => {
       if (localRef.current && position) {
         if (rotation) {
-          localRef.current.rotation.z = -rotation
+          // localRef.current.rotation.set((rotation[0]-Math.PI/6)*0.5, 0, -(rotation[2]-Math.PI/2));
+          localRef.current.rotation.set(rotation[0],rotation[1],rotation[2])
         }
-        localRef.current.position.set((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -position.z * 48)
+        localRef.current.position.set((position[0]-0.5)*4, -(position[1]-0.5)*4, -position[2]*30)
       }
     })
   
@@ -89,18 +89,21 @@ const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref
   
 function CameraControls({target}){
   const { camera } = useThree()
-  const cameraPosition = useRef(new THREE.Vector3(0,0,10))
+  const cameraPosition = useRef(new THREE.Vector3(0,0,0))
   useFrame(()=> {
     if (target && target.current && target.current.position) {
     const targetPosition = target.current.position.clone()
-    targetPosition.z -=3.9
-    targetPosition.y +=0.2
-  
+    targetPosition.z -= 6.2
+    targetPosition.y +=0.25
+    
     // 부드러운 카메라 이동
     cameraPosition.current.lerp(targetPosition,0.1)
     camera.position.copy(cameraPosition.current)
   
     camera.lookAt(target.current.position)
+
+    camera.near = 0.1;
+    camera.raf = 1000;
     }
   })
   return null
@@ -109,49 +112,33 @@ function CameraControls({target}){
 export function Player({ position, landmarks }) {
   const groupRef = useRef(null)
   const headRef = useRef(null)
-
-  const calculateRotations = (data) => {
-    if (!data) return {head:0, leftHand:0, rightHand:0}
-    return {
-      head: data?.leftEye && data?.rightEye
-        ? calculateHeadRotation(data.leftEye, data.rightEye)
-        : 0,
-      leftHand: data?.leftHand?.wrist && data?.leftHand?.indexBase && data?.leftHand?.pinkyBase
-        ? calculateHandRotation(data.leftHand.wrist, data.leftHand.indexBase, data.leftHand.pinkyBase)
-        : 0,
-      rightHand: data?.rightHand?.wrist && data?.rightHand?.indexBase && data?.rightHand?.pinkyBase
-        ? calculateHandRotation(data.rightHand.wrist, data.rightHand.indexBase, data.rightHand.pinkyBase)
-        : 0
-    }
-  }
-  
-  const rotations = calculateRotations(landmarks)
-
   return (
     <>
     <group ref={groupRef} position={position}>
+        {landmarks.head && (
         <Head
           ref={headRef}
-          position={landmarks.nose}
-          rotation={rotations.head}
+          position={new THREE.Vector3(landmarks.head[0][0], landmarks.head[0][1], landmarks.head[0][2])}
+          rotation={[0, -landmarks.head[1][1] * (Math.PI / 180), -landmarks.head[1][2] * (Math.PI / 180)]}
           scale={0.25}
           name='head'
         />
-         {headRef.current && <CameraControls target={headRef} />}
+        )}
+        {headRef.current && <CameraControls target={headRef} />}
 
-        {landmarks.rightHand?.wrist && (
+        {landmarks.rightHand && (
           <Hand
-            position={landmarks.rightHand.wrist}
-            rotation={rotations.rightHand}
+            position={landmarks.rightHand[0]}
+            rotation={[(landmarks.rightHand[1][0]-Math.PI), Math.PI , -(landmarks.rightHand[1][1]-Math.PI/2)]}
             scale={0.33}
             name='rightHand'
             color = 'blue'
           />
         )}
-        {landmarks.leftHand?.wrist && (
+        {landmarks.leftHand && (
           <Hand
-            position={landmarks.leftHand.wrist}
-            rotation={rotations.leftHand}
+            position={landmarks.leftHand[0]}
+            rotation={[-(landmarks.leftHand[1][0]-Math.PI), 0 ,-(landmarks.leftHand[1][1]+Math.PI/2)]}
             scale={0.33}
             name='leftHand'
             color = 'blue'

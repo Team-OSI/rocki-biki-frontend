@@ -3,7 +3,6 @@
 import React, { forwardRef, useRef, useEffect, useImperativeHandle } from 'react'
 import { useFrame} from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
-import { calculateHandRotation, calculateHeadRotation} from '@/lib/utils/calc_rotation'
 import * as THREE from 'three'
 
 // Opponent 전용 Head 컴포넌트
@@ -28,9 +27,9 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name }, ref) => {
   
     useFrame(() => {
       if (localRef.current && position) {
-        localRef.current.position.set((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -(position.z+0.01) * 25)
+        localRef.current.position.set((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -(position.z+0.01) * 15)
         if (rotation) {
-          localRef.current.rotation.z = -rotation
+          localRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
         }
       }
     })
@@ -56,9 +55,9 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
     useFrame(() => {
       if (localRef.current && position) {
         if (rotation) {
-          localRef.current.rotation.z = -rotation
+          localRef.current.rotation.set(rotation[0],rotation[1],rotation[2])
         }
-        localRef.current.position.set((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -position.z * 48)
+        localRef.current.position.set((position[0]-0.5)*4, -(position[1]-0.5)*4, -position[2]*30)
       }
     })
   
@@ -71,44 +70,45 @@ export function Opponent({ position, opponentData }) {
   const groupRef = useRef(null)
   const headRef = useRef(null)
 
-  const calculateRotations = (data) => {
-    if (!data) return {head:0, leftHand:0, rightHand:0}
-    return {
-      head: data?.leftEye && data?.rightEye
-        ? calculateHeadRotation(data.leftEye, data.rightEye)
-        : 0,
-      leftHand: data?.leftHand?.wrist && data?.leftHand?.indexBase && data?.leftHand?.pinkyBase
-        ? calculateHandRotation(data.leftHand.wrist, data.leftHand.indexBase, data.leftHand.pinkyBase)
-        : 0,
-      rightHand: data?.rightHand?.wrist && data?.rightHand?.indexBase && data?.rightHand?.pinkyBase
-        ? calculateHandRotation(data.rightHand.wrist, data.rightHand.indexBase, data.rightHand.pinkyBase)
-        : 0
-    }
-  }
+  // const calculateRotations = (data) => {
+  //   if (!data) return {head:0, leftHand:0, rightHand:0}
+  //   return {
+  //     head: data?.leftEye && data?.rightEye
+  //       ? calculateHeadRotation(data.leftEye, data.rightEye)
+  //       : 0,
+  //     leftHand: data?.leftHand?.wrist && data?.leftHand?.indexBase && data?.leftHand?.pinkyBase
+  //       ? calculateHandRotation(data.leftHand.wrist, data.leftHand.indexBase, data.leftHand.pinkyBase)
+  //       : 0,
+  //     rightHand: data?.rightHand?.wrist && data?.rightHand?.indexBase && data?.rightHand?.pinkyBase
+  //       ? calculateHandRotation(data.rightHand.wrist, data.rightHand.indexBase, data.rightHand.pinkyBase)
+  //       : 0
+  //   }
+  // }
   
-  const rotations = calculateRotations(opponentData)
+  // const rotations = calculateRotations(opponentData)
 
   return (
     <group ref={groupRef} position={position} rotation={[0, Math.PI, 0]}>
+       {opponentData.head && (
         <OpponentHead
           ref={headRef}
-          position={opponentData.nose}
-          rotation={rotations.head}
+          position={new THREE.Vector3(opponentData.head[0][0], opponentData.head[0][1], opponentData.head[0][2])}
+          rotation={[0, -opponentData.head[1][1] * (Math.PI / 180), -opponentData.head[1][2] * (Math.PI / 180)]}
           scale={0.25}
           name='opponentHead'
-        />
-        {opponentData.rightHand?.wrist && (
+        />)}
+        {opponentData.rightHand && (
           <OpponentHand
-            position={opponentData.rightHand.wrist}
-            rotation={rotations.rightHand}
+          position={opponentData.rightHand[0]}
+          rotation={[(opponentData.rightHand[1][0]-Math.PI), Math.PI , -(opponentData.rightHand[1][1]-Math.PI/2)]}
             scale={0.33}
             name='opponentRightHand'
           />
         )}
-        {opponentData.leftHand?.wrist && (
+        {opponentData.leftHand && (
           <OpponentHand
-            position={opponentData.leftHand.wrist}
-            rotation={rotations.leftHand}
+            position={opponentData.leftHand[0]}
+            rotation={[-(opponentData.leftHand[1][0]-Math.PI), 0 ,-(opponentData.leftHand[1][1]+Math.PI/2)]}
             scale={0.33}
             name='opponentLeftHand'
           />
