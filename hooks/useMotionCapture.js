@@ -1,21 +1,24 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { Camera } from '@mediapipe/camera_utils';
-import { initializeDetectors } from '@/lib/mediapipe/tasksVision';
+import { initializeDetectors, processPoseLandmarks } from '@/lib/mediapipe/tasksVision';
 
 export function useMotionCapture(localVideoRef, setLandmarks) {
     const resultRef = useRef(null);
     const cameraRef = useRef(null);
 
-    const processLandmarks = useCallback((faceResult, handResult) => {
-        if (!faceResult.faceLandmarks?.[0] || !handResult.landmarks) return;
+    const processLandmarks = useCallback((faceResult, handResult, poseResult) => {
+        if (!faceResult.faceLandmarks?.[0] || !handResult.landmarks || !poseResult.landmarks) return;
 
         const face = faceResult.faceLandmarks[0];
         const hands = handResult.landmarks;
+        const pose = processPoseLandmarks(poseResult.landmarks[0]);
 
         const newLandmarks = {
             nose: face[1],
             leftEye: face[159],
             rightEye: face[386],
+            leftShoulder: pose ? pose.leftShoulder : null,
+            rightShoulder: pose ? pose.rightShoulder : null,
             leftHand: hands[0] ? {
                 wrist: hands[0][10],
                 indexBase: hands[0][1], // 5
@@ -37,8 +40,9 @@ export function useMotionCapture(localVideoRef, setLandmarks) {
         const timestamp = performance.now();
         const faceResult = resultRef.current.faceLandmarker.detectForVideo(localVideoRef.current, timestamp);
         const handResult = resultRef.current.handLandmarker.detectForVideo(localVideoRef.current, timestamp);
-        
-        processLandmarks(faceResult, handResult);
+        const poseResult = resultRef.current.poseLandmarker.detectForVideo(localVideoRef.current, timestamp);
+
+        processLandmarks(faceResult, handResult, poseResult);
     }, [processLandmarks, localVideoRef]);
 
     useEffect(() => {
