@@ -97,9 +97,9 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
             ];
         };
 
-        //  주먹인지 && 주먹방향체크하는 함수
+        //  주먹 인지 && 주먹 방향 체크하는 함수
         const determinHandState = (hand) => {
-            //손에 모양에따라 주먹이 아니면 0을 리턴하고 주먹이면 주먹의 방향을 표시
+            // 손의 모양에 따라 주먹이 아니면 0을 리턴하고 주먹이면 주먹의 방향을 표시
             // 손등이면 1, 손바닥이면 2 리턴
             if (!hand || hand.length < 21) return 0;
             const thumb_tip = hand[4];
@@ -235,7 +235,7 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
                 cameraRef.current = null;
             }
         };
-    }, [ detectFrame, localVideoRef]); //detectors 제거 closure로 접근가능
+    }, [ detectFrame, localVideoRef]); // detectors 제거 closure로 접근가능
 
     return null;
 }
