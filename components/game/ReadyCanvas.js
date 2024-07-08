@@ -6,29 +6,24 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const canvasRef = useRef(null);
   const [similarityResult, setSimilarityResult] = useState(null);
   const [isReadyPose, setIsReadyPose] = useState(false);
+  const keypoints = ['nose', 'leftShoulder', 'rightShoulder'];
   const similarityThreshold = 0.80;
-  const keypoints = ['nose', 'leftEye', 'rightEye', 'leftHand', 'rightHand'];
 
   const targetPose = useRef({
-    nose: { x: 0.5, y: 0.5 },
-    leftEye: { x: 0.4, y: 0.4 },
-    rightEye: { x: 0.6, y: 0.4 },
-    leftHand: { x: 0.3, y: 0.6 },
-    rightHand: { x: 0.7, y: 0.6 }
+    nose: { x: 0.5, y: 0.45 },
+    leftShoulder: { x: 0.7, y: 0.65 },
+    rightShoulder: { x: 0.3, y: 0.65 }
   });
 
-  const normalizeCoordinates = useCallback((landmarks) => {
-    const normalizedLandmarks = {};
-    for (const [key, point] of Object.entries(landmarks)) {
-      if (point && point !== null) {
-        normalizedLandmarks[key] = {
-          x: point.x / canvasSize.width,
-          y: point.y / canvasSize.height
-        };
+  const extractRequiredLandmarks = useCallback((landmarks) => {
+    const requiredLandmarks = {};
+    for (const keypoint of keypoints) {
+      if (landmarks && landmarks[keypoint]) {
+        requiredLandmarks[keypoint] = landmarks[keypoint];
       }
     }
-    return normalizedLandmarks;
-  }, [canvasSize]);
+    return requiredLandmarks;
+  }, [keypoints]);
 
   const calculatePoseSimilarity = useCallback((detectedPose, targetPose) => {
     let totalDistance = 0;
@@ -47,55 +42,59 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
     if (count === 0) return 0;
 
     const avgDistance = totalDistance / count;
-    const maxAllowedDistance = 0.2; // 20% of normalized space
+    const maxAllowedDistance = 0.15;
     const similarity = Math.max(0, 1 - avgDistance / maxAllowedDistance);
 
     return similarity;
   }, [keypoints]);
 
   const checkReadyPose = useCallback(() => {
-      if (landmarks && canvasRef.current) {
-          const normalizedLandmarks = normalizeCoordinates(landmarks);
-          const similarity = calculatePoseSimilarity(normalizedLandmarks, targetPose.current);
-          setSimilarityResult(similarity);
-          setIsReadyPose(similarity >= similarityThreshold);
+    if (landmarks && canvasRef.current) {
+      const requiredLandmarks = extractRequiredLandmarks(landmarks);
+      const similarity = calculatePoseSimilarity(requiredLandmarks, targetPose.current);
+      setSimilarityResult(similarity);
+      setIsReadyPose(similarity >= similarityThreshold);
+      if (similarity >= similarityThreshold) {
+        onReady();
       }
-  }, [landmarks, calculatePoseSimilarity, normalizeCoordinates, similarityThreshold]);
+    }
+  }, [landmarks, calculatePoseSimilarity, similarityThreshold, onReady, extractRequiredLandmarks]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    console.log('Drawing on canvas. Size:', canvas.width, canvas.height);
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white';
-    ctx.font = '30px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Ready Canvas - Get into position', canvas.width / 2, 50);
 
+    const drawingAreaWidth = canvas.width * 0.4;  // 40vw
+    const drawingAreaHeight = drawingAreaWidth * 3/4;  // 4:3 ratio
+    const startX = canvas.width / 2 + 5;  // 화면 중앙에서 약간 오른쪽
+    const startY = (canvas.height - drawingAreaHeight) / 2;
+
+    // 그리기 영역 표시 (디버깅용)
+    ctx.strokeStyle = 'white';
+    ctx.strokeRect(startX, startY, drawingAreaWidth, drawingAreaHeight);
+
+    // 타겟 포즈 그리기
     ctx.strokeStyle = 'yellow';
     ctx.lineWidth = 2;
     for (const [key, point] of Object.entries(targetPose.current)) {
-      console.log(`Drawing ${key} at`, point.x * canvas.width, point.y * canvas.height);
+      const x = startX + point.x * drawingAreaWidth;
+      const y = startY + point.y * drawingAreaHeight;
       ctx.beginPath();
-      ctx.arc(point.x * canvas.width, point.y * canvas.height, 10, 0, 2 * Math.PI);
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
       ctx.stroke();
       ctx.fillStyle = 'yellow';
       ctx.fill();
     }
-
-    if (landmarks) {
-      ctx.strokeStyle = 'blue';
-      for (const [key, point] of Object.entries(landmarks)) {
-        if (point && point !== null) {
-          ctx.beginPath();
-          ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-          ctx.stroke();
-        }
-      }
-    }
-  }, [landmarks]);
+    ctx.beginPath();
+    ctx.moveTo(startX + targetPose.current.leftShoulder.x * drawingAreaWidth, startY + targetPose.current.leftShoulder.y * drawingAreaHeight);
+    ctx.lineTo(startX + targetPose.current.nose.x * drawingAreaWidth, startY + targetPose.current.nose.y * drawingAreaHeight);
+    ctx.lineTo(startX + targetPose.current.rightShoulder.x * drawingAreaWidth, startY + targetPose.current.rightShoulder.y * drawingAreaHeight);
+    ctx.stroke();
+  }, [landmarks, canvasSize, extractRequiredLandmarks]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -111,33 +110,24 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   
   // 디버깅 용
   useEffect(() => {
-    console.log('Raw landmarks:', landmarks);
-
-    if (landmarks) {
+    const requiredLandmarks = extractRequiredLandmarks(landmarks);
+    if (requiredLandmarks) {
       const landmarkCoordinates = {};
       
       for (const keypoint of keypoints) {
-        if (landmarks[keypoint] && landmarks[keypoint] !== null) {
+        if (requiredLandmarks[keypoint] && requiredLandmarks[keypoint] !== null) {
           landmarkCoordinates[keypoint] = {
-            x: Math.round(landmarks[keypoint].x * 100) / 100,
-            y: Math.round(landmarks[keypoint].y * 100) / 100
+            x: Math.round(requiredLandmarks[keypoint].x * 100) / 100,
+            y: Math.round(requiredLandmarks[keypoint].y * 100) / 100
           };
         } else {
           console.log(`Missing or null keypoint: ${keypoint}`);
         }
       }
-
-      console.log('Processed Landmark Coordinates:', landmarkCoordinates);
-      console.log('Number of detected landmarks:', Object.keys(landmarkCoordinates).length);
     } else {
       console.log('No landmarks detected');
     }
-  }, [landmarks]);
-
-  useEffect(() => {
-    console.log('Target pose:', targetPose.current);
-    console.log('Canvas size:', canvasSize);
-  }, [canvasSize]);
+  }, [landmarks, keypoints, extractRequiredLandmarks]);
 
   const readyMessageStyle = {
     position: 'absolute',

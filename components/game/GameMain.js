@@ -23,6 +23,8 @@ export default function GameMain() {
         rightEye: null,
         leftHand: null,
         rightHand: null,
+        leftShoulder: null,
+        rightShoulder: null,
     });
     const landmarksRef = useRef(landmarks);
     const localVideoRef = useRef(null);
@@ -49,9 +51,7 @@ export default function GameMain() {
     );
 
     const handleReady = () => {
-        if (isReady) {
-            setIsGameStarted(true);
-        }
+        setIsGameStarted(true);
     };
 
     const videoContainerStyle = (isLocal) => ({
@@ -79,7 +79,7 @@ export default function GameMain() {
     const overlayStyle = {
         position: 'absolute',
         bottom: 0,
-        left: '50%',
+        left: 0,
         width: '100%',
         height: '100%',
         opacity: 0.5,
