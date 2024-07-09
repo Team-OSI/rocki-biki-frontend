@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, useRef, useEffect, useImperativeHandle, useMemo, useCallback } from 'react'
+import { forwardRef, useRef, useEffect, useImperativeHandle, useMemo, useCallback } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three';

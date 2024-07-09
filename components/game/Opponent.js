@@ -1,16 +1,13 @@
 'use client';
 
-import React, { forwardRef, useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react'
+import { forwardRef, useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react'
 import { useFrame} from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
-import {create} from 'zustand'
+import useGameStore from '../../store/gameStore';
 
-// Zustand store for game state
-const useGameStore = create((set) => ({
-  opponentHealth: 100,
-  decreaseHealth: (amount) => set((state) => ({ opponentHealth: Math.max(0, state.opponentHealth - amount)}))
-}))
+// 전역 객체 생성
+const hitSound = new Audio('/sounds/hit.mp3');
 
 // Opponent 전용 Head 컴포넌트
 const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) => {
@@ -31,26 +28,23 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
       }),
       [localRef], 
     )
-     useEffect(() => {
-       Object.values(materials).forEach((material) => {
-         material.transparent = true
-         material.opacity = opacity
-         if (hit) {
-          material.color.setRGB(1, 0, 0) // Set color to red when hit
-         } else {
-          material.color.setRGB(1, 1, 1) // 되돌리기
-         }
-       })
-     }, [materials, opacity, hit])
   
-    useFrame(() => {
-      if (localRef.current && position) {
+    useEffect(() => {
+      if (localRef.current) {
         localRef.current.position.set((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -(position.z+0.01) * 15)
         if (rotation) {
           localRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
         }
       }
-    })
+    }, [position, rotation])
+
+    useEffect(() => {
+      Object.values(materials).forEach((material) => {
+        material.transparent = true
+        material.opacity = opacity
+        material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
+      })
+    }, [materials, hit])
     return <primitive ref={localRef} object={scene} scale={scale} name={name} />
   })
   
@@ -84,17 +78,23 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
 
 OpponentHand.displayName = "OpponentHand";
 
-export function Opponent({ position, landmarks, opponentData }) {
+export function Opponent({ position, landmarks, opponentData, socket }) {
   const groupRef = useRef(null)
   const headRef = useRef(null)
   const [hit, setHit] = useState(false)
   const lastHitTime = useRef(0)
-  const decreaseHealth = useGameStore((state) => state.decreaseHealth)
+  const decreaseOpponentHealth = useGameStore((state) => state.decreaseOpponentHealth)
+  const count_optm = useRef(0)
+  const roomId = useRef('')
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    roomId.current = searchParams.get('roomId');
+  }, [roomId]);
 
   const playHitSound = useCallback(() => {
-    const audio = new Audio('/sounds/hit.mp3')
-    audio.play()
-  }, [])
+    hitSound.play()
+  }, []);
 
   const checkHit = useCallback(() => {
     if(!headRef.current || !landmarks.leftHand || !landmarks.rightHand) return
@@ -127,17 +127,31 @@ export function Opponent({ position, landmarks, opponentData }) {
         const damage = Math.floor(velocity * 10)
 
         setHit(true)
-        decreaseHealth(damage)
+        decreaseOpponentHealth(damage)
+        
+        // 데미지 정보를 서버로 전송
+        if(socket){
+          // console.log('Emitting damage:', { roomId: roomId.current, amount: damage });
+          socket.emit('damage', { roomId: roomId.current, amount: damage });
+        } else {
+          // console.log('Socket not available');
+        }
+
         playHitSound()
         lastHitTime.current = currentTime
         setTimeout(() => setHit(false), 200)
-        console.log('===velocity:', velocity, 'damage:',damage, )
+        // console.log('===velocity:', velocity, 'damage:',damage, )
       }
-      console.log('distance:', distance)
+      // console.log('distance:', distance)
     })
-  }, [landmarks, decreaseHealth, playHitSound])
+  }, [landmarks, decreaseOpponentHealth, playHitSound])
+
   useFrame(() => {
+    if(count_optm.current % 10 === 0) {
       checkHit()
+    }
+    if (count_optm.current > 1000000) count_optm.current = 0;
+    count_optm.current++;
       // console.log('myhead',landmarks?.current?.head?.[0])
   })
 

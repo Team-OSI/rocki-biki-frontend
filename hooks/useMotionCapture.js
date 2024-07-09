@@ -99,6 +99,7 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
 
         //  주먹인지 && 주먹방향체크하는 함수
         const determinHandState = (hand) => {
+            return 0;
             //손에 모양에따라 주먹이 아니면 0을 리턴하고 주먹이면 주먹의 방향을 표시
             // 손등이면 1, 손바닥이면 2 리턴
             if (!hand || hand.length < 21) return 0;
@@ -219,8 +220,8 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
         const initCamera = async () => {
                 cameraRef.current = new Camera(localVideoRef.current, {
                     onFrame: detectFrame,
-                    width: 320,
-                    height: 240,
+                    width: 448,//640
+                    height: 336, //480
                     frameRate: 30
                 });
                 await cameraRef.current.start();
@@ -229,7 +230,6 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
         initCamera();
 
         return () => {
-            // isMounted = false;
             if (cameraRef.current) {
                 cameraRef.current.stop();
                 cameraRef.current = null;

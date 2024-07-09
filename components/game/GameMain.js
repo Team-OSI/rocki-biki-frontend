@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { GameCanvas } from "@/components/game/GameCanvas";
-import ReadyCanvas from "@/components/game/ReadyCanvas";
+// import ReadyCanvas from "@/components/game/ReadyCanvas";
 import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
+import useGameStore from '@/store/gameStore';
 
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
@@ -36,7 +37,7 @@ export default function GameMain() {
     useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks);
 
     // WebRTC 연결 설정
-    useWebRTCConnection(
+    const {socket, connectionState} = useWebRTCConnection(
         roomId,
         localVideoRef,
         remoteVideoRef,
@@ -56,9 +57,9 @@ export default function GameMain() {
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
+        zIndex: '40',
         width: isGameStarted ? '200px' : 'calc(40vw - 10px)', 
         height: isGameStarted ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
-        zIndex: 10,
         ...(isGameStarted
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : { 
@@ -104,7 +105,7 @@ export default function GameMain() {
     }, []);
 
     return (
-        <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
+        <div className="relative w-screen h-screen bg-gray-900 overflow-hidden z-30">
             <div style={videoContainerStyle(true)}>
                 <video
                     className="scale-x-[-1] opacity-80"
@@ -124,10 +125,17 @@ export default function GameMain() {
                 )}
             </div>
             <div style={videoContainerStyle(false)}>
-                {remoteVideoRef.current ? (
-                    <>
+            <>
+                {connectionState !== 'connected' &&(
+                    <div
+                    className="bg-slate-400 opacity-80 flex items-center justify-center text-white"
+                    style={videoStyle}
+                    >
+                    연결 대기 중...
+                    </div>
+                )}
                         <video
-                            className="scale-x-[-1] opacity-80"
+                            className="scale-x-[-1] opacity-80 z-50"
                             ref={remoteVideoRef}
                             style={videoStyle}
                             autoPlay
@@ -143,28 +151,21 @@ export default function GameMain() {
                             />
                         )}
                     </>
-                ) : (
-                    <div
-                        className="bg-slate-400 opacity-80 flex items-center justify-center text-white"
-                        style={videoStyle}
-                    >
-                        연결 대기 중...
-                    </div>
-                )}
             </div>
-            <div className="absolute inset-0 z-0" ref={canvasRef}>
-                {!isGameStarted ? (
+            <div className="absolute inset-0 z-10" ref={canvasRef}>
+                {/* {!isGameStarted ? (
                     <ReadyCanvas 
                         onReady={handleReady}
                         landmarks={poseLandmarks}
                         canvasSize={canvasSize}
                     />
-                ) : (
+                ) : ( */}
                     <GameCanvas 
                         receivedPoseData={receivedPoseData}
                         landmarks={landmarks}
+                        socket={socket}
                     />
-                )}
+                {/* )} */}
             </div>
         </div>
     );

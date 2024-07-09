@@ -1,7 +1,7 @@
 'use client'
 
 import SignupModal from '@/components/login/SignUpModal'
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 export default function LoginModal({ onClose, onLogin }) {
   const [showModal, setShowModal] = useState(false);
