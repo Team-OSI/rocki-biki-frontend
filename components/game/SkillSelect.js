@@ -20,11 +20,47 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize }) {
   const [attackImage, setAttackImage] = useState(null);
   const [attackBackImage, setAttackBackImage] = useState(null);
   
-  const buttons = [
-    { id: 'Shield', x: 50, y: canvasSize.height - 60, width: 100, height: 50, backgroundColor: 'rgba(21, 20, 21, 0.65)', progressColor: 'rgba(245, 234, 39, 0.8)' },
-    { id: 'Heal', x: canvasSize.width / 2 - 50, y: canvasSize.height - 60, width: 100, height: 50, backgroundColor: 'rgba(21, 20, 21, 0.65)', progressColor: 'rgba(246, 36, 145, 0.65)' },
-    { id: 'Attack', x: canvasSize.width - 150, y: canvasSize.height - 60, width: 100, height: 50, backgroundColor: 'rgba(21, 20, 21, 0.65)', progressColor: 'rgba(0, 0, 255, 0.8)' },
-  ];
+  const buttonWidth = 120;
+  const buttonHeight = 80;
+  const buttonMargin = 50;
+  const rightMargin = 10; // 오른쪽 여백
+
+  const buttons = useMemo(() => [
+    { 
+      id: 'Shield', 
+      getX: (canvasWidth) => canvasWidth * 0.8 - buttonWidth / 2,
+      getY: (canvasHeight) => canvasHeight * 0.2 - buttonHeight / 2,
+      width: buttonWidth, 
+      height: buttonHeight, 
+      backgroundColor: 'rgba(21, 20, 21, 0.65)', 
+      progressColor: 'rgba(245, 234, 39, 0.8)' 
+    },
+    { 
+      id: 'Heal', 
+      getX: (canvasWidth) => canvasWidth * 0.8 - buttonWidth / 2,
+      getY: (canvasHeight) => canvasHeight * 0.5 - buttonHeight / 2,
+      width: buttonWidth, 
+      height: buttonHeight, 
+      backgroundColor: 'rgba(21, 20, 21, 0.65)', 
+      progressColor: 'rgba(246, 36, 145, 0.65)' 
+    },
+    { 
+      id: 'Attack', 
+      getX: (canvasWidth) => canvasWidth * 0.8 - buttonWidth / 2,
+      getY: (canvasHeight) => canvasHeight * 0.8 - buttonHeight / 2,
+      width: buttonWidth, 
+      height: buttonHeight, 
+      backgroundColor: 'rgba(21, 20, 21, 0.65)', 
+      progressColor: 'rgba(0, 0, 255, 0.8)' 
+    },
+  ], []);
+
+  const mapHandCoordinates = (hand) => {
+    return [
+      1 - hand[0], // x 좌표 반전
+      hand[1]
+    ];
+  };
 
   useEffect(() => {
     // 필요한 이미지 프리 로드
@@ -76,17 +112,28 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize }) {
       const ctx = canvasRef.current.getContext('2d');
       ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
       
-      // 랜드마크를 사용하여 손의 위치 확인
       if (landmarks.leftHand && landmarks.rightHand) {
-        const leftHand = landmarks.leftHand?.[0];
-        const rightHand = landmarks.rightHand?.[0];
+        const leftHand = mapHandCoordinates(landmarks.leftHand[0]);
+        const rightHand = mapHandCoordinates(landmarks.rightHand[0]);
         
+        console.log('Mapped Left hand:', leftHand);
+        console.log('Mapped Right hand:', rightHand);
+  
+        // 손 위치 시각화
+        [leftHand, rightHand].forEach(hand => {
+          ctx.beginPath();
+          ctx.arc(hand[0] * canvasSize.width, hand[1] * canvasSize.height, 10, 0, 2 * Math.PI);
+          ctx.fillStyle = 'red';
+          ctx.fill();
+        });
+  
         buttons.forEach(button => {
           if (isHandOverButton(leftHand, button, canvasSize) || isHandOverButton(rightHand, button, canvasSize)) {
             updateButtonProgress(button.id);
           } else {
             resetButtonProgress(button.id);
           }
+
         });
       }
     }
@@ -95,21 +142,29 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize }) {
   const isHandOverButton = (hand, button, canvasSize) => {
     if (!hand) return false;
     const [x, y] = hand;
-    const canvasX = x * canvasSize.width;
-    const canvasY = y * canvasSize.height;
-    return canvasX > button.x && canvasX < button.x + button.width &&
-           canvasY > button.y && canvasY < button.y + button.height;
+    const buttonX = button.getX(canvasSize.width) / canvasSize.width;
+    const buttonY = button.getY(canvasSize.height) / canvasSize.height;
+    const buttonWidth = button.width / canvasSize.width;
+    const buttonHeight = button.height / canvasSize.height;
+
+    const isOver = x > buttonX && x < buttonX + buttonWidth &&
+                  y > buttonY && y < buttonY + buttonHeight;
+    
+    return isOver;
   };
 
   const updateButtonProgress = (buttonId) => {
-      setButtonProgress(prev => {
-          const newProgress = Math.min((prev[buttonId] || 0) + 0.05, 1);
-          if (newProgress >= 1) {
-              setActiveSkill(buttonId);
-              return { ...prev, [buttonId]: 0 };
-          }
-          return { ...prev, [buttonId]: newProgress };
-      });
+    console.log(`Updating progress for button: ${buttonId}`);
+    setButtonProgress(prev => {
+      const newProgress = Math.min((prev[buttonId] || 0) + 0.05, 1);
+      console.log(`New progress for ${buttonId}: ${newProgress}`);
+      if (newProgress >= 1) {
+        console.log(`Activating skill: ${buttonId}`);
+        setActiveSkill(buttonId);
+        return { ...prev, [buttonId]: 0 };
+      }
+      return { ...prev, [buttonId]: newProgress };
+    });
   };
 
   const resetButtonProgress = (buttonId) => {
@@ -156,6 +211,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize }) {
         <ProgressButton
           key={button.id}
           {...button}
+          x={button.getX(canvasSize.width)}
+          y={button.getY(canvasSize.height)}
           progress={buttonProgress[button.id] || 0}
         />
       ))}

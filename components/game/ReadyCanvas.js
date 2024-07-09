@@ -9,7 +9,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const [isReadyPose, setIsReadyPose] = useState(false);
   const [remainingTime, setRemainingTime] = useState(5);
   const keypoints = ['nose', 'leftShoulder', 'rightShoulder'];
-  const similarityThreshold = 0.70;
+  const similarityThreshold = 0.20;
 
   const targetPose = useRef({
     nose: { x: 0.5, y: 0.45 },

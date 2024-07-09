@@ -154,13 +154,15 @@ export default function GameMain() {
                     </div>
                 )}
             </div>
-            <div className="absolute inset-0 z-40" ref={canvasRef}>
+            <div className="absolute inset-0" ref={canvasRef}>
                 {!isGameStarted ? (
-                    <ReadyCanvas 
-                        onReady={handleReady}
-                        landmarks={poseLandmarks}
-                        canvasSize={canvasSize}
-                    />
+                    <div className="absolute inset-0 z-40">
+                        <ReadyCanvas 
+                            onReady={handleReady}
+                            landmarks={poseLandmarks}
+                            canvasSize={canvasSize}
+                        />
+                    </div>
                 ) : (
                     <>
                         <div className="absolute inset-0 z-10">
