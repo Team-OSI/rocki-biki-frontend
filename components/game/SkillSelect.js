@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import ProgressButton from './ProgressButton';
+import HealSkill from './HealSkill';
 
-export default function SkillSelect({ localVideoRef, landmarks, canvasSize }) {
+export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks }) {
   const canvasRef = useRef(null);
   const [buttonProgress, setButtonProgress] = useState({});
 
@@ -115,9 +116,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize }) {
       if (landmarks.leftHand && landmarks.rightHand) {
         const leftHand = mapHandCoordinates(landmarks.leftHand[0]);
         const rightHand = mapHandCoordinates(landmarks.rightHand[0]);
-        
-        console.log('Mapped Left hand:', leftHand);
-        console.log('Mapped Right hand:', rightHand);
   
         // 손 위치 시각화
         [leftHand, rightHand].forEach(hand => {
@@ -154,12 +152,9 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize }) {
   };
 
   const updateButtonProgress = (buttonId) => {
-    console.log(`Updating progress for button: ${buttonId}`);
     setButtonProgress(prev => {
       const newProgress = Math.min((prev[buttonId] || 0) + 0.05, 1);
-      console.log(`New progress for ${buttonId}: ${newProgress}`);
       if (newProgress >= 1) {
-        console.log(`Activating skill: ${buttonId}`);
         setActiveSkill(buttonId);
         return { ...prev, [buttonId]: 0 };
       }
@@ -223,16 +218,17 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize }) {
           backgroundImage={shieldBackImage} 
           onSkillComplete={handleSkillComplete}
         />
-      )}
+      )} */}
       {showHealSkill && (
-        <HealSkill 
-          webcamRef={localVideoRef} 
-          image={healImage} 
-          backgroundImage={healBackImage} 
+        <HealSkill
+          videoElement={localVideoRef.current}
+          image={healImage}
+          backgroundImage={healBackImage}
           onSkillComplete={handleSkillComplete}
+          poseLandmarks={poseLandmarks}
         />
       )}
-      {showAttackSkill && (
+      {/* {showAttackSkill && (
         <AttackSkill 
           webcamRef={localVideoRef} 
           image={attackImage} 

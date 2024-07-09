@@ -59,7 +59,6 @@ export default function GameMain() {
         position: 'absolute',
         width: isGameStarted ? '200px' : 'calc(40vw - 10px)', 
         height: isGameStarted ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
-        // zIndex: 20,
         ...(isGameStarted
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : { 
@@ -74,7 +73,6 @@ export default function GameMain() {
         height: '100%',
         objectFit: 'cover',
         borderRadius: '25px',
-        // zIndex: 100,
     };
 
     const overlayStyle = {
@@ -173,7 +171,8 @@ export default function GameMain() {
                         </div>
                         <div className="absolute inset-0 z-40 pointer-events-none">
                             <SkillSelect
-                                // localVideoRef={localVideoRef}
+                                localVideoRef={localVideoRef}
+                                poseLandmarks={poseLandmarks}
                                 landmarks={landmarks}
                                 canvasSize={canvasSize}
                             />
