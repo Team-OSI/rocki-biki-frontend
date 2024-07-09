@@ -6,6 +6,7 @@ import ReadyCanvas from "@/components/game/ReadyCanvas";
 import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
+import SkillSelect from './SkillSelect';
 
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
@@ -73,6 +74,7 @@ export default function GameMain() {
         height: '100%',
         objectFit: 'cover',
         borderRadius: '25px',
+        zIndex: 100,
     };
 
     const overlayStyle = {
@@ -105,7 +107,7 @@ export default function GameMain() {
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
-            <div style={videoContainerStyle(true)}>
+            <div style={videoContainerStyle(true)} className="z-50">
                 <video
                     className="scale-x-[-1] opacity-80"
                     ref={localVideoRef}
@@ -123,11 +125,11 @@ export default function GameMain() {
                     />
                 )}
             </div>
-            <div style={videoContainerStyle(false)}>
+            <div style={videoContainerStyle(false)} className="z-50">
                 {remoteVideoRef.current ? (
                     <>
                         <video
-                            className="scale-x-[-1] opacity-80 z-10"
+                            className="scale-x-[-1] opacity-80"
                             ref={remoteVideoRef}
                             style={videoStyle}
                             autoPlay
@@ -152,7 +154,7 @@ export default function GameMain() {
                     </div>
                 )}
             </div>
-            <div className="absolute inset-0 z-20" ref={canvasRef}>
+            <div className="absolute inset-0 z-40" ref={canvasRef}>
                 {!isGameStarted ? (
                     <ReadyCanvas 
                         onReady={handleReady}
@@ -160,10 +162,21 @@ export default function GameMain() {
                         canvasSize={canvasSize}
                     />
                 ) : (
-                    <GameCanvas 
-                        receivedPoseData={receivedPoseData}
-                        landmarks={landmarks}
-                    />
+                    <>
+                        <div className="absolute inset-0 z-30">
+                            <GameCanvas 
+                                receivedPoseData={receivedPoseData}
+                                landmarks={landmarks}
+                            />
+                        </div>
+                        <div className="absolute inset-0 z-40 pointer-events-none">
+                            <SkillSelect
+                                // localVideoRef={localVideoRef}
+                                landmarks={landmarks}
+                                canvasSize={canvasSize}
+                            />
+                        </div>
+                    </>
                 )}
             </div>
         </div>

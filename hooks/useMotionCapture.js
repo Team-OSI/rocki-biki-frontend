@@ -235,7 +235,7 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
                 cameraRef.current = null;
             }
         };
-    }, [ detectFrame, localVideoRef]); // detectors 제거 closure로 접근가능
+    }, [detectFrame, localVideoRef]); // detectors 제거 closure로 접근가능
 
     return null;
 }
