@@ -59,7 +59,7 @@ export default function GameMain() {
         position: 'absolute',
         width: isGameStarted ? '200px' : 'calc(40vw - 10px)', 
         height: isGameStarted ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
-        zIndex: 10,
+        // zIndex: 20,
         ...(isGameStarted
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : { 
@@ -74,7 +74,7 @@ export default function GameMain() {
         height: '100%',
         objectFit: 'cover',
         borderRadius: '25px',
-        zIndex: 100,
+        // zIndex: 100,
     };
 
     const overlayStyle = {
@@ -107,7 +107,7 @@ export default function GameMain() {
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
-            <div style={videoContainerStyle(true)} className="z-50">
+            <div style={videoContainerStyle(true)} className="z-30">
                 <video
                     className="scale-x-[-1] opacity-80"
                     ref={localVideoRef}
@@ -125,7 +125,7 @@ export default function GameMain() {
                     />
                 )}
             </div>
-            <div style={videoContainerStyle(false)} className="z-50">
+            <div style={videoContainerStyle(false)} className="z-30">
                 {remoteVideoRef.current ? (
                     <>
                         <video
@@ -163,7 +163,7 @@ export default function GameMain() {
                     />
                 ) : (
                     <>
-                        <div className="absolute inset-0 z-30">
+                        <div className="absolute inset-0 z-10">
                             <GameCanvas 
                                 receivedPoseData={receivedPoseData}
                                 landmarks={landmarks}
