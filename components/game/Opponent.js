@@ -1,18 +1,31 @@
 'use client';
 
-import React, { forwardRef, useRef, useEffect, useImperativeHandle } from 'react'
+import React, { forwardRef, useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react'
 import { useFrame} from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
+import {create} from 'zustand'
+
+// Zustand store for game state
+const useGameStore = create((set) => ({
+  opponentHealth: 100,
+  decreaseHealth: (amount) => set((state) => ({ opponentHealth: Math.max(0, state.opponentHealth - amount)}))
+}))
 
 // Opponent 전용 Head 컴포넌트
-const OpponentHead = forwardRef(({ position, rotation, scale, name }, ref) => {
+const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) => {
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/opponent-head.glb')
     const opacity = 0.9
     useImperativeHandle(
       ref,
       () => ({
+        getWorldPosition: (target) => {
+          if (localRef.current) {
+            return localRef.current.getWorldPosition(target || new THREE.Vector3())
+          }
+          return new THREE.Vector3()
+        },
         position: localRef.current?.position,
         rotation: localRef.current?.rotation,
       }),
@@ -22,8 +35,13 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name }, ref) => {
        Object.values(materials).forEach((material) => {
          material.transparent = true
          material.opacity = opacity
+         if (hit) {
+          material.color.setRGB(1, 0, 0) // Set color to red when hit
+         } else {
+          material.color.setRGB(1, 1, 1) // 되돌리기
+         }
        })
-     }, [materials, opacity])
+     }, [materials, opacity, hit])
   
     useFrame(() => {
       if (localRef.current && position) {
@@ -66,26 +84,62 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
 
 OpponentHand.displayName = "OpponentHand";
 
-export function Opponent({ position, opponentData }) {
+export function Opponent({ position, landmarks, opponentData }) {
   const groupRef = useRef(null)
   const headRef = useRef(null)
+  const [hit, setHit] = useState(false)
+  const lastHitTime = useRef(0)
+  const decreaseHealth = useGameStore((state) => state.decreaseHealth)
 
-  // const calculateRotations = (data) => {
-  //   if (!data) return {head:0, leftHand:0, rightHand:0}
-  //   return {
-  //     head: data?.leftEye && data?.rightEye
-  //       ? calculateHeadRotation(data.leftEye, data.rightEye)
-  //       : 0,
-  //     leftHand: data?.leftHand?.wrist && data?.leftHand?.indexBase && data?.leftHand?.pinkyBase
-  //       ? calculateHandRotation(data.leftHand.wrist, data.leftHand.indexBase, data.leftHand.pinkyBase)
-  //       : 0,
-  //     rightHand: data?.rightHand?.wrist && data?.rightHand?.indexBase && data?.rightHand?.pinkyBase
-  //       ? calculateHandRotation(data.rightHand.wrist, data.rightHand.indexBase, data.rightHand.pinkyBase)
-  //       : 0
-  //   }
-  // }
-  
-  // const rotations = calculateRotations(opponentData)
+  const playHitSound = useCallback(() => {
+    const audio = new Audio('/sounds/hit.mp3')
+    audio.play()
+  }, [])
+
+  const checkHit = useCallback(() => {
+    if(!headRef.current || !landmarks.leftHand || !landmarks.rightHand) return
+
+    const headPosition = new THREE.Vector3()
+    headRef.current.getWorldPosition(headPosition)
+
+    const hands = [landmarks.leftHand, landmarks.rightHand]
+    const currentTime = performance.now()
+
+    hands.forEach((hand, index) => {
+      // console.log(hand[2])
+      if(hand[2] !== 0) return // 주먹상태인지 확인
+
+      const handPosition = new THREE.Vector3(
+        (hand[0][0] - 0.5) * 4,
+        -(hand[0][1] - 0.5) * 4,
+        -(hand[0][2] * 30)
+      )
+      // Opponent의 회전을 적용합니다 (y축 주위로 180도 회전).
+      // handPosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+      // Player의 위치 오프셋을 적용합니다.
+      const distanceAdjustment = new THREE.Vector3(0, 0, -2.5); // 1 - (-5) = 6
+      handPosition.add(distanceAdjustment);
+
+      const distance = headPosition.distanceTo(handPosition)
+
+      if (distance < 1.3 && currentTime - lastHitTime.current > 1000) {
+        const velocity = hand[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
+        const damage = Math.floor(velocity * 10)
+
+        setHit(true)
+        decreaseHealth(damage)
+        playHitSound()
+        lastHitTime.current = currentTime
+        setTimeout(() => setHit(false), 200)
+        console.log('===velocity:', velocity, 'damage:',damage, )
+      }
+      console.log('distance:', distance)
+    })
+  }, [landmarks, decreaseHealth, playHitSound])
+  useFrame(() => {
+      checkHit()
+      // console.log('myhead',landmarks?.current?.head?.[0])
+  })
 
   return (
     <group ref={groupRef} position={position} rotation={[0, Math.PI, 0]}>
@@ -96,6 +150,7 @@ export function Opponent({ position, opponentData }) {
           rotation={[0, -opponentData.head[1][1] * (Math.PI / 180), -opponentData.head[1][2] * (Math.PI / 180)]}
           scale={0.25}
           name='opponentHead'
+          hit={hit}
         />)}
         {opponentData.rightHand && (
           <OpponentHand

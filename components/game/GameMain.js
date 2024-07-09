@@ -15,7 +15,7 @@ export default function GameMain() {
         setRoomId(searchParams.get('roomId'));
     }, []);
     
-    const [isGameStarted, setIsGameStarted] = useState(false);
+    const [isGameStarted, setIsGameStarted] = useState(true);
     const [receivedPoseData, setReceivedPoseData] = useState({});
     const [landmarks, setLandmarks] = useState({
         nose: null,
@@ -42,9 +42,9 @@ export default function GameMain() {
         remoteVideoRef,
         (receivedData) => {
             // console.log('Received data:', receivedData);
-            if (receivedData.type === 'pose') {
+            // if (receivedData.type === 'pose') {
                 setReceivedPoseData(receivedData.pose);
-            }
+            // }
         },
         () => landmarksRef.current
     );

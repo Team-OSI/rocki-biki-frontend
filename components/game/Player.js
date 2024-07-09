@@ -93,7 +93,7 @@ function CameraControls({target}){
   useFrame(()=> {
     if (target && target.current && target.current.position) {
     const targetPosition = target.current.position.clone()
-    targetPosition.z -= 6.2
+    targetPosition.z -= 3.8
     targetPosition.y +=0.25
     
     // 부드러운 카메라 이동
@@ -114,7 +114,7 @@ export function Player({ position, landmarks }) {
   const headRef = useRef(null)
   return (
     <>
-    <group ref={groupRef} position={position}>
+    <group ref={groupRef} position={position} >
         {landmarks.head && (
         <Head
           ref={headRef}
