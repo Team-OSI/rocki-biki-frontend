@@ -18,7 +18,7 @@ export default function Lobby() {
   const [filteredRooms, setFilteredRooms] = useState([]);
 
   useEffect(() => {
-    initSocket('http://localhost:7777');
+    initSocket('//rocki-biki.com:4000');
     return () => closeSocket;
   },[initSocket, closeSocket]);
 

@@ -195,7 +195,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     }, 1000 / 20);
   };
 
-    return { connectionState };
+    return { socket, connectionState };
 };
 
 export default useWebRTCConnection;
