@@ -6,8 +6,8 @@ import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import useGameStore from '../../store/gameStore';
 
-// 전역 객체 생성
-const hitSound = new Audio('/sounds/hit.mp3');
+
+
 
 // Opponent 전용 Head 컴포넌트
 const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) => {
@@ -86,6 +86,11 @@ export function Opponent({ position, landmarks, opponentData, socket }) {
   const decreaseOpponentHealth = useGameStore((state) => state.decreaseOpponentHealth)
   const count_optm = useRef(0)
   const roomId = useRef('')
+  const hitSoundRef = useRef(null);
+
+  useEffect(() => {
+    hitSoundRef.current = new Audio('./sounds/hit.MP3');
+  }, []);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -93,7 +98,9 @@ export function Opponent({ position, landmarks, opponentData, socket }) {
   }, [roomId]);
 
   const playHitSound = useCallback(() => {
-    hitSound.play()
+    if (hitSoundRef.current) {
+      hitSoundRef.current.play();
+    }
   }, []);
 
   const checkHit = useCallback(() => {
