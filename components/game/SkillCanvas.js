@@ -1,27 +1,26 @@
 "use client"
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 
-const similarityThreshold = 0.65;
+const similarityThreshold = 0.70;
 const SKILL_DURATION = 5;
 
-export default function HealSkill({ videoElement, image, backgroundImage, onSkillComplete, poseLandmarks }) {
+export default function SkillCanvas({ 
+    videoElement, 
+    image, 
+    backgroundImage, 
+    onSkillComplete, 
+    poseLandmarks, 
+    skillConfig,
+    width = 640,
+    height = 480
+}) {
     const canvasRef = useRef(null);
     const animationFrameRef = useRef(null);
     const [similarityResult, setSimilarityResult] = useState(null);
     const [remainingTime, setRemainingTime] = useState(SKILL_DURATION);
     const [isSkillActive, setIsSkillActive] = useState(false);
     const timerRef = useRef(null);
-    const [landmarkCoordinates, setLandmarkCoordinates] = useState({});
-    
-    // 상대 좌표 (하트 포즈)
-    const targetPose = useRef({
-        leftElbow: { x: 0.56, y: -0.69 },
-        rightElbow: { x: -0.63, y: -0.41 },
-        leftWrist: { x: 0.03, y: -1.44 },
-        rightWrist: { x: -0.09, y: -1.31 },
-        leftIndex: { x: -0.13, y: -1.53 },
-        rightIndex: { x: 0.09, y: -1.47 },
-    });
+    // const [landmarkCoordinates, setLandmarkCoordinates] = useState({});  // 디버깅용
 
     const startTimer = useCallback(() => {
         if (timerRef.current) return;
@@ -77,40 +76,31 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
 
     const processFrame = useCallback(() => {
         if (!canvasRef.current || !poseLandmarks) return;
-    
+
         const canvasCtx = canvasRef.current.getContext('2d');
-        const canvasWidth = canvasRef.current.width;
-        const canvasHeight = canvasRef.current.height;
-    
         canvasCtx.save();
-        canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
-        // 배경 이미지 그리기
+        canvasCtx.clearRect(0, 0, width, height);
+
         if (backgroundImage) {
-            canvasCtx.drawImage(backgroundImage, 0, 0, canvasWidth, canvasHeight);
+            canvasCtx.drawImage(backgroundImage, 0, 0, width, height);
         } else {
             canvasCtx.fillStyle = 'black';
-            canvasCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+            canvasCtx.fillRect(0, 0, width, height);
         }
-    
-        // 비디오 요소 그리기
+
         if (videoElement) {
-            canvasCtx.drawImage(videoElement, 0, 0, canvasWidth, canvasHeight);
+            canvasCtx.drawImage(videoElement, 0, 0, width, height);
         }
-    
-        // 스킬이 활성화되어 있고 시간이 남아있을 때 이미지 그리기
-        if (isSkillActive && remainingTime > 0 && image && poseLandmarks.nose) {
-            const imgWidth = 400; 
-            const imgHeight = 400; 
-            const x = (canvasWidth - imgWidth) / 2;
-            const y = (canvasHeight - imgHeight) / 2;
-            canvasCtx.drawImage(image, x, y, imgWidth, imgHeight);
+
+        if (isSkillActive && remainingTime > 0 && image) {
+            const position = skillConfig.imagePosition(poseLandmarks, width, height);
+            canvasCtx.drawImage(image, position.x, position.y, skillConfig.imageSize.width, skillConfig.imageSize.height);
         }
-    
+
         canvasCtx.restore();
-    
+
         animationFrameRef.current = requestAnimationFrame(processFrame);
-    }, [poseLandmarks, isSkillActive, remainingTime, image, backgroundImage, videoElement]);
+    }, [videoElement, backgroundImage, isSkillActive, remainingTime, image, poseLandmarks, skillConfig, width, height]);
 
     useEffect(() => {
         if (poseLandmarks) {
@@ -124,16 +114,15 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
                 leftIndex: poseLandmarks.leftIndex,
                 rightIndex: poseLandmarks.rightIndex
             };
-        
-            // 모든 필요한 랜드마크가 존재하는지 확인
+
             if (Object.values(detectedPose).every(landmark => landmark)) {
-                const poseSimilarity = calculatePoseSimilarity(detectedPose, targetPose.current);
+                const poseSimilarity = calculatePoseSimilarity(detectedPose, skillConfig.targetPose);
                 setSimilarityResult(poseSimilarity);
                 setIsSkillActive(poseSimilarity >= similarityThreshold);
-                setLandmarkCoordinates(detectedPose);  // 랜드마크 좌표 저장
+                // setLandmarkCoordinates(detectedPose);
             }
         }
-    }, [poseLandmarks, targetPose]);
+    }, [poseLandmarks, skillConfig.targetPose]);
 
     useEffect(() => {
         processFrame();
@@ -146,25 +135,31 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
 
     return (
         <div className='motion-capture'>
-            <canvas id="landmarks" ref={canvasRef} width="640" height="480" style={{ transform:'scaleX(-1)' }} />
+            <canvas 
+                ref={canvasRef} 
+                width={width} 
+                height={height} 
+                style={{ transform: 'scaleX(-1)' }} 
+            />
             <div id="skill-timer">
                 <span className='timer-value'>{remainingTime}</span>초만 더 버텨라!
             </div>
             <div>
                 {similarityResult !== null && (
-                    <div id="similarity" style={{ color: 'yellowgreen' }}>
+                    <div id="similarity" style={{ color: skillConfig.textColor }}>
                         <p>Similarity: {similarityResult.toFixed(2)}</p>
                         {isSkillActive && remainingTime > 0 && (
-                            <p>하트~⎝⎛♥‿♥⎞⎠ (Shield Skill 발동!!)</p>)}
+                            <p>{skillConfig.activationMessage} ({skillConfig.name} Skill 발동!!)</p>
+                        )}
                     </div>
                 )}
             </div>
-            <div id="landmark-coordinates" style={{ position: 'absolute', top: '10px', left: '10px', color: 'white', backgroundColor: 'rgba(0,0,0,0.5)', padding: '10px' }}>
+            {/* <div id="landmark-coordinates" style={{ position: 'absolute', top: '10px', left: '10px', color: 'white', backgroundColor: 'rgba(0,0,0,0.5)', padding: '10px' }}>
                 <h3>Landmark Coordinates:</h3>
                 {Object.entries(landmarkCoordinates).map(([key, value]) => (
                     <p key={key}>{key}: x: {value?.x?.toFixed(2) || 'N/A'}, y: {value?.y?.toFixed(2) || 'N/A'}</p>
                 ))}
-            </div>
+            </div> */}
         </div>
     );
 }

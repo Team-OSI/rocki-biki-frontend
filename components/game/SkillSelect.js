@@ -3,13 +3,12 @@ import ProgressButton from './ProgressButton';
 import HealSkill from './HealSkill';
 import AttackSkill from './AttackSkill';
 import ShieldSkill from './ShieldSkill';
+import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
+import SkillCanvas from './SkillCanvas';
 
 export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks }) {
   const canvasRef = useRef(null);
   const [buttonProgress, setButtonProgress] = useState({});
-
-  const lastUpdateTimeRef = useRef({});
-  const HOVER_THRESHOLD = 1000; // 1초
   
   const [activeSkill, setActiveSkill] = useState(null);
   const [showShieldSkill, setShowShieldSkill] = useState(false);
@@ -25,8 +24,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   
   const buttonWidth = 120;
   const buttonHeight = 80;
-  const buttonMargin = 50;
-  const rightMargin = 10; // 오른쪽 여백
 
   const buttons = useMemo(() => [
     { 
@@ -214,30 +211,33 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         />
       ))}
       {showShieldSkill && (
-        <ShieldSkill 
+        <SkillCanvas 
           videoElement={localVideoRef.current}
           image={shieldImage} 
           backgroundImage={shieldBackImage} 
           onSkillComplete={handleSkillComplete}
           poseLandmarks={poseLandmarks}
+          skillConfig={shieldSkill}
         />
       )}
       {showHealSkill && (
-        <HealSkill
+        <SkillCanvas
           videoElement={localVideoRef.current}
           image={healImage}
           backgroundImage={healBackImage}
           onSkillComplete={handleSkillComplete}
           poseLandmarks={poseLandmarks}
+          skillConfig={healSkill}
         />
       )}
       {showAttackSkill && (
-        <AttackSkill 
+        <SkillCanvas
           videoElement={localVideoRef.current}
           image={attackImage} 
           backgroundImage={attackBackImage} 
           onSkillComplete={handleSkillComplete}
           poseLandmarks={poseLandmarks}
+          skillConfig={attackSkill}
         />
       )}
     </div>
