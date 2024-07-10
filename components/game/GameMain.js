@@ -6,7 +6,6 @@ import ReadyCanvas from "@/components/game/ReadyCanvas";
 import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
-import useGameStore from '@/store/gameStore';
 import SkillSelect from './skill/SkillSelect';
 
 export default function GameMain() {
@@ -19,23 +18,16 @@ export default function GameMain() {
     
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [receivedPoseData, setReceivedPoseData] = useState({});
-    const [landmarks, setLandmarks] = useState({
-        nose: null,
-        leftEye: null,
-        rightEye: null,
-        leftHand: null,
-        rightHand: null,
-    });
-    const [poseLandmarks, setPoseLandmarks] = useState(null);
+    const [landmarks, setLandmarks] = useState({});
     const landmarksRef = useRef(landmarks);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
     useEffect(() => {
-        landmarksRef.current = landmarks;
+        landmarksRef.current = landmarks.landmarks;
     }, [landmarks]);
     
-    useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks);
+    useMotionCapture(localVideoRef, setLandmarks);
 
     // WebRTC 연결 설정
     const {socket, connectionState} = useWebRTCConnection(
@@ -44,9 +36,9 @@ export default function GameMain() {
         remoteVideoRef,
         (receivedData) => {
             // console.log('Received data:', receivedData);
-            // if (receivedData.type === 'pose') {
+            if (receivedData.type === 'pose') {
                 setReceivedPoseData(receivedData.pose);
-            // }
+            }
         },
         () => landmarksRef.current
     );
@@ -60,7 +52,7 @@ export default function GameMain() {
         position: 'absolute',
         width: isGameStarted ? '200px' : 'calc(40vw - 10px)', 
         height: isGameStarted ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
-        zIndex: 10,
+        zIndex: 30,
         ...(isGameStarted
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : { 
@@ -107,9 +99,9 @@ export default function GameMain() {
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
-            <div style={videoContainerStyle(true)} className="z-30">
+            <div style={videoContainerStyle(true)}>
                 <video
-                    className="scale-x-[-1] opacity-80"
+                    className="scale-x-[-1] opacity-80 mt-2"
                     ref={localVideoRef}
                     style={videoStyle}
                     autoPlay
@@ -129,36 +121,36 @@ export default function GameMain() {
             <>
                 {connectionState !== 'connected' &&(
                     <div
-                    className="bg-slate-400 opacity-80 flex items-center justify-center text-white"
+                    className="bg-slate-400 mt-2 opacity-80 flex items-center justify-center text-white"
                     style={videoStyle}
                     >
                     연결 대기 중...
                     </div>
                 )}
-                        <video
-                            className="scale-x-[-1] opacity-80"
-                            ref={remoteVideoRef}
-                            style={videoStyle}
-                            autoPlay
-                            playsInline
+                    <video
+                        className="scale-x-[-1] opacity-80 mt-2"
+                        ref={remoteVideoRef}
+                        style={videoStyle}
+                        autoPlay
+                        playsInline
+                    />
+                    {!isGameStarted && (
+                        <Image
+                            src="/images/ready_pose.webp"
+                            alt="Ready Pose"
+                            layout="fill"
+                            objectFit="cover"
+                            style={overlayStyle}
                         />
-                        {!isGameStarted && (
-                            <Image
-                                src="/images/ready_pose.webp"
-                                alt="Ready Pose"
-                                layout="fill"
-                                objectFit="cover"
-                                style={overlayStyle}
-                            />
-                        )}
-                    </>
+                    )}
+                </>
             </div>
             <div className="absolute inset-0" ref={canvasRef}>
                 {!isGameStarted ? (
                     <div className="absolute inset-0 z-40">
                         <ReadyCanvas
                             onReady={handleReady}
-                            landmarks={poseLandmarks}
+                            landmarks={landmarks.poseLandmarks}
                             canvasSize={canvasSize}
                         />
                     </div>
@@ -167,14 +159,14 @@ export default function GameMain() {
                         <div className="absolute inset-0 z-10">
                             <GameCanvas
                                 receivedPoseData={receivedPoseData}
-                                landmarks={landmarks}
+                                landmarks={landmarks.landmarks}
                             />
                         </div>
                         <div className="absolute inset-0 z-40 pointer-events-none">
                             <SkillSelect
                                 localVideoRef={localVideoRef}
-                                poseLandmarks={poseLandmarks}
-                                landmarks={landmarks}
+                                poseLandmarks={landmarks.poseLandmarks}
+                                landmarks={landmarks.landmarks}
                                 canvasSize={canvasSize}
                             />
                         </div>
