@@ -1,14 +1,21 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoginDiv from '@/components/login/LoginDiv';
-import RoomModal from '@/components/lobby/RoomModal';
+import Cookies from 'js-cookie';
 
 export default function App() {
   const [login, setLogin] = useState(false);
   const [showLoginDiv, setShowLoginDiv] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const token = Cookies.get('accessToken');
+    if (token) {
+      setLogin(true);
+    }
+  },[]);
 
   const handleLogin = () => {
     setLogin(true);
@@ -23,12 +30,8 @@ export default function App() {
     }
   };
 
-  const testLogin = () => {
-    setLogin(true);
-  }
-
   return (
-    <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/img/ring.jpg')" }}>
+    <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
       <div className="absolute top-16 w-full flex flex-col items-center gap-4 font-bold">
         <h1 className="text-8xl">ROCKY</h1>
         <h1 className="text-8xl">BIKI</h1>
@@ -50,7 +53,7 @@ export default function App() {
           </button>
         </div>
       )}
-      <button onClick={testLogin} className="mt-4">test</button>
+      {/* <button onClick={testLogin} className="mt-4">test</button> */}
     </div>
   );
 }

@@ -1,97 +1,59 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Stats, PerspectiveCamera, Environment } from '@react-three/drei';
 import { Player } from './Player';
 import { Opponent } from './Opponent';
-import { useSearchParams } from 'next/navigation';
-import { useMotionCapture } from '@/hooks/useMotionCapture';
-import useWebRTCConnection from '@/hooks/useWebRTCConnection';
-import { startRecognition, getRecognition } from '@/api/stt/api';
+import { useEffect } from 'react';
+import useGameStore from '@/store/gameStore';
+import StateBar from './StateBar';
 
-// 씬 컴포넌트
-function Scene({ localVideoRef, remoteVideoRef }) {
-  const searchParams = useSearchParams();
-  const roomId = searchParams.get('roomId');
-  const [receivedPoseData, setReceivedPoseData] = useState({});
-  const [landmarks, setLandmarks] = useState({
-    nose: null,
-    leftEye: null,
-    rightEye: null,
-    leftHand: null,
-    rightHand: null,
+
+function Scene({receivedPoseData, landmarks, socket}) {
+  const decreasePlayerHealth = useGameStore(state => state.decreasePlayerHealth)
+  useFrame((state, delta) => {
+
   });
-  const landmarksRef = useRef(landmarks);
 
   useEffect(() => {
-    landmarksRef.current = landmarks;
-  }, [landmarks]);
-
-  useMotionCapture(localVideoRef, setLandmarks);
-
-  useWebRTCConnection(
-    roomId,
-    localVideoRef,
-    remoteVideoRef,
-    (receivedData) => {
-      if (receivedData.type === 'pose') {
-        setReceivedPoseData(receivedData.pose);
-      }
-    },
-    () => landmarksRef.current
-  );
-
-  useFrame((state, delta) => {});
+    if (socket) {
+      // console.log('Socket connected:', socket.connected)
+      socket.on('connect', () => console.log('Socket connected'))
+      socket.on('disconnet', () => console.log('Socket disconnected'))
+      socket.on('damage', (data) => {
+        // console.log('Damage received:', data)
+        decreasePlayerHealth(data.amount);
+      });
+  
+      return () => {
+        socket.off('damage');
+        socket.off('connect');
+        socket.off('disconnect');
+      };
+    }
+  }, [socket, decreasePlayerHealth]);
 
   return (
     <>
       <ambientLight intensity={0.7} />
       <pointLight position={[10, 10, 10]} intensity={1} />
-      <Player position={[0, 0, -2.6]} landmarks={landmarks} />
-      <Opponent position={[0, 0, 3]} opponentData={receivedPoseData} />
-      <Environment files="/images/metro_noord_4k.hdr" background />
+      <Player position={[0, 0, -2.5]} landmarks={landmarks} />
+      <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} socket={socket}/>
+      <Environment preset='sunset' background />
     </>
   );
 }
 
-// 게임 캔버스 컴포넌트
-export function GameCanvas() {
-  const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
-
-  const connectionState = 'connected';
-
+export function GameCanvas({ receivedPoseData, landmarks, socket }) {
   return (
-    <div className="w-full h-screen">
-      <video
-        className="fixed scale-x-[-1] right-5 top-5 z-10 rounded-[50px] opacity-80"
-        ref={localVideoRef}
-        style={{ width: '200px', height: '150px' }}
-        autoPlay
-        playsInline
-      />
-      {connectionState === 'connected' ? (
-        <video
-          className="fixed scale-x-[-1] left-5 top-5 z-10 rounded-[50px] opacity-80"
-          ref={remoteVideoRef}
-          style={{ width: '200px', height: '150px' }}
-          autoPlay
-          playsInline
-        />
-      ) : (
-        <div
-          className="fixed scale-x-[-1] left-5 bg-slate-400 top-5 z-10 rounded-[50px] opacity-80"
-          style={{ width: '200px', height: '150px' }}
-        />
-      )}
-      <Canvas shadows>
-        <color attach="background" args={["gray"]} />
-        <ambientLight />
-        <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
-        <Scene localVideoRef={localVideoRef} remoteVideoRef={remoteVideoRef} />
-        <Stats />
-      </Canvas>
-    </div>
+  <>
+  <StateBar />
+    <Canvas shadows>
+      <ambientLight />
+      <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
+      <Scene receivedPoseData={receivedPoseData} landmarks={landmarks} socket={socket} />
+      {/* <Stats /> */}
+    </Canvas>
+  </>
   );
 }

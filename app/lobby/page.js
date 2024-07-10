@@ -6,14 +6,21 @@ import Room from '@/components/lobby/Room';
 import RoomButton from '@/components/lobby/RoomButton';
 import RoomModal from '@/components/lobby/RoomModal';
 import useSocket from '../../hooks/useSocket';
+import useSocketStore from '@/store/socketStore';
 
 export default function Lobby() {
   const router = useRouter();
   // const { rooms, addRoom, joinRoom } = useSocket('http://localhost:7777');
-  const { rooms, addRoom, joinRoom } = useSocket('//rocki-biki.com:4000');
+  // const { rooms, addRoom, joinRoom } = useSocket('//rocki-biki.com:4000');
+  const { initSocket, closeSocket, rooms, addRoom, joinRoom } = useSocketStore();
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
+
+  useEffect(() => {
+    initSocket('//rocki-biki.com:4000');
+    return () => closeSocket;
+  },[initSocket, closeSocket]);
 
   useEffect(() => {
     setFilteredRooms(rooms);
@@ -46,7 +53,7 @@ export default function Lobby() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/img/ring.jpg')" }}>
+    <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
       <div className="absolute top-12 w-full flex flex-col items-center gap-4 font-bold">
         <h1 className="text-8xl">로비</h1>
       </div>
