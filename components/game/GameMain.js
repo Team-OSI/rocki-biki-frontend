@@ -6,7 +6,7 @@ import ReadyCanvas from "@/components/game/ReadyCanvas";
 import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
-import SkillSelect from './SkillSelect';
+import SkillSelect from './skill/SkillSelect';
 
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
