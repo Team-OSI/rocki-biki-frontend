@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { Camera } from '@mediapipe/camera_utils';
 import { initializeDetectors, processPoseLandmarks } from '@/lib/mediapipe/tasksVision';
 
-export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) {
+export function useMotionCapture(localVideoRef, setLandmarks) {
     const [detectors, setDetectors] = useState(null);
     const cameraRef = useRef(null);
     const prevLandmarksRef = useRef(null);
@@ -193,13 +193,17 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
             leftHand: newLandmarks.leftHand[0] ? newLandmarks.leftHand : lastValidLandmarksRef.current?.leftHand,
             rightHand: newLandmarks.rightHand[0] ? newLandmarks.rightHand : lastValidLandmarksRef.current?.rightHand
         };
-        setLandmarks(newLandmarks);
-        // 로컬에서만 사용할 포즈 데이터
-        if (poseResult.landmarks && poseResult.landmarks[0]) {
-            const poseLandmarks = processPoseLandmarks(poseResult.landmarks[0]);
-            setPoseLandmarks(poseLandmarks);
-        }
-    }, [setLandmarks, setPoseLandmarks, isValidMovement, calculateHandRotation, calc_hand_center]);
+
+
+        const updatedLandmarks = {
+            landmarks: newLandmarks,
+            poseLandmarks: poseResult.landmarks && poseResult.landmarks[0] 
+                ? processPoseLandmarks(poseResult.landmarks[0]) 
+                : null
+        };
+        setLandmarks(updatedLandmarks);
+
+    }, [setLandmarks,isValidMovement, calculateHandRotation, calc_hand_center]);
     
 
     const detectFrame = useCallback(async () => {
@@ -221,7 +225,7 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
                     onFrame: detectFrame,
                     width: 448,//640
                     height: 336, //480
-                    frameRate: 30
+                    frameRate: 20
                 });
                 await cameraRef.current.start();
         };
