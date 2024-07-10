@@ -6,15 +6,29 @@ import Room from '@/components/lobby/Room';
 import RoomButton from '@/components/lobby/RoomButton';
 import RoomModal from '@/components/lobby/RoomModal';
 import useSocket from '../../hooks/useSocket';
+import useSocketStore from '@/store/socketStore';
 
 export default function Lobby() {
   const router = useRouter();
-  const { rooms, addRoom, joinRoom } = useSocket('http://localhost:7777');
+  // const { rooms, addRoom, joinRoom } = useSocket('http://localhost:7777');
+  // const { rooms, addRoom, joinRoom } = useSocket('//rocki-biki.com:4000');
+  const { initSocket, closeSocket, rooms, addRoom, joinRoom } = useSocketStore();
   const [showRoomModal, setShowRoomModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredRooms, setFilteredRooms] = useState([]);
 
   useEffect(() => {
-    console.log('Rooms updated', rooms); 
+    initSocket('http://localhost:7777');
+    return () => closeSocket;
+  },[initSocket, closeSocket]);
+
+  useEffect(() => {
+    setFilteredRooms(rooms);
   }, [rooms]);
+
+  useEffect(() => {
+    filterRooms();
+  }, [rooms, searchTerm]);
 
   const goGame = (roomId) => {
     joinRoom(roomId);
@@ -27,20 +41,37 @@ export default function Lobby() {
     });
   };
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filterRooms = () => {
+    const filtered = rooms.filter(room => 
+      room.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredRooms(filtered);
+  };
+
   return (
     <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
-      <div className="absolute top-16 w-full flex flex-col items-center gap-4 font-bold">
+      <div className="absolute top-12 w-full flex flex-col items-center gap-4 font-bold">
         <h1 className="text-8xl">로비</h1>
       </div>
-      <div className="flex flex-col items-center w-full max-w-screen-md mt-60 mb-30">
+      <div className="flex flex-col items-center w-full max-w-screen-md mt-40 mb-40">
         <div className="w-full p-6 bg-blue-100 rounded-lg shadow-lg">
-          <div className="flex justify-between mb-6">
-            <button className="bg-gray-300 px-4 py-2 rounded-lg">필터</button>
-            <input className="border border-gray-300 p-2 rounded-lg flex-grow mx-4" placeholder="검색창" />
-            <button className="bg-gray-300 px-4 py-2 rounded-lg">검색</button>
+          <div className="flex justify-center items-center mb-6">
+            <input
+              className="border border-gray-300 py-2 px-2 rounded-lg max-w-xs w-1/2 h-12"
+              placeholder="방 제목"
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+            <div className="ml-8 h-20">
+              <RoomButton onClick={() => setShowRoomModal(true)} />
+            </div>
           </div>
           <div className="max-h-96 overflow-y-auto">
-            {rooms.map((room, index) => (
+            {filteredRooms.map((room, index) => (
               <Room 
                 key={index} 
                 title={room.title} 
@@ -50,7 +81,6 @@ export default function Lobby() {
               />
             ))}
           </div>
-          <RoomButton onClick={() => setShowRoomModal(true)} />
         </div>
       </div>
       {showRoomModal && (
