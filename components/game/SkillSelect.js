@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import ProgressButton from './ProgressButton';
 import HealSkill from './HealSkill';
+import AttackSkill from './AttackSkill';
+import ShieldSkill from './ShieldSkill';
 
 export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks }) {
   const canvasRef = useRef(null);
@@ -66,42 +68,42 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   useEffect(() => {
     // 필요한 이미지 프리 로드
     const shield_img = new Image();
-    shield_img.src = '/img/love.png';
+    shield_img.src = '/images/love.png';
     shield_img.onload = () => {
       console.log('Heart image loaded successfully');
       setShieldImage(shield_img);
     };  
     
     const shield_back_img = new Image();
-    shield_back_img.src = '/img/shield_background.jpg';
+    shield_back_img.src = '/images/shield_background.jpg';
     shield_back_img.onload = () => {
       console.log('Background image loaded successfully (Shield)');
       setShieldBackImage(shield_back_img);
     };  
 
     const heal_img = new Image();
-    heal_img.src = '/img/crown.png';
+    heal_img.src = '/images/crown.png';
     heal_img.onload = () => {
       console.log('Crown image loaded successfully');
       setHealImage(heal_img);
     };
 
     const heal_back_img = new Image();
-    heal_back_img.src = '/img/heal_background.jpg';
+    heal_back_img.src = '/images/heal_background.jpg';
     heal_back_img.onload = () => {
       console.log('Background image loaded successfully (Heal)');
       setHealBackImage(heal_back_img);
     };
 
     const attack_img = new Image();
-    attack_img.src = '/img/tattoo.png';
+    attack_img.src = '/images/tattoo.png';
     attack_img.onload = () => {
       console.log('Tattoo image loaded successfully');
       setAttackImage(attack_img);
     };
 
     const attack_back_img = new Image();
-    attack_back_img.src = '/img/attack_background.jpg';
+    attack_back_img.src = '/images/attack_background.jpg';
     attack_back_img.onload = () => {
       console.log('Background image loaded successfully (Attack)');
       setAttackBackImage(attack_back_img);
@@ -211,14 +213,15 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           progress={buttonProgress[button.id] || 0}
         />
       ))}
-      {/* {showShieldSkill && (
+      {showShieldSkill && (
         <ShieldSkill 
-          webcamRef={localVideoRef} 
+          videoElement={localVideoRef.current}
           image={shieldImage} 
           backgroundImage={shieldBackImage} 
           onSkillComplete={handleSkillComplete}
+          poseLandmarks={poseLandmarks}
         />
-      )} */}
+      )}
       {showHealSkill && (
         <HealSkill
           videoElement={localVideoRef.current}
@@ -228,14 +231,15 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           poseLandmarks={poseLandmarks}
         />
       )}
-      {/* {showAttackSkill && (
+      {showAttackSkill && (
         <AttackSkill 
-          webcamRef={localVideoRef} 
+          videoElement={localVideoRef.current}
           image={attackImage} 
           backgroundImage={attackBackImage} 
           onSkillComplete={handleSkillComplete}
+          poseLandmarks={poseLandmarks}
         />
-      )} */}
+      )}
     </div>
   );
 };
