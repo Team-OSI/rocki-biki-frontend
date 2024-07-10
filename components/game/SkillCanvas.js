@@ -1,8 +1,8 @@
 "use client"
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 
-const similarityThreshold = 0.70;
-const SKILL_DURATION = 5;
+const similarityThreshold = 0.70;   // 포즈 유사도 임계값
+const SKILL_DURATION = 5;           // 스킬 지속 시간
 
 export default function SkillCanvas({ 
     videoElement, 
@@ -22,6 +22,7 @@ export default function SkillCanvas({
     const timerRef = useRef(null);
     // const [landmarkCoordinates, setLandmarkCoordinates] = useState({});  // 디버깅용
 
+    // 타이머 시작 함수
     const startTimer = useCallback(() => {
         if (timerRef.current) return;
         timerRef.current = setInterval(() => {
@@ -37,18 +38,21 @@ export default function SkillCanvas({
         }, 1000);
     }, [onSkillComplete]);
 
+    // 컴포넌트 언마운트 시 타이머 정리
     useEffect(() => {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, []);
     
+    // 스킬 활성화 시 타이머 시작
     useEffect(() => {
         if (isSkillActive && !timerRef.current) {
             startTimer();
         }
     }, [isSkillActive, startTimer]);
 
+    // 포즈 유사도 계산 함수
     const calculatePoseSimilarity = (detectedPose, targetPose) => {
         const shoulderWidth = Math.abs(detectedPose.leftShoulder.x - detectedPose.rightShoulder.x);
         
@@ -74,6 +78,7 @@ export default function SkillCanvas({
         return similarities.reduce((sum, similarity) => sum + similarity, 0) / similarities.length;
     };
 
+    // 프레임 처리 함수
     const processFrame = useCallback(() => {
         if (!canvasRef.current || !poseLandmarks) return;
 
@@ -102,6 +107,7 @@ export default function SkillCanvas({
         animationFrameRef.current = requestAnimationFrame(processFrame);
     }, [videoElement, backgroundImage, isSkillActive, remainingTime, image, poseLandmarks, skillConfig, width, height]);
 
+    // 포즈 랜드마크 처리 및 유사도 계산
     useEffect(() => {
         if (poseLandmarks) {
             const detectedPose = {
@@ -124,6 +130,7 @@ export default function SkillCanvas({
         }
     }, [poseLandmarks, skillConfig.targetPose]);
 
+    // 프레임 처리 시작 및 정리
     useEffect(() => {
         processFrame();
         return () => {

@@ -1,8 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import ProgressButton from './ProgressButton';
-import HealSkill from './HealSkill';
-import AttackSkill from './AttackSkill';
-import ShieldSkill from './ShieldSkill';
 import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import SkillCanvas from './SkillCanvas';
 
@@ -54,6 +51,27 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       progressColor: 'rgba(0, 0, 255, 0.8)' 
     },
   ], []);
+
+  const skillConfigs = {
+    shield: {
+      show: showShieldSkill,
+      image: shieldImage,
+      backgroundImage: shieldBackImage,
+      skillConfig: shieldSkill
+    },
+    heal: {
+      show: showHealSkill,
+      image: healImage,
+      backgroundImage: healBackImage,
+      skillConfig: healSkill
+    },
+    attack: {
+      show: showAttackSkill,
+      image: attackImage,
+      backgroundImage: attackBackImage,
+      skillConfig: attackSkill
+    }
+  };
 
   const mapHandCoordinates = (hand) => {
     return [
@@ -116,7 +134,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         const leftHand = mapHandCoordinates(landmarks.leftHand[0]);
         const rightHand = mapHandCoordinates(landmarks.rightHand[0]);
   
-        // 손 위치 시각화
+        // 손 위치 시각화 (디버깅용)
         [leftHand, rightHand].forEach(hand => {
           ctx.beginPath();
           ctx.arc(hand[0] * canvasSize.width, hand[1] * canvasSize.height, 10, 0, 2 * Math.PI);
@@ -210,36 +228,19 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           progress={buttonProgress[button.id] || 0}
         />
       ))}
-      {showShieldSkill && (
-        <SkillCanvas 
-          videoElement={localVideoRef.current}
-          image={shieldImage} 
-          backgroundImage={shieldBackImage} 
-          onSkillComplete={handleSkillComplete}
-          poseLandmarks={poseLandmarks}
-          skillConfig={shieldSkill}
-        />
-      )}
-      {showHealSkill && (
-        <SkillCanvas
-          videoElement={localVideoRef.current}
-          image={healImage}
-          backgroundImage={healBackImage}
-          onSkillComplete={handleSkillComplete}
-          poseLandmarks={poseLandmarks}
-          skillConfig={healSkill}
-        />
-      )}
-      {showAttackSkill && (
-        <SkillCanvas
-          videoElement={localVideoRef.current}
-          image={attackImage} 
-          backgroundImage={attackBackImage} 
-          onSkillComplete={handleSkillComplete}
-          poseLandmarks={poseLandmarks}
-          skillConfig={attackSkill}
-        />
-      )}
+      {Object.entries(skillConfigs).map(([skillType, config]) => (
+        config.show && (
+          <SkillCanvas
+            key={skillType}
+            videoElement={localVideoRef.current}
+            image={config.image}
+            backgroundImage={config.backgroundImage}
+            onSkillComplete={handleSkillComplete}
+            poseLandmarks={poseLandmarks}
+            skillConfig={config.skillConfig}
+          />
+        )
+      ))}
     </div>
   );
 };
