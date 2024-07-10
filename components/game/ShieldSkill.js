@@ -12,15 +12,15 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
     const [isSkillActive, setIsSkillActive] = useState(false);
     const timerRef = useRef(null);
     const [landmarkCoordinates, setLandmarkCoordinates] = useState({});
-
-    // 상대 좌표 (두손을 양볼에 갖다대는 포즈)
+    
+    // 상대 좌표 (하트 포즈)
     const targetPose = useRef({
-        leftElbow: { x: 0.60, y: 0.46 },
-        rightElbow: { x: -0.60, y: 0.20 },
-        leftWrist: { x: 0.11, y: -0.20 },
-        rightWrist: { x: 0.06, y: -0.31 },
-        leftIndex: { x: -0.09, y: -0.37 },
-        rightIndex: { x: 0.23, y: -0.49 },
+        leftElbow: { x: 0.56, y: -0.69 },
+        rightElbow: { x: -0.63, y: -0.41 },
+        leftWrist: { x: 0.03, y: -1.44 },
+        rightWrist: { x: -0.09, y: -1.31 },
+        leftIndex: { x: -0.13, y: -1.53 },
+        rightIndex: { x: 0.09, y: -1.47 },
     });
 
     const startTimer = useCallback(() => {
@@ -100,10 +100,10 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
     
         // 스킬이 활성화되어 있고 시간이 남아있을 때 이미지 그리기
         if (isSkillActive && remainingTime > 0 && image && poseLandmarks.nose) {
-            const imgWidth = 144; 
-            const imgHeight = 81; 
-            const x = poseLandmarks.nose.x * canvasWidth - 80;
-            const y = (poseLandmarks.nose.y * canvasHeight - imgHeight) - 80;
+            const imgWidth = 400; 
+            const imgHeight = 400; 
+            const x = (canvasWidth - imgWidth) / 2;
+            const y = (canvasHeight - imgHeight) / 2;
             canvasCtx.drawImage(image, x, y, imgWidth, imgHeight);
         }
     
@@ -114,27 +114,26 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
 
     useEffect(() => {
         if (poseLandmarks) {
-          const detectedPose = {
-            nose: poseLandmarks.nose,
-            leftShoulder: poseLandmarks.leftShoulder,
-            rightShoulder: poseLandmarks.rightShoulder,
-            leftElbow: poseLandmarks.leftElbow,
-            rightElbow: poseLandmarks.rightElbow,
-            leftWrist: poseLandmarks.leftWrist,
-            rightWrist: poseLandmarks.rightWrist,
-            leftIndex: poseLandmarks.leftIndex,
-            rightIndex: poseLandmarks.rightIndex
-          };
-      
-          // 모든 필요한 랜드마크가 존재하는지 확인
-          if (Object.values(detectedPose).every(landmark => landmark)) {
-            const poseSimilarity = calculatePoseSimilarity(detectedPose, targetPose.current);
-            setSimilarityResult(poseSimilarity);
-            setIsSkillActive(poseSimilarity >= similarityThreshold);
-            setLandmarkCoordinates(detectedPose);  // 랜드마크 좌표 저장
-          }
+            const detectedPose = {
+                leftShoulder: poseLandmarks.leftShoulder,
+                rightShoulder: poseLandmarks.rightShoulder,
+                leftElbow: poseLandmarks.leftElbow,
+                rightElbow: poseLandmarks.rightElbow,
+                leftWrist: poseLandmarks.leftWrist,
+                rightWrist: poseLandmarks.rightWrist,
+                leftIndex: poseLandmarks.leftIndex,
+                rightIndex: poseLandmarks.rightIndex
+            };
+        
+            // 모든 필요한 랜드마크가 존재하는지 확인
+            if (Object.values(detectedPose).every(landmark => landmark)) {
+                const poseSimilarity = calculatePoseSimilarity(detectedPose, targetPose.current);
+                setSimilarityResult(poseSimilarity);
+                setIsSkillActive(poseSimilarity >= similarityThreshold);
+                setLandmarkCoordinates(detectedPose);  // 랜드마크 좌표 저장
+            }
         }
-      }, [poseLandmarks, targetPose]);
+    }, [poseLandmarks, targetPose]);
 
     useEffect(() => {
         processFrame();
@@ -153,10 +152,10 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
             </div>
             <div>
                 {similarityResult !== null && (
-                    <div id="similarity" style={{ color: 'plum' }}>
+                    <div id="similarity" style={{ color: 'yellowgreen' }}>
                         <p>Similarity: {similarityResult.toFixed(2)}</p>
                         {isSkillActive && remainingTime > 0 && (
-                            <p>깜찍~(ゝω´･)b⌒☆ (Heal Skill 발동!!)</p>)}
+                            <p>하트~⎝⎛♥‿♥⎞⎠ (Shield Skill 발동!!)</p>)}
                     </div>
                 )}
             </div>

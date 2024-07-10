@@ -13,14 +13,14 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
     const timerRef = useRef(null);
     const [landmarkCoordinates, setLandmarkCoordinates] = useState({});
 
-    // 상대 좌표 (두손을 양볼에 갖다대는 포즈)
+    // 상대 좌표 (흑염룡 포즈)
     const targetPose = useRef({
-        leftElbow: { x: 0.60, y: 0.46 },
-        rightElbow: { x: -0.60, y: 0.20 },
-        leftWrist: { x: 0.11, y: -0.20 },
-        rightWrist: { x: 0.06, y: -0.31 },
-        leftIndex: { x: -0.09, y: -0.37 },
-        rightIndex: { x: 0.23, y: -0.49 },
+        leftElbow: { x: -0.04, y: 1.26 },
+        rightElbow: { x: -0.04, y: 0.93 },
+        leftWrist: { x: -0.78, y: 1.00 },
+        rightWrist: { x: 0.48, y: -0.04 },
+        leftIndex: { x: -0.93, y: 0.81 },
+        rightIndex: { x: 0.59, y: -0.37 },
     });
 
     const startTimer = useCallback(() => {
@@ -77,14 +77,14 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
 
     const processFrame = useCallback(() => {
         if (!canvasRef.current || !poseLandmarks) return;
-    
+
         const canvasCtx = canvasRef.current.getContext('2d');
         const canvasWidth = canvasRef.current.width;
         const canvasHeight = canvasRef.current.height;
-    
+
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-    
+
         // 배경 이미지 그리기
         if (backgroundImage) {
             canvasCtx.drawImage(backgroundImage, 0, 0, canvasWidth, canvasHeight);
@@ -92,49 +92,49 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
             canvasCtx.fillStyle = 'black';
             canvasCtx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
-    
+
         // 비디오 요소 그리기
         if (videoElement) {
             canvasCtx.drawImage(videoElement, 0, 0, canvasWidth, canvasHeight);
         }
-    
+
         // 스킬이 활성화되어 있고 시간이 남아있을 때 이미지 그리기
-        if (isSkillActive && remainingTime > 0 && image && poseLandmarks.nose) {
-            const imgWidth = 144; 
-            const imgHeight = 81; 
-            const x = poseLandmarks.nose.x * canvasWidth - 80;
-            const y = (poseLandmarks.nose.y * canvasHeight - imgHeight) - 80;
+        if (isSkillActive && remainingTime > 0 && image) {
+            const imgWidth = 45; 
+            const imgHeight = 61; 
+            const x = poseLandmarks.rightEye.x * canvasWidth - 60;
+            const y = (poseLandmarks.rightEye.y * canvasHeight - imgHeight) + 60;
             canvasCtx.drawImage(image, x, y, imgWidth, imgHeight);
         }
-    
+
         canvasCtx.restore();
-    
+
         animationFrameRef.current = requestAnimationFrame(processFrame);
     }, [poseLandmarks, isSkillActive, remainingTime, image, backgroundImage, videoElement]);
 
     useEffect(() => {
         if (poseLandmarks) {
-          const detectedPose = {
-            nose: poseLandmarks.nose,
-            leftShoulder: poseLandmarks.leftShoulder,
-            rightShoulder: poseLandmarks.rightShoulder,
-            leftElbow: poseLandmarks.leftElbow,
-            rightElbow: poseLandmarks.rightElbow,
-            leftWrist: poseLandmarks.leftWrist,
-            rightWrist: poseLandmarks.rightWrist,
-            leftIndex: poseLandmarks.leftIndex,
-            rightIndex: poseLandmarks.rightIndex
-          };
-      
-          // 모든 필요한 랜드마크가 존재하는지 확인
-          if (Object.values(detectedPose).every(landmark => landmark)) {
-            const poseSimilarity = calculatePoseSimilarity(detectedPose, targetPose.current);
-            setSimilarityResult(poseSimilarity);
-            setIsSkillActive(poseSimilarity >= similarityThreshold);
-            setLandmarkCoordinates(detectedPose);  // 랜드마크 좌표 저장
-          }
+            const detectedPose = {
+                rightEye: poseLandmarks.rightEye,
+                leftShoulder: poseLandmarks.leftShoulder,
+                rightShoulder: poseLandmarks.rightShoulder,
+                leftElbow: poseLandmarks.leftElbow,
+                rightElbow: poseLandmarks.rightElbow,
+                leftWrist: poseLandmarks.leftWrist,
+                rightWrist: poseLandmarks.rightWrist,
+                leftIndex: poseLandmarks.leftIndex,
+                rightIndex: poseLandmarks.rightIndex
+            };
+        
+            // 모든 필요한 랜드마크가 존재하는지 확인
+            if (Object.values(detectedPose).every(landmark => landmark)) {
+                const poseSimilarity = calculatePoseSimilarity(detectedPose, targetPose.current);
+                setSimilarityResult(poseSimilarity);
+                setIsSkillActive(poseSimilarity >= similarityThreshold);
+                setLandmarkCoordinates(detectedPose);  // 랜드마크 좌표 저장
+            }
         }
-      }, [poseLandmarks, targetPose]);
+    }, [poseLandmarks, targetPose]);
 
     useEffect(() => {
         processFrame();
@@ -153,10 +153,10 @@ export default function HealSkill({ videoElement, image, backgroundImage, onSkil
             </div>
             <div>
                 {similarityResult !== null && (
-                    <div id="similarity" style={{ color: 'plum' }}>
+                    <div id="similarity" style={{ color: 'gray' }}>
                         <p>Similarity: {similarityResult.toFixed(2)}</p>
                         {isSkillActive && remainingTime > 0 && (
-                            <p>깜찍~(ゝω´･)b⌒☆ (Heal Skill 발동!!)</p>)}
+                            <p>시시해서 죽고 싶어졌다..(ʘ言ʘ╬) (Attack Skill 발동!!)</p>)}
                     </div>
                 )}
             </div>
