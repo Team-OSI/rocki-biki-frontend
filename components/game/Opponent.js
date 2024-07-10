@@ -1,38 +1,50 @@
 'use client';
 
-import React, { forwardRef, useRef, useEffect, useImperativeHandle } from 'react'
+import { forwardRef, useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react'
 import { useFrame} from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
+import useGameStore from '../../store/gameStore';
+
+
+
 
 // Opponent 전용 Head 컴포넌트
-const OpponentHead = forwardRef(({ position, rotation, scale, name }, ref) => {
+const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) => {
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/opponent-head.glb')
     const opacity = 0.9
     useImperativeHandle(
       ref,
       () => ({
+        getWorldPosition: (target) => {
+          if (localRef.current) {
+            return localRef.current.getWorldPosition(target || new THREE.Vector3())
+          }
+          return new THREE.Vector3()
+        },
         position: localRef.current?.position,
         rotation: localRef.current?.rotation,
       }),
       [localRef], 
     )
-     useEffect(() => {
-       Object.values(materials).forEach((material) => {
-         material.transparent = true
-         material.opacity = opacity
-       })
-     }, [materials, opacity])
   
-    useFrame(() => {
-      if (localRef.current && position) {
+    useEffect(() => {
+      if (localRef.current) {
         localRef.current.position.set((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -(position.z+0.01) * 15)
         if (rotation) {
           localRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
         }
       }
-    })
+    }, [position, rotation])
+
+    useEffect(() => {
+      Object.values(materials).forEach((material) => {
+        material.transparent = true
+        material.opacity = opacity
+        material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
+      })
+    }, [materials, hit])
     return <primitive ref={localRef} object={scene} scale={scale} name={name} />
   })
   
@@ -66,26 +78,89 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
 
 OpponentHand.displayName = "OpponentHand";
 
-export function Opponent({ position, opponentData }) {
+export function Opponent({ position, landmarks, opponentData, socket }) {
   const groupRef = useRef(null)
   const headRef = useRef(null)
+  const [hit, setHit] = useState(false)
+  const lastHitTime = useRef(0)
+  const decreaseOpponentHealth = useGameStore((state) => state.decreaseOpponentHealth)
+  const count_optm = useRef(0)
+  const roomId = useRef('')
+  const hitSoundRef = useRef(null);
 
-  // const calculateRotations = (data) => {
-  //   if (!data) return {head:0, leftHand:0, rightHand:0}
-  //   return {
-  //     head: data?.leftEye && data?.rightEye
-  //       ? calculateHeadRotation(data.leftEye, data.rightEye)
-  //       : 0,
-  //     leftHand: data?.leftHand?.wrist && data?.leftHand?.indexBase && data?.leftHand?.pinkyBase
-  //       ? calculateHandRotation(data.leftHand.wrist, data.leftHand.indexBase, data.leftHand.pinkyBase)
-  //       : 0,
-  //     rightHand: data?.rightHand?.wrist && data?.rightHand?.indexBase && data?.rightHand?.pinkyBase
-  //       ? calculateHandRotation(data.rightHand.wrist, data.rightHand.indexBase, data.rightHand.pinkyBase)
-  //       : 0
-  //   }
-  // }
-  
-  // const rotations = calculateRotations(opponentData)
+  useEffect(() => {
+    hitSoundRef.current = new Audio('./sounds/hit.MP3');
+  }, []);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    roomId.current = searchParams.get('roomId');
+  }, [roomId]);
+
+  const playHitSound = useCallback(() => {
+    if (hitSoundRef.current) {
+      hitSoundRef.current.play();
+    }
+  }, []);
+
+  const checkHit = useCallback(() => {
+    if(!headRef.current || !landmarks.leftHand || !landmarks.rightHand) return
+
+    const headPosition = new THREE.Vector3()
+    headRef.current.getWorldPosition(headPosition)
+
+    const hands = [landmarks.leftHand, landmarks.rightHand]
+    const currentTime = performance.now()
+
+    hands.forEach((hand, index) => {
+      // console.log(hand[2])
+      if(hand[2] !== 0) return // 주먹상태인지 확인
+
+      const handPosition = new THREE.Vector3(
+        (hand[0][0] - 0.5) * 4,
+        -(hand[0][1] - 0.5) * 4,
+        -(hand[0][2] * 30)
+      )
+      // Opponent의 회전을 적용합니다 (y축 주위로 180도 회전).
+      // handPosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+      // Player의 위치 오프셋을 적용합니다.
+      const distanceAdjustment = new THREE.Vector3(0, 0, -2.5); // 1 - (-5) = 6
+      handPosition.add(distanceAdjustment);
+
+      const distance = headPosition.distanceTo(handPosition)
+
+      if (distance < 1.3 && currentTime - lastHitTime.current > 1000) {
+        const velocity = hand[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
+        const damage = Math.floor(velocity * 10)
+
+        setHit(true)
+        decreaseOpponentHealth(damage)
+        
+        // 데미지 정보를 서버로 전송
+        if(socket){
+          // console.log('Emitting damage:', { roomId: roomId.current, amount: damage });
+          socket.emit('damage', { roomId: roomId.current, amount: damage });
+        } else {
+          // console.log('Socket not available');
+        }
+
+        playHitSound()
+        lastHitTime.current = currentTime
+        setTimeout(() => setHit(false), 200)
+        // console.log('===velocity:', velocity, 'damage:',damage, )
+      }
+      // console.log('distance:', distance)
+    })
+  }, [landmarks, decreaseOpponentHealth, playHitSound])
+
+  useFrame(() => {
+    if(count_optm.current % 10 === 0) {
+      checkHit()
+    }
+    if (count_optm.current > 1000000) count_optm.current = 0;
+    count_optm.current++;
+      // console.log('myhead',landmarks?.current?.head?.[0])
+  })
 
   return (
     <group ref={groupRef} position={position} rotation={[0, Math.PI, 0]}>
@@ -96,6 +171,7 @@ export function Opponent({ position, opponentData }) {
           rotation={[0, -opponentData.head[1][1] * (Math.PI / 180), -opponentData.head[1][2] * (Math.PI / 180)]}
           scale={0.25}
           name='opponentHead'
+          hit={hit}
         />)}
         {opponentData.rightHand && (
           <OpponentHand

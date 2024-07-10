@@ -168,17 +168,16 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         const landmarks = getLandmarks();
         if (landmarks) {
           const message = {
-            type: 'pose',
-            timestamp: new Date().toISOString(),
+            // type: 'pose',
             pose: landmarks
           };
           dataChannel.current.send(JSON.stringify(message));
         }
       }
-    }, 1000 / 20);
+    }, 1000 / 30);
   };
 
-  return { socket, localStream, peerConnection, connectionState };
+  return {socket, connectionState} ;
 };
 
 export default useWebRTCConnection;

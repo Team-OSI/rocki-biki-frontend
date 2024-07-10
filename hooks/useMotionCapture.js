@@ -132,7 +132,7 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
         }
         // 유효성 설정
         const maxHeadMovement = 0.8 ; // 최대허용 머리 이동거리
-        const maxHandMovement = 1.9; // 최대허용 손 이동거리
+        const maxHandMovement = 2.9; // 최대허용 손 이동거리
 
         // 내보낼 landmarks 값
         const newLandmarks = {
@@ -211,7 +211,7 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
         const poseResult = detectors.poseLandmarker.detectForVideo(localVideoRef.current, timestamp);
         
         processLandmarks(faceResult, handResult, poseResult);
-    }, [processLandmarks, localVideoRef, detectors]);
+    }, [detectors]);
 
     useEffect(() => {
         if (!detectors || !localVideoRef.current) return;
@@ -219,8 +219,8 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
         const initCamera = async () => {
                 cameraRef.current = new Camera(localVideoRef.current, {
                     onFrame: detectFrame,
-                    width: 320,
-                    height: 240,
+                    width: 448,//640
+                    height: 336, //480
                     frameRate: 30
                 });
                 await cameraRef.current.start();
@@ -229,7 +229,6 @@ export function useMotionCapture(localVideoRef, setLandmarks, setPoseLandmarks) 
         initCamera();
 
         return () => {
-            // isMounted = false;
             if (cameraRef.current) {
                 cameraRef.current.stop();
                 cameraRef.current = null;
