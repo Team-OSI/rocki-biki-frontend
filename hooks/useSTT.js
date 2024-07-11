@@ -26,7 +26,7 @@ const useSTT = (onResult, onError) => {
 
         recognition.current.onresult = (event) => {
             let interimTranscript = '';
-            let newFinalTranscript = finalTranscript;
+            let newFinalTranscript = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 const transcript = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
@@ -40,6 +40,10 @@ const useSTT = (onResult, onError) => {
         };
 
         recognition.current.onerror = (event) => {
+            console.error('Speech recognition error:', event);
+            if (event.error === 'no-speech' || event.error === 'aborted') {
+                startRecognition(); // 재시도
+            }
             if (onError) {
                 onError(event);
             }
@@ -48,23 +52,32 @@ const useSTT = (onResult, onError) => {
         return () => {
             if (recognition.current) {
                 recognition.current.stop();
+                setIsRecognizing(false);
             }
         };
-    }, [finalTranscript, onResult, onError]);
+    }, [onResult, onError]);
 
     const startRecognition = () => {
         if (recognition.current && !isRecognizing) {
-            console.log("Starting recognition");
             setFinalTranscript('');
+            setIsRecognizing(true);
             recognition.current.start();
         }
     };
 
     const stopRecognition = () => {
-        if (recognition.current && isRecognizing) {
-            recognition.current.stop();
-        }
+        recognition.current.stop();
+        setIsRecognizing(false);
     };
+
+    // const stopRecognition = () => {
+    //     console.log(2);
+    //     if (recognition.current && isRecognizing) {
+    //         console.log(3);
+    //         recognition.current.stop();
+    //         setIsRecognizing(false);
+    //     }
+    // };
 
     return {
         isRecognizing,
