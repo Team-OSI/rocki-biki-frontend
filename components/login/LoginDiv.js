@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import SignupModal from '@/components/login/SignUpModal';
 import { login } from '@/api/user/api'; // 로그인 API 호출을 위한 함수 임포트
+import SignupModal from '@/components/login/SignUpModal';
 
 export default function LoginDiv({ onClose, onLogin }) {
   const [showSignupModal, setShowSignupModal] = useState(false);
@@ -83,7 +83,7 @@ export default function LoginDiv({ onClose, onLogin }) {
           Sign Up
         </button>
       </div>
-      {showSignupModal && <SignupModal onClose={() => setShowSignupModal(false)} onSuccess={handleSignUpSuccess} />}
+      { showSignupModal && < SignupModal onClose={() => setShowSignupModal(false)} onSuccess={handleSignUpSuccess} />}
     </div>
   );
 }
