@@ -7,7 +7,7 @@ import Cookies from 'js-cookie';
 // });
 
 const api = axios.create({
-  baseURL: '//rocki-biki.com:8080',
+  baseURL: process.env.NEXT_PUBLIC_SPRING_SERVER,
   headers: {
     'Content-Type' : 'application/json'
   },

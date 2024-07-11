@@ -5,20 +5,19 @@ import { useRouter } from 'next/navigation';
 import Room from '@/components/lobby/Room';
 import RoomButton from '@/components/lobby/RoomButton';
 import RoomModal from '@/components/lobby/RoomModal';
-import useSocket from '../../hooks/useSocket';
 import useSocketStore from '@/store/socketStore';
+import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 
 export default function Lobby() {
   const router = useRouter();
-  // const { rooms, addRoom, joinRoom } = useSocket('http://localhost:7777');
-  // const { rooms, addRoom, joinRoom } = useSocket('//rocki-biki.com:4000');
   const { initSocket, closeSocket, rooms, addRoom, joinRoom } = useSocketStore();
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
 
+
   useEffect(() => {
-    initSocket('//rocki-biki.com:4000');
+    initSocket(process.env.NEXT_PUBLIC_NODE_SERVER);
     return () => closeSocket;
   },[initSocket, closeSocket]);
 
