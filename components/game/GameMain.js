@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import { GameCanvas } from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
 import { useMotionCapture } from '@/hooks/useMotionCapture';
@@ -23,11 +23,11 @@ export default function GameMain() {
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
-    useEffect(() => {
-        landmarksRef.current = landmarks.landmarks;
-    }, [landmarks]);
-    
-    useMotionCapture(localVideoRef, setLandmarks);
+    const handleLandmarksUpdate = useCallback((newLandmarks) => {
+        setLandmarks(newLandmarks);
+    }, []);
+
+    useMotionCapture(localVideoRef, handleLandmarksUpdate);
 
     // WebRTC 연결 설정
     const {socket, connectionState} = useWebRTCConnection(
