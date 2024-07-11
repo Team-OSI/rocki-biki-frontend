@@ -21,7 +21,7 @@ export default function LoginDiv({ onClose, onLogin }) {
   };
 
   const handleOAuthLogin = (provider) => {
-    window.location.href = `http://172.30.1.16:8080/oauth2/authorization/${provider}?redirect_uri=http://localhost:3000&mode=login`;
+    window.location.href = `${process.env.NEXT_PUBLIC_SPRING_SERVER}/oauth2/authorization/${provider}?redirect_uri=${process.env.NEXT_PUBLIC_NEXT}`;
   };
 
   const handleSignUpSuccess = () => {
