@@ -1,34 +1,67 @@
 'use client';
 
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Stats, PerspectiveCamera, Environment } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Stats, PerspectiveCamera, Environment, Sky, useTexture } from '@react-three/drei';
 import { Player } from './Player';
 import { Opponent } from './Opponent';
-import { useEffect } from 'react';
+import {useEffect, useState} from 'react';
 import useGameStore from '@/store/gameStore';
 import StateBar from './StateBar';
+import useSocketStore from "@/store/socketStore";
 
+const skillBackgrounds = {
+  default: '/images/default_background.jpg',
+  attack: '/images/attack_background.png',
+  heal: '/images/heal_background.jpg',
+  shield: '/images/shield_background.jpg',
+};
+
+function BackGround( { texturePath }) {
+  const texture = useTexture(texturePath);
+  const { scene } = useThree();
+
+  useEffect(() => {
+    scene.background = texture;
+    return () => {
+      scene.background = null;
+    };
+  }, [scene, texture]);
+
+  return null;
+}
 
 function Scene({receivedPoseData, landmarks, socket}) {
   const decreasePlayerHealth = useGameStore(state => state.decreasePlayerHealth)
-  useFrame((state, delta) => {
+  const [background, setBackground] = useState(skillBackgrounds.default);
+  const opponentSkill = useSocketStore(state => state.opponentSkill)
 
-  });
+  useEffect(() => {
+    if (opponentSkill) {
+      setBackground(skillBackgrounds[opponentSkill.skillType] || skillBackgrounds.default);
+    }
+  }, [opponentSkill]);
 
   useEffect(() => {
     if (socket) {
-      // console.log('Socket connected:', socket.connected)
-      socket.on('connect', () => console.log('Socket connected'))
-      socket.on('disconnet', () => console.log('Socket disconnected'))
-      socket.on('damage', (data) => {
-        // console.log('Damage received:', data)
+      const handleDamage = (data) => {
         decreasePlayerHealth(data.amount);
-      });
-  
+      };
+
+      const handleOpponentSkillUsed = ({ skillType }) => {
+        console.log('Opponent used skill:', skillType);
+      };
+
+      console.log('Socket connected:', socket.connected)
+      socket.on('connect', () => console.log('Socket connected'))
+      socket.on('disconnect', () => console.log('Socket disconnected'))
+      socket.on('damage', handleDamage);
+      socket.on('opponentSkillUsed', handleOpponentSkillUsed);
+
       return () => {
         socket.off('damage');
         socket.off('connect');
         socket.off('disconnect');
+        socket.off('opponentSkillUsed');
       };
     }
   }, [socket, decreasePlayerHealth]);
@@ -39,7 +72,8 @@ function Scene({receivedPoseData, landmarks, socket}) {
       <pointLight position={[10, 10, 10]} intensity={1} />
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
       <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} socket={socket}/>
-      <Environment preset='sunset' background />
+      {/*<Environment preset='sunset' background />*/}
+      <BackGround texturePath={background} />
     </>
   );
 }

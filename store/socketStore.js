@@ -4,6 +4,7 @@ import io from 'socket.io-client';
 const useSocketStore = create((set, get) => ({
     socket: null,
     rooms: [],
+    opponentSkill: null,
 
     initSocket: (url, userId) => {
         const newSocket = io(url);
@@ -16,6 +17,12 @@ const useSocketStore = create((set, get) => ({
             console.log('ROOMS_UPDATE received', rooms);
             set({ rooms });
         })
+
+        newSocket.on('opponentSkillUsed', ({ skillType }) => {
+            set({ opponentSkill: { skillType } });
+            console.log("받은 데이터: ", skillType)
+            setTimeout(() => set({ opponentSkill: null }), 5000);
+        });
         set({ socket: newSocket});
 
     },
@@ -64,6 +71,13 @@ const useSocketStore = create((set, get) => ({
             socket.emit('candidate', { candidate, roomId });
         }
     },
+
+    useSkill: () => (skillType, roomId) => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('useSkill', { roomId, skillType, timeStamp: Date.now() });
+        }
+    }
 }));
 
 export default useSocketStore;
