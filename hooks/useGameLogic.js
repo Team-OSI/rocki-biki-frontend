@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import io from 'socket.io-client';
+import useSocket from "@/hooks/useSocket";
+import socketStore from "@/store/socketStore";
 
 const useGameLogic = () => {
-  const { roomId } = useParams();
-  const [socket, setSocket] = useState(null);
+  const [roomId, setRoomId] = useState(null);
+  const socket = socketStore(state => state.socket);
+  const useSkill = socketStore(state => state.useSkill);
   const [gameState, setGameState] = useState({
     players: {},
     round: 0,
@@ -13,12 +16,9 @@ const useGameLogic = () => {
   });
   const [localPlayer, setLocalPlayer] = useState(null);
 
-  // 소켓 연결 설정
   useEffect(() => {
-    const newSocket = io('http://localhost:3001'); // 서버 URL을 적절히 변경하세요
-    setSocket(newSocket);
-
-    return () => newSocket.close();
+    const searchParams = new URLSearchParams(window.location.search);
+    setRoomId(searchParams.get('roomId'));
   }, []);
 
   // 소켓 이벤트 리스너 설정
@@ -97,11 +97,17 @@ const useGameLogic = () => {
     }
   }, [socket, roomId, localPlayer]);
 
+  const skillUseFunction = useSkill();
+  const handleUseSkill = useCallback((skillType) => {
+    skillUseFunction(skillType, roomId);
+  }, [skillUseFunction, roomId]);
+
   return {
     gameState,
     localPlayer,
     performAction,
     setReady,
+    handleUseSkill,
   };
 };
 

@@ -6,8 +6,7 @@ const SKILL_DURATION = 5;           // 스킬 지속 시간
 
 export default function SkillCanvas({ 
     videoElement, 
-    image, 
-    backgroundImage, 
+    image,
     onSkillComplete, 
     poseLandmarks, 
     skillConfig,
@@ -86,13 +85,6 @@ export default function SkillCanvas({
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, width, height);
 
-        if (backgroundImage) {
-            canvasCtx.drawImage(backgroundImage, 0, 0, width, height);
-        } else {
-            canvasCtx.fillStyle = 'black';
-            canvasCtx.fillRect(0, 0, width, height);
-        }
-
         if (videoElement) {
             canvasCtx.drawImage(videoElement, 0, 0, width, height);
         }
@@ -105,7 +97,7 @@ export default function SkillCanvas({
         canvasCtx.restore();
 
         animationFrameRef.current = requestAnimationFrame(processFrame);
-    }, [videoElement, backgroundImage, isSkillActive, remainingTime, image, poseLandmarks, skillConfig, width, height]);
+    }, [videoElement, isSkillActive, remainingTime, image, poseLandmarks, skillConfig, width, height]);
 
     // 포즈 랜드마크 처리 및 유사도 계산
     useEffect(() => {

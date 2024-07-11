@@ -7,9 +7,11 @@ import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
+import useGameLogic from "@/hooks/useGameLogic";
 
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
+    const { handleUseSkill } = useGameLogic();
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -168,6 +170,7 @@ export default function GameMain() {
                                 poseLandmarks={landmarks.poseLandmarks}
                                 landmarks={landmarks.landmarks}
                                 canvasSize={canvasSize}
+                                onUseSkill={handleUseSkill}
                             />
                         </div>
                     </>
