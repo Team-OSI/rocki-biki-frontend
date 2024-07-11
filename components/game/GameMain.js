@@ -8,6 +8,7 @@ import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
 
+
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
 
@@ -25,12 +26,17 @@ export default function GameMain() {
 
     const handleLandmarksUpdate = useCallback((newLandmarks) => {
         setLandmarks(newLandmarks);
+        console.log(newLandmarks.landmarks);
     }, []);
+
+    useEffect(()=> {
+        landmarksRef.current = landmarks
+    },[landmarks])
 
     useMotionCapture(localVideoRef, handleLandmarksUpdate);
 
     // WebRTC 연결 설정
-    const {socket, connectionState} = useWebRTCConnection(
+    const connectionState = useWebRTCConnection(
         roomId,
         localVideoRef,
         remoteVideoRef,
@@ -40,9 +46,9 @@ export default function GameMain() {
                 setReceivedPoseData(receivedData.pose);
             }
         },
-        () => landmarksRef.current
+        () => landmarksRef.current.landmarks
     );
-
+    
     const handleReady = () => {
         setIsGameStarted(true);
     };
