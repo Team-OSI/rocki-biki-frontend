@@ -1,7 +1,13 @@
 import { Inter } from "next/font/google";
+import { Do_Hyeon } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
+const dohyun = Do_Hyeon({
+  weight: ['400'],
+  subsets: ['latin'],
+  display: 'swap',
+})
 
 export const metadata = {
   title: "Create Next App",
@@ -11,7 +17,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={dohyun.className}>{children}</body>
     </html>
   );
 }

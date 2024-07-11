@@ -1,7 +1,7 @@
-import { GameCanvas } from "@/components/game/GameCanvas"
+import GameMain from "@/components/game/GameMain"
 
 export default function Game() {
     return (
-            <GameCanvas />
+            <GameMain />
     )
 }
