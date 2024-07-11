@@ -2,10 +2,6 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 // 기본 URL 설정
-// const api = axios.create({
-//   baseURL: '//rocki-biki.com:8080',
-// });
-
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_SPRING_SERVER,
   headers: {
@@ -13,6 +9,14 @@ const api = axios.create({
   },
   withCredentials: true,
 });
+
+// const api = axios.create({
+//   baseURL: 'http://localhost:8080',
+//   headers: {
+//     'Content-Type' : 'application/json'
+//   },
+//   withCredentials: true,
+// });
 
 api.interceptors.request.use(
   (config) => {

@@ -11,7 +11,8 @@ export default function App() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = Cookies.get('accessToken');
+    const token = Cookies.get('JWT_Token');
+    console.log(token);
     if (token) {
       setLogin(true);
     }
