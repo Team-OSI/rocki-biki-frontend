@@ -93,10 +93,14 @@ export default function GameMain() {
         const updateCanvasSize = () => {
             if (canvasRef.current) {
                 const { width, height } = canvasRef.current.getBoundingClientRect();
-                setCanvasSize({ width, height });
+                setCanvasSize(prevSize => {
+                    if (prevSize.width !== width || prevSize.height !== height) {
+                        return { width, height };
+                    }
+                    return prevSize;
+                });
             }
         };
-
         updateCanvasSize();
         window.addEventListener('resize', updateCanvasSize);
 
