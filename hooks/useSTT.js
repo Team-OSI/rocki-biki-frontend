@@ -42,7 +42,7 @@ const useSTT = (onResult, onError) => {
         recognition.current.onerror = (event) => {
             console.error('Speech recognition error:', event);
             if (event.error === 'no-speech' || event.error === 'aborted') {
-                startRecognition(); // 재시도
+                startRecognition(); 
             }
             if (onError) {
                 onError(event);
@@ -71,9 +71,7 @@ const useSTT = (onResult, onError) => {
     };
 
     // const stopRecognition = () => {
-    //     console.log(2);
     //     if (recognition.current && isRecognizing) {
-    //         console.log(3);
     //         recognition.current.stop();
     //         setIsRecognizing(false);
     //     }

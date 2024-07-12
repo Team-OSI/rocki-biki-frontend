@@ -7,6 +7,7 @@ import RoomButton from '@/components/lobby/RoomButton';
 import RoomModal from '@/components/lobby/RoomModal';
 import useSocketStore from '@/store/socketStore';
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
+import Cookies from 'js-cookie';
 
 export default function Lobby() {
   const router = useRouter();
@@ -15,6 +16,11 @@ export default function Lobby() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
 
+
+  useEffect(() => {
+    const token = Cookies.get('JWT_TOKEN');
+    console.log(token);
+  },[]);
 
   useEffect(() => {
     initSocket(process.env.NEXT_PUBLIC_NODE_SERVER);
