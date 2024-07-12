@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {throttle} from 'lodash';
 
 export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const canvasRef = useRef(null);
@@ -60,43 +61,54 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
           clearInterval(timerRef.current);
           timerRef.current = null;
           setIsReadyPose(true);
-          onReady();
           return 0;
         }
         return prevTime - 1;
       });
     }, 1000);
-  }, [onReady]);
+  }, []);
 
-  const checkReadyPose = useCallback(() => {
-    if (landmarks && canvasRef.current) {
-      const requiredLandmarks = extractRequiredLandmarks(landmarks);
-      const similarity = calculatePoseSimilarity(requiredLandmarks, targetPose.current);
-      setSimilarityResult(similarity);
-  
-      if (similarity >= similarityThreshold) {
-        if (!timerRef.current) {
-          startTimer(); // 타이머가 실행 중이 아닐 때만 시작
-        }
-      } else {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-          setRemainingTime(5);
+  useEffect(() => {
+    if (isReadyPose) {
+      // 상태 업데이트를 다음 틱으로 지연
+      setTimeout(() => {
+        onReady();
+      }, 0);
+    }
+  }, [isReadyPose, onReady]);
+
+  const checkReadyPose = useCallback(
+    throttle(() => {
+      if (landmarks && canvasRef.current) {
+        const requiredLandmarks = extractRequiredLandmarks(landmarks);
+        const similarity = calculatePoseSimilarity(requiredLandmarks, targetPose.current);
+        setSimilarityResult(similarity);
+
+        if (similarity >= similarityThreshold) {
+          if (!timerRef.current) {
+            startTimer(); // 타이머가 실행 중이 아닐 때만 시작
+          }
+        } else {
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+            setRemainingTime(5);
+          }
         }
       }
-    }
-  }, [landmarks, calculatePoseSimilarity, similarityThreshold, extractRequiredLandmarks, startTimer]);
+    }, 500),
+    [landmarks, calculatePoseSimilarity, similarityThreshold, extractRequiredLandmarks, startTimer]
+  );
+
+  useEffect(() => {
+    checkReadyPose();
+  }, [landmarks, checkReadyPose]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     canvas.width = canvasSize.width;
     canvas.height = canvasSize.height;
   }, [canvasSize]);
-
-  useEffect(() => {
-    checkReadyPose();
-  }, [landmarks, checkReadyPose]);
 
   const [headerText, setHeaderText] = useState("점선에 어깨와 머리를 맞춰주세요");
   const [headerColor, setHeaderColor] = useState('white');

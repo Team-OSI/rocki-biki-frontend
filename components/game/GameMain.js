@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import { GameCanvas } from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
 import { useMotionCapture } from '@/hooks/useMotionCapture';
@@ -25,29 +25,42 @@ export default function GameMain() {
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
+    useEffect(() => {
+        landmarksRef.current = landmarks;
+    }, [landmarks]);
+
     const handleLandmarksUpdate = useCallback((newLandmarks) => {
-        setLandmarks(newLandmarks);
+        setLandmarks(prevLandmarks => {
+            if (JSON.stringify(prevLandmarks) !== JSON.stringify(newLandmarks)) {
+                return newLandmarks;
+            }
+            return prevLandmarks;
+        });
     }, []);
 
     useMotionCapture(localVideoRef, handleLandmarksUpdate);
 
     // WebRTC 연결 설정
-    const {socket, connectionState} = useWebRTCConnection(
+    const { connectionState} = useWebRTCConnection(
         roomId,
         localVideoRef,
         remoteVideoRef,
-        (receivedData) => {
-            // console.log('Received data:', receivedData);
+        useCallback((receivedData) => {
             if (receivedData.type === 'pose') {
-                setReceivedPoseData(receivedData.pose);
+                setReceivedPoseData(prevData => {
+                    if (JSON.stringify(prevData) !== JSON.stringify(receivedData.pose)) {
+                        return receivedData.pose;
+                    }
+                    return prevData;
+                });
             }
-        },
-        () => landmarksRef.current
+        }, []),
+        useCallback(() => landmarksRef.current, [])
     );
 
-    const handleReady = () => {
+    const handleReady = useCallback(() => {
         setIsGameStarted(true);
-    };
+    }, []);
 
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
@@ -88,8 +101,13 @@ export default function GameMain() {
     useEffect(() => {
         const updateCanvasSize = () => {
             if (canvasRef.current) {
-              const { width, height } = canvasRef.current.getBoundingClientRect();
-              setCanvasSize({ width, height });
+                const { width, height } = canvasRef.current.getBoundingClientRect();
+                setCanvasSize(prevSize => {
+                    if (prevSize.width !== width || prevSize.height !== height) {
+                        return { width, height };
+                    }
+                    return prevSize;
+                });
             }
         };
 
@@ -98,6 +116,39 @@ export default function GameMain() {
 
         return () => window.removeEventListener('resize', updateCanvasSize);
     }, []);
+
+    const memoizedPoseLandmarks = useMemo(() => landmarks.poseLandmarks, [landmarks.poseLandmarks]);
+    const memoizedLandmarks = useMemo(() => landmarks.landmarks, [landmarks.landmarks]);
+
+    const gameContent = useMemo(() => (
+        isGameStarted ? (
+            <>
+                <div className="absolute inset-0 z-10">
+                    <GameCanvas
+                        receivedPoseData={receivedPoseData}
+                        landmarks={memoizedLandmarks}
+                    />
+                </div>
+                <div className="absolute inset-0 z-40 pointer-events-none">
+                    <SkillSelect
+                        localVideoRef={localVideoRef}
+                        poseLandmarks={memoizedPoseLandmarks}
+                        landmarks={memoizedLandmarks}
+                        canvasSize={canvasSize}
+                        onUseSkill={handleUseSkill}
+                    />
+                </div>
+            </>
+        ) : (
+            <div className="absolute inset-0 z-40">
+                <ReadyCanvas
+                    onReady={handleReady}
+                    landmarks={memoizedPoseLandmarks}
+                    canvasSize={canvasSize}
+                />
+            </div>
+        )
+    ), [isGameStarted, receivedPoseData, landmarks, canvasSize, handleUseSkill, handleReady, memoizedPoseLandmarks, memoizedLandmarks]);
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
@@ -113,9 +164,8 @@ export default function GameMain() {
                     <Image
                         src="/images/ready_pose.webp"
                         alt="Ready Pose"
-                        layout="fill"
-                        objectFit="cover"
-                        style={overlayStyle}
+                        fill
+                        style={{ objectFit: 'cover', ...overlayStyle }}
                     />
                 )}
             </div>
@@ -140,41 +190,14 @@ export default function GameMain() {
                         <Image
                             src="/images/ready_pose.webp"
                             alt="Ready Pose"
-                            layout="fill"
-                            objectFit="cover"
-                            style={overlayStyle}
+                            fill
+                            style={{ objectFit: 'cover', ...overlayStyle }}
                         />
                     )}
                 </>
             </div>
             <div className="absolute inset-0" ref={canvasRef}>
-                {!isGameStarted ? (
-                    <div className="absolute inset-0 z-40">
-                        <ReadyCanvas
-                            onReady={handleReady}
-                            landmarks={landmarks.poseLandmarks}
-                            canvasSize={canvasSize}
-                        />
-                    </div>
-                ) : (
-                    <>
-                        <div className="absolute inset-0 z-10">
-                            <GameCanvas
-                                receivedPoseData={receivedPoseData}
-                                landmarks={landmarks.landmarks}
-                            />
-                        </div>
-                        <div className="absolute inset-0 z-40 pointer-events-none">
-                            <SkillSelect
-                                localVideoRef={localVideoRef}
-                                poseLandmarks={landmarks.poseLandmarks}
-                                landmarks={landmarks.landmarks}
-                                canvasSize={canvasSize}
-                                onUseSkill={handleUseSkill}
-                            />
-                        </div>
-                    </>
-                )}
+                {gameContent}
             </div>
         </div>
     );

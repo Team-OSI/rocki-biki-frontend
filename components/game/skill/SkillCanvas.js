@@ -1,5 +1,6 @@
 "use client"
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import {throttle} from "lodash";
 
 const similarityThreshold = 0.70;   // 포즈 유사도 임계값
 const SKILL_DURATION = 5;           // 스킬 지속 시간
@@ -77,6 +78,12 @@ export default function SkillCanvas({
         return similarities.reduce((sum, similarity) => sum + similarity, 0) / similarities.length;
     };
 
+    // skillConfig의 최신 참조를 유지
+    const skillConfigRef = useRef(skillConfig);
+    useEffect(() => {
+        skillConfigRef.current = skillConfig;
+    }, [skillConfig]);
+
     // 프레임 처리 함수
     const processFrame = useCallback(() => {
         if (!canvasRef.current || !poseLandmarks) return;
@@ -90,47 +97,62 @@ export default function SkillCanvas({
         }
 
         if (isSkillActive && remainingTime > 0 && image) {
-            const position = skillConfig.imagePosition(poseLandmarks, width, height);
-            canvasCtx.drawImage(image, position.x, position.y, skillConfig.imageSize.width, skillConfig.imageSize.height);
+            const position = skillConfigRef.current.imagePosition(poseLandmarks, width, height);
+            canvasCtx.drawImage(image, position.x, position.y, skillConfigRef.current.imageSize.width, skillConfigRef.current.imageSize.height);
         }
-
         canvasCtx.restore();
 
-        animationFrameRef.current = requestAnimationFrame(processFrame);
-    }, [videoElement, isSkillActive, remainingTime, image, poseLandmarks, skillConfig, width, height]);
+        if (isSkillActive && remainingTime > 0) {
+            animationFrameRef.current = requestAnimationFrame(processFrame);
+        }
+    }, [videoElement, isSkillActive, remainingTime, image, poseLandmarks, width, height]);
 
     // 포즈 랜드마크 처리 및 유사도 계산
-    useEffect(() => {
-        if (poseLandmarks) {
-            const detectedPose = {
-                leftShoulder: poseLandmarks.leftShoulder,
-                rightShoulder: poseLandmarks.rightShoulder,
-                leftElbow: poseLandmarks.leftElbow,
-                rightElbow: poseLandmarks.rightElbow,
-                leftWrist: poseLandmarks.leftWrist,
-                rightWrist: poseLandmarks.rightWrist,
-                leftIndex: poseLandmarks.leftIndex,
-                rightIndex: poseLandmarks.rightIndex
-            };
+    const processPose = useCallback(
+        throttle((landmarks) => {
+            if (landmarks) {
+                const detectedPose = {
+                    leftShoulder: landmarks.leftShoulder,
+                    rightShoulder: landmarks.rightShoulder,
+                    leftElbow: landmarks.leftElbow,
+                    rightElbow: landmarks.rightElbow,
+                    leftWrist: landmarks.leftWrist,
+                    rightWrist: landmarks.rightWrist,
+                    leftIndex: landmarks.leftIndex,
+                    rightIndex: landmarks.rightIndex
+                };
 
-            if (Object.values(detectedPose).every(landmark => landmark)) {
-                const poseSimilarity = calculatePoseSimilarity(detectedPose, skillConfig.targetPose);
-                setSimilarityResult(poseSimilarity);
-                setIsSkillActive(poseSimilarity >= similarityThreshold);
-                // setLandmarkCoordinates(detectedPose);
+                if (Object.values(detectedPose).every(landmark => landmark)) {
+                    const poseSimilarity = calculatePoseSimilarity(detectedPose, skillConfig.targetPose);
+                    return () => {
+                        setSimilarityResult(poseSimilarity);
+                        setIsSkillActive(poseSimilarity >= similarityThreshold);
+                    };
+                    // setLandmarkCoordinates(detectedPose);
+                }
             }
-        }
-    }, [poseLandmarks, skillConfig.targetPose]);
+            return null;
+        }, 500), // 500ms마다 최대 한 번 실행
+        [skillConfig.targetPose, calculatePoseSimilarity]
+    );
+
+    // poseLandmarks 상태 업데이트
+    useEffect(() => {
+        const updateState = processPose(poseLandmarks);
+        if (updateState) updateState();
+    }, [poseLandmarks, processPose]);
 
     // 프레임 처리 시작 및 정리
     useEffect(() => {
-        processFrame();
+        if (isSkillActive && remainingTime > 0) {
+            processFrame();
+        }
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [processFrame]);
+    }, [isSkillActive, remainingTime, processFrame]);
 
     return (
         <div className='motion-capture'>

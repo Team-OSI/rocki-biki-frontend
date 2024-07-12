@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import { Camera } from '@mediapipe/camera_utils';
 import { initializeDetectors, processPoseLandmarks } from '@/lib/mediapipe/tasksVision';
 import { isValidMovement, calculateHandRotation, calc_hand_center, determineHandState, calc_head_rotation_2d } from '@/lib/utils/motionUtils';
+import {throttle} from "lodash";
 
 const processLandmarks = (faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks) => {
     const face = faceResult.faceLandmarks?.[0] || [];
@@ -76,33 +77,42 @@ const processLandmarks = (faceResult, handResult, poseResult, prevLandmarks, las
 
 export function useMotionCapture(localVideoRef, onLandmarksUpdate) {
     const [detectors, setDetectors] = useState(null);
-    const cameraRef = useRef(null);
+    // const cameraRef = useRef(null);
     const prevLandmarksRef = useRef(null);
     const lastValidLandmarksRef = useRef(null);
-
     const detectFrameRef = useRef(null);
 
+    const throttledOnLandmarksUpdate = useRef(
+        throttle((landmarks) => {
+            onLandmarksUpdate(landmarks);
+        }, 100) // 100ms마다 최대 한 번 실행
+    ).current;
+
+    const memoizedProcessLandmarks = useCallback(processLandmarks, []);
+
+    const detectFrame = useCallback(async () => {
+        if (!detectors || !localVideoRef.current) return;
+
+        const timestamp = performance.now();
+        const faceResult = detectors.faceLandmarker.detectForVideo(localVideoRef.current, timestamp);
+        const handResult = detectors.handLandmarker.detectForVideo(localVideoRef.current, timestamp);
+        const poseResult = detectors.poseLandmarker.detectForVideo(localVideoRef.current, timestamp);
+
+        const {updatedLandmarks, updatedPoseLandmarks, newPrevLandmarks, newLastValidLandmarks} =
+            memoizedProcessLandmarks(faceResult, handResult, poseResult, prevLandmarksRef.current, lastValidLandmarksRef.current);
+
+        prevLandmarksRef.current = newPrevLandmarks;
+        lastValidLandmarksRef.current = newLastValidLandmarks;
+
+        throttledOnLandmarksUpdate({
+            landmarks: updatedLandmarks,
+            poseLandmarks: updatedPoseLandmarks
+        });
+    }, [detectors, localVideoRef, throttledOnLandmarksUpdate, memoizedProcessLandmarks]);
+
     useEffect(() => {
-        detectFrameRef.current = async () => {
-            if (!detectors || !localVideoRef.current) return;
-
-            const timestamp = performance.now();
-            const faceResult = detectors.faceLandmarker.detectForVideo(localVideoRef.current, timestamp);
-            const handResult = detectors.handLandmarker.detectForVideo(localVideoRef.current, timestamp);
-            const poseResult = detectors.poseLandmarker.detectForVideo(localVideoRef.current, timestamp);
-
-            const {updatedLandmarks, updatedPoseLandmarks, newPrevLandmarks, newLastValidLandmarks} =
-                processLandmarks(faceResult, handResult, poseResult, prevLandmarksRef.current, lastValidLandmarksRef.current);
-
-            prevLandmarksRef.current = newPrevLandmarks;
-            lastValidLandmarksRef.current = newLastValidLandmarks;
-
-            onLandmarksUpdate({
-                landmarks: updatedLandmarks,
-                poseLandmarks: updatedPoseLandmarks
-            });
-        };
-    }, [detectors, localVideoRef, onLandmarksUpdate]);
+        detectFrameRef.current = detectFrame;
+    }, [detectFrame]);
 
     useEffect(() => {
         let isMounted = true;
@@ -128,23 +138,21 @@ export function useMotionCapture(localVideoRef, onLandmarksUpdate) {
     useEffect(() => {
         if (!detectors || !localVideoRef.current) return;
 
-        const initCamera = async () => {
-            cameraRef.current = new Camera(localVideoRef.current, {
-                onFrame: () => detectFrameRef.current(),
-                width: 448,
-                height: 336,
-                frameRate: 20
-            });
-            await cameraRef.current.start();
-        };
+        const camera = new Camera(localVideoRef.current, {
+            onFrame: async () => {
+                if (detectFrameRef.current) {
+                    await detectFrameRef.current();
+                }
+            },
+            width: 448,
+            height: 336,
+            frameRate: 20
+        });
 
-        initCamera();
+        camera.start();
 
         return () => {
-            if (cameraRef.current) {
-                cameraRef.current.stop();
-                cameraRef.current = null;
-            }
+            camera.stop();
         };
     }, [detectors, localVideoRef]);
 
