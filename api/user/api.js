@@ -12,9 +12,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = Cookies.get('accessToken');
+    const token = Cookies.get('JWT_TOKEN');
     if(token) {
-      config.headers.Authorization = `Bearer $(token)`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -45,13 +45,50 @@ export const login = async (email, passWord) => {
   }
 };
 
-// export const registNickname = async (email) => {
-//   try {
-//     const response = await api.post('/api/auth/registNickname', {
-//       email: email,
-//     });
-//     return response.data;
-//   } catch (error) {
-//     throw error.response.data;
-//   }
-// };
+export const setNickname = async (nickname, file) => {
+  try {
+    const formData = new FormData();
+    formData.append('nickname', nickname);
+    formData.append('image', file);
+
+    const response = await axios.post('/api/users/profile/set', formData, {
+      baseURL: process.env.NEXT_PUBLIC_SPRING_SERVER,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      withCredentials: true,
+    });
+
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw error.response.data;
+    } else {
+      throw new Error('Network or server error');
+    }
+  }
+};
+
+export const getNickname = async () => {
+  try {
+    const response = await api.get('/api/users/profile/get', {
+    });
+    console.log(response.data.nickname);
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
+export const updateNickname = async () => {
+  try {
+    const response = await api.post('/api/users/profile/update', {
+      nickname: nickname,
+      // email: email,
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoginDiv from '@/components/login/LoginDiv';
 import Cookies from 'js-cookie';
-
+            
 export default function App() {
   const [login, setLogin] = useState(false);
   const [showLoginDiv, setShowLoginDiv] = useState(false);
@@ -12,7 +12,6 @@ export default function App() {
 
   useEffect(() => {
     const token = Cookies.get('JWT_TOKEN');
-    console.log(token);
     if (token) {
       setLogin(true);
     }
