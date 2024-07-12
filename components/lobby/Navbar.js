@@ -1,11 +1,8 @@
 import Link from 'next/link';
-import { getNickname } from '@/api/user/api';
-// import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 
-
-export default function Navbar({ userNickname }) {
+export default function Navbar({ userNickname, userProfileImage }) {
   const router = useRouter();
 
   const handleLogout = () => {
@@ -25,6 +22,13 @@ export default function Navbar({ userNickname }) {
           Lobby
         </div>
         <div className="flex items-center flex-grow justify-end">
+          {userProfileImage && (
+            <img 
+              src={userProfileImage} 
+              alt={`${userNickname}'s profile`} 
+              className="w-8 h-8 rounded-full mr-2"
+            />
+          )}
           <Link href="/myPage" className="text-gray-300 hover:text-white">
             {userNickname}
           </Link>

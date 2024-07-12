@@ -50,12 +50,12 @@ export const setNickname = async (nickname, image) => {
   formData.append('nickname', nickname);
   formData.append('image', image);
 
-  const jwtToken = Cookies.get('JWT_TOKEN'); // 쿠키에서 JWT 토큰 가져오기
+  const jwtToken = Cookies.get('JWT_TOKEN'); 
 
   const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/set`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
-      'Authorization': `Bearer ${jwtToken}` // 헤더에 JWT 토큰 추가
+      'Authorization': `Bearer ${jwtToken}` 
     }
   });
   return response.data;
@@ -65,7 +65,6 @@ export const getNickname = async () => {
   try {
     const response = await api.get('/api/users/profile/get', {
     });
-    console.log(response.data.nickname);
     return response.data;
   } catch (error) {
     throw error.response.data;

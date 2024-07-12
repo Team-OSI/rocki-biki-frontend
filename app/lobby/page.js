@@ -22,11 +22,13 @@ export default function Lobby() {
   const [nickname, setNickname] = useState('');
   const [showNicknameModal, setShowNicknameModal] = useState(false); 
   const [userNickname, setUserNickname] = useState('');
+  const [userProfileImage, setUserProfileImage] = useState('');
 
   useEffect(() => {
     const fetchNickname = async () => {
       try {
-        const response = await getNickname(); 
+        const response = await getNickname();
+        setUserProfileImage(response.profileImage);
         setUserNickname(response.nickname);
       } catch (err) {
         setShowNicknameModal(true);
@@ -83,7 +85,7 @@ export default function Lobby() {
   const handleNicknameSubmit = async (nickname) => {
     try {
       await setNickname(nickname);
-      setUserNickname(nickname); // 여기서 userNickname 상태를 업데이트합니다.
+      setUserNickname(nickname); 
       setShowNicknameModal(false);
     } catch (err) {
       alert('Failed to set nickname');
@@ -92,7 +94,7 @@ export default function Lobby() {
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
-      <Navbar userNickname={userNickname} /> {/* userNickname을 Navbar에 전달합니다. */}
+      <Navbar userNickname={userNickname} userProfileImage={userProfileImage} />
       <div className="mt-32 flex flex-col items-center w-full max-w-screen-md">
         <div className="w-full p-6 bg-blue-100 rounded-lg shadow-lg">
           <div className="flex justify-center items-center mb-6">

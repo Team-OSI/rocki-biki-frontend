@@ -46,12 +46,6 @@ export default function NicknameModal({ onClose, onSubmit }) {
         >
           확인
         </button>
-        <button
-          className="mt-2 text-gray-500"
-          onClick={onClose}
-        >
-          닫기
-        </button>
       </div>
     </div>
   );
