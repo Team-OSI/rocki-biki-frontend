@@ -1,23 +1,21 @@
 'use client';
 
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import { GameCanvas } from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
 import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
-import useGameLogic from "@/hooks/useGameLogic";
 
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
-    const { handleUseSkill } = useGameLogic();
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
         setRoomId(searchParams.get('roomId'));
     }, []);
-    
+
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [receivedPoseData, setReceivedPoseData] = useState({});
     const [landmarks, setLandmarks] = useState({});
@@ -25,56 +23,47 @@ export default function GameMain() {
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
-    useEffect(() => {
-        landmarksRef.current = landmarks;
-    }, [landmarks]);
-
     const handleLandmarksUpdate = useCallback((newLandmarks) => {
-        setLandmarks(prevLandmarks => {
-            if (JSON.stringify(prevLandmarks) !== JSON.stringify(newLandmarks)) {
-                return newLandmarks;
-            }
-            return prevLandmarks;
-        });
+        setLandmarks(newLandmarks);
     }, []);
+
+    useEffect(()=> {
+        landmarksRef.current = landmarks
+    },[landmarks])
 
     useMotionCapture(localVideoRef, handleLandmarksUpdate);
 
     // WebRTC 연결 설정
-    const { connectionState} = useWebRTCConnection(
+    const {socket, connectionState} = useWebRTCConnection(
         roomId,
         localVideoRef,
         remoteVideoRef,
-        useCallback((receivedData) => {
+        (receivedData) => {
+            // console.log('Received data:', receivedData);
             if (receivedData.type === 'pose') {
-                setReceivedPoseData(prevData => {
-                    if (JSON.stringify(prevData) !== JSON.stringify(receivedData.pose)) {
-                        return receivedData.pose;
-                    }
-                    return prevData;
-                });
+                setReceivedPoseData(receivedData.pose);
             }
-        }, []),
-        useCallback(() => landmarksRef.current, [])
+        },
+        () => landmarksRef.current.landmarks
     );
 
-    const handleReady = useCallback(() => {
+    const handleReady = () => {
         setIsGameStarted(true);
-    }, []);
+    };
 
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
-        width: isGameStarted ? '200px' : 'calc(40vw - 10px)', 
+        width: isGameStarted ? '200px' : 'calc(40vw - 10px)',
         height: isGameStarted ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
         zIndex: 30,
         ...(isGameStarted
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
-            : { 
+            : {
                 top: '50%',
-                left: isLocal ? 'calc(50% + 5px)' : 'calc(50% - 40vw - 5px)', 
+                left: isLocal ? 'calc(50% + 5px)' : 'calc(50% - 40vw - 5px)',
                 transform: 'translate(0, -50%)'
-              }),
+            }),
     });
 
     const videoStyle = {
@@ -102,12 +91,7 @@ export default function GameMain() {
         const updateCanvasSize = () => {
             if (canvasRef.current) {
                 const { width, height } = canvasRef.current.getBoundingClientRect();
-                setCanvasSize(prevSize => {
-                    if (prevSize.width !== width || prevSize.height !== height) {
-                        return { width, height };
-                    }
-                    return prevSize;
-                });
+                setCanvasSize({ width, height });
             }
         };
 
@@ -116,39 +100,6 @@ export default function GameMain() {
 
         return () => window.removeEventListener('resize', updateCanvasSize);
     }, []);
-
-    const memoizedPoseLandmarks = useMemo(() => landmarks.poseLandmarks, [landmarks.poseLandmarks]);
-    const memoizedLandmarks = useMemo(() => landmarks.landmarks, [landmarks.landmarks]);
-
-    const gameContent = useMemo(() => (
-        isGameStarted ? (
-            <>
-                <div className="absolute inset-0 z-10">
-                    <GameCanvas
-                        receivedPoseData={receivedPoseData}
-                        landmarks={memoizedLandmarks}
-                    />
-                </div>
-                <div className="absolute inset-0 z-40 pointer-events-none">
-                    <SkillSelect
-                        localVideoRef={localVideoRef}
-                        poseLandmarks={memoizedPoseLandmarks}
-                        landmarks={memoizedLandmarks}
-                        canvasSize={canvasSize}
-                        onUseSkill={handleUseSkill}
-                    />
-                </div>
-            </>
-        ) : (
-            <div className="absolute inset-0 z-40">
-                <ReadyCanvas
-                    onReady={handleReady}
-                    landmarks={memoizedPoseLandmarks}
-                    canvasSize={canvasSize}
-                />
-            </div>
-        )
-    ), [isGameStarted, receivedPoseData, landmarks, canvasSize, handleUseSkill, handleReady, memoizedPoseLandmarks, memoizedLandmarks]);
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
@@ -164,21 +115,22 @@ export default function GameMain() {
                     <Image
                         src="/images/ready_pose.webp"
                         alt="Ready Pose"
-                        fill
-                        style={{ objectFit: 'cover', ...overlayStyle }}
+                        layout="fill"
+                        objectFit="cover"
+                        style={overlayStyle}
                     />
                 )}
             </div>
             <div style={videoContainerStyle(false)} className="z-30">
-            <>
-                {connectionState !== 'connected' &&(
-                    <div
-                    className="bg-slate-400 mt-2 opacity-80 flex items-center justify-center text-white"
-                    style={videoStyle}
-                    >
-                    연결 대기 중...
-                    </div>
-                )}
+                <>
+                    {connectionState !== 'connected' &&(
+                        <div
+                            className="bg-slate-400 mt-2 opacity-80 flex items-center justify-center text-white"
+                            style={videoStyle}
+                        >
+                            연결 대기 중...
+                        </div>
+                    )}
                     <video
                         className="scale-x-[-1] opacity-80 mt-2"
                         ref={remoteVideoRef}
@@ -190,14 +142,40 @@ export default function GameMain() {
                         <Image
                             src="/images/ready_pose.webp"
                             alt="Ready Pose"
-                            fill
-                            style={{ objectFit: 'cover', ...overlayStyle }}
+                            layout="fill"
+                            objectFit="cover"
+                            style={overlayStyle}
                         />
                     )}
                 </>
             </div>
             <div className="absolute inset-0" ref={canvasRef}>
-                {gameContent}
+                {!isGameStarted ? (
+                    <div className="absolute inset-0 z-40">
+                        <ReadyCanvas
+                            onReady={handleReady}
+                            landmarks={landmarks.poseLandmarks}
+                            canvasSize={canvasSize}
+                        />
+                    </div>
+                ) : (
+                    <>
+                        <div className="absolute inset-0 z-10">
+                            <GameCanvas
+                                receivedPoseData={receivedPoseData}
+                                landmarks={landmarks.landmarks}
+                            />
+                        </div>
+                        <div className="absolute inset-0 z-40 pointer-events-none">
+                            <SkillSelect
+                                localVideoRef={localVideoRef}
+                                poseLandmarks={landmarks.poseLandmarks}
+                                landmarks={landmarks.landmarks}
+                                canvasSize={canvasSize}
+                            />
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
