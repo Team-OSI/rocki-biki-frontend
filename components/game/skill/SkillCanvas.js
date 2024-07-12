@@ -5,15 +5,16 @@ import {throttle} from "lodash";
 const similarityThreshold = 0.70;   // 포즈 유사도 임계값
 const SKILL_DURATION = 5;           // 스킬 지속 시간
 
-export default function SkillCanvas({ 
-    videoElement, 
-    image,
-    onSkillComplete, 
-    poseLandmarks, 
-    skillConfig,
-    width = 640,
-    height = 480
-}) {
+export default function SkillCanvas(
+    {
+        videoElement,
+        image,
+        onSkillComplete,
+        poseLandmarks,
+        skillConfig,
+        width = 640,
+        height = 480
+    }) {
     const canvasRef = useRef(null);
     const animationFrameRef = useRef(null);
     const [similarityResult, setSimilarityResult] = useState(null);
@@ -44,7 +45,7 @@ export default function SkillCanvas({
             if (timerRef.current) clearInterval(timerRef.current);
         };
     }, []);
-    
+
     // 스킬 활성화 시 타이머 시작
     useEffect(() => {
         if (isSkillActive && !timerRef.current) {
@@ -55,7 +56,7 @@ export default function SkillCanvas({
     // 포즈 유사도 계산 함수
     const calculatePoseSimilarity = (detectedPose, targetPose) => {
         const shoulderWidth = Math.abs(detectedPose.leftShoulder.x - detectedPose.rightShoulder.x);
-        
+
         const calculateRelativeSimilarity = (detected, target, shoulder) => {
             const relativeDetected = {
                 x: (detected.x - shoulder.x) / shoulderWidth,
@@ -65,7 +66,7 @@ export default function SkillCanvas({
             const dy = relativeDetected.y - target.y;
             return 1 - Math.min(Math.sqrt(dx*dx + dy*dy), 1);
         };
-    
+
         const similarities = [
             calculateRelativeSimilarity(detectedPose.rightWrist, targetPose.rightWrist, detectedPose.rightShoulder),
             calculateRelativeSimilarity(detectedPose.leftWrist, targetPose.leftWrist, detectedPose.leftShoulder),
@@ -74,11 +75,10 @@ export default function SkillCanvas({
             calculateRelativeSimilarity(detectedPose.rightIndex, targetPose.rightIndex, detectedPose.rightShoulder),
             calculateRelativeSimilarity(detectedPose.leftIndex, targetPose.leftIndex, detectedPose.leftShoulder)
         ];
-    
+
         return similarities.reduce((sum, similarity) => sum + similarity, 0) / similarities.length;
     };
 
-    // skillConfig의 최신 참조를 유지
     const skillConfigRef = useRef(skillConfig);
     useEffect(() => {
         skillConfigRef.current = skillConfig;
@@ -100,11 +100,10 @@ export default function SkillCanvas({
             const position = skillConfigRef.current.imagePosition(poseLandmarks, width, height);
             canvasCtx.drawImage(image, position.x, position.y, skillConfigRef.current.imageSize.width, skillConfigRef.current.imageSize.height);
         }
+
         canvasCtx.restore();
 
-        if (isSkillActive && remainingTime > 0) {
-            animationFrameRef.current = requestAnimationFrame(processFrame);
-        }
+        animationFrameRef.current = requestAnimationFrame(processFrame);
     }, [videoElement, isSkillActive, remainingTime, image, poseLandmarks, width, height]);
 
     // 포즈 랜드마크 처리 및 유사도 계산
@@ -136,7 +135,6 @@ export default function SkillCanvas({
         [skillConfig.targetPose, calculatePoseSimilarity]
     );
 
-    // poseLandmarks 상태 업데이트
     useEffect(() => {
         const updateState = processPose(poseLandmarks);
         if (updateState) updateState();
@@ -144,23 +142,21 @@ export default function SkillCanvas({
 
     // 프레임 처리 시작 및 정리
     useEffect(() => {
-        if (isSkillActive && remainingTime > 0) {
-            processFrame();
-        }
+        processFrame();
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [isSkillActive, remainingTime, processFrame]);
+    }, [processFrame]);
 
     return (
         <div className='motion-capture'>
-            <canvas 
-                ref={canvasRef} 
-                width={width} 
-                height={height} 
-                style={{ transform: 'scaleX(-1)' }} 
+            <canvas
+                ref={canvasRef}
+                width={width}
+                height={height}
+                style={{ transform: 'scaleX(-1)' }}
             />
             <div id="skill-timer">
                 <span className='timer-value'>{remainingTime}</span>초만 더 버텨라!

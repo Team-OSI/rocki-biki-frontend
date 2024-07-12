@@ -85,7 +85,7 @@ export function useMotionCapture(localVideoRef, onLandmarksUpdate) {
     const throttledOnLandmarksUpdate = useRef(
         throttle((landmarks) => {
             onLandmarksUpdate(landmarks);
-        }, 100) // 100ms마다 최대 한 번 실행
+        }, 50) // 50ms마다 최대 한 번 실행
     ).current;
 
     const memoizedProcessLandmarks = useCallback(processLandmarks, []);
