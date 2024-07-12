@@ -12,6 +12,8 @@ const useSocketStore = create((set, get) => ({
             set({ rooms });
         })
         set({ socket: newSocket});
+
+        
     },
 
     closeSocket: () => {

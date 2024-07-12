@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
+import useSTT from '@/hooks/useStt'; 
 
 const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
     const socket = useSocketStore(state => state.socket);
@@ -12,6 +13,16 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     const localStream = useRef();
     const dataChannel = useRef();
     const intervalId = useRef();
+
+    const { isRecognizing, finalTranscript, startRecognition, stopRecognition } = useSTT(
+        ({ finalTranscript, interimTranscript }) => {
+            console.log('Final:', finalTranscript);
+            console.log('Interim:', interimTranscript);
+        },
+        (error) => {
+            console.error('Speech recognition error:', error);
+        }
+    );
 
     useEffect(() => {
         if (!socket || !roomId) return;
@@ -67,6 +78,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             if (intervalId.current) {
                 clearInterval(intervalId.current);
             }
+            stopRecognition();
         };
     }, [socket, roomId]);
 
@@ -174,6 +186,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                 const offer = await peerConnection.current.createOffer();
                 await peerConnection.current.setLocalDescription(offer);
                 emitOffer(offer, roomId);
+                startRecognition();
             } catch (error) {
                 console.error('Error starting call:', error);
             }
@@ -195,7 +208,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     }, 1000 / 20);
   };
 
-    return { socket, connectionState };
+    return { socket, connectionState, isRecognizing, finalTranscript, startRecognition, stopRecognition };
 };
 
 export default useWebRTCConnection;

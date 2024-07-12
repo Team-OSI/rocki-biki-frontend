@@ -44,3 +44,14 @@ export const login = async (email, passWord) => {
     throw error.response.data;
   }
 };
+
+// export const registNickname = async (email) => {
+//   try {
+//     const response = await api.post('/api/auth/registNickname', {
+//       email: email,
+//     });
+//     return response.data;
+//   } catch (error) {
+//     throw error.response.data;
+//   }
+// };
