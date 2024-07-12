@@ -45,29 +45,20 @@ export const login = async (email, passWord) => {
   }
 };
 
-export const setNickname = async (nickname, file) => {
-  try {
-    const formData = new FormData();
-    formData.append('nickname', nickname);
-    formData.append('image', file);
+export const setNickname = async (nickname, image) => {
+  const formData = new FormData();
+  formData.append('nickname', nickname);
+  formData.append('image', image);
 
-    const response = await axios.post('/api/users/profile/set', formData, {
-      baseURL: process.env.NEXT_PUBLIC_SPRING_SERVER,
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
-      withCredentials: true,
-    });
+  const jwtToken = Cookies.get('JWT_TOKEN'); // 쿠키에서 JWT 토큰 가져오기
 
-    console.log(response.data);
-    return response.data;
-  } catch (error) {
-    if (error.response) {
-      throw error.response.data;
-    } else {
-      throw new Error('Network or server error');
+  const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/set`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${jwtToken}` // 헤더에 JWT 토큰 추가
     }
-  }
+  });
+  return response.data;
 };
 
 export const getNickname = async () => {
