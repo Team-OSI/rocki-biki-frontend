@@ -1,25 +1,30 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import io from 'socket.io-client';
+import useSocketStore from '@/store/socketStore';
+import useGameStore from '@/store/gameStore';
+
 
 const useGameLogic = () => {
   const { roomId } = useParams();
-  const [socket, setSocket] = useState(null);
-  const [gameState, setGameState] = useState({
-    players: {},
-    round: 0,
-    gameStarted: false,
-    winner: null,
-  });
-  const [localPlayer, setLocalPlayer] = useState(null);
+  const {
+    playerName,
+    opponentName,
+    setPlayerName,
+    opponentReady,
+    setOpponentName,
+    opponentReadyState,
+    setOpponentReady,
+    startGame,
+    gameStatus,
+    endGame,
+    resetGame,
+    decreasePlayerHealth,
+    decreaseOpponentHealth,
+    getWinner
+  } = useGameStore();
 
   // 소켓 연결 설정
-  useEffect(() => {
-    const newSocket = io('http://localhost:3001'); // 서버 URL을 적절히 변경하세요
-    setSocket(newSocket);
-
-    return () => newSocket.close();
-  }, []);
+  const socket = useSocketStore(state => state.socket);
 
   // 소켓 이벤트 리스너 설정
   useEffect(() => {
@@ -31,9 +36,8 @@ const useGameLogic = () => {
     socket.on('gameStart', handleGameStart);
     socket.on('roundEnd', handleRoundEnd);
     socket.on('gameEnd', handleGameEnd);
-
-    // 방에 입장
-    socket.emit('joinRoom', roomId);
+    socket.on('damage', handleDamage);
+    socket.on('opponentIsReady', handleOpponentReady);
 
     return () => {
       socket.off('gameUpdate');
@@ -42,6 +46,8 @@ const useGameLogic = () => {
       socket.off('gameStart');
       socket.off('roundEnd');
       socket.off('gameEnd');
+      socket.off('damage');
+      socket.off('opponentIsReady');
     };
   }, [socket, roomId]);
 
@@ -84,24 +90,34 @@ const useGameLogic = () => {
   }, []);
 
   // 액션 수행 (예: 펀치)
-  const performAction = useCallback((action) => {
-    if (socket) {
-      socket.emit('playerAction', { roomId, playerId: localPlayer, action });
-    }
-  }, [socket, roomId, localPlayer]);
+  // const performAction = useCallback((action) => {
+  //   if (socket) {
+  //     socket.emit('playerAction', { roomId, playerId: localPlayer, action });
+  //   }
+  // }, [socket, roomId, localPlayer]);
 
-  // 게임 준비 상태 설정
-  const setReady = useCallback(() => {
+  // 플레이어 받은 데미지 처리
+  const handleDamage = (data) => {
     if (socket) {
-      socket.emit('playerReady', { roomId, playerId: localPlayer });
+      const curGameStatus = useGameStore.getState().gameStatus;
+      if (curGameStatus === "playing"){
+        decreasePlayerHealth(data.amount);
+      }
     }
-  }, [socket, roomId, localPlayer]);
+  }
+
+  // 상대플레이어 상태 받기
+  const handleOpponentReady = (data) => {
+    console.log('1zz')
+    if (socket) {
+      console.log("setOpponentReady: ",data)
+      setOpponentReady(data);
+    }
+  }
 
   return {
-    gameState,
-    localPlayer,
-    performAction,
-    setReady,
+    gameStatus,
+    startGame
   };
 };
 
