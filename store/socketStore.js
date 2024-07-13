@@ -5,15 +5,19 @@ const useSocketStore = create((set, get) => ({
     socket: null,
     rooms: [],
 
-    initSocket: (url) => {
+    initSocket: (url, userId) => {
         const newSocket = io(url);
+
+        newSocket.on('connect', () => {
+            newSocket.emit('USER_CONNECT', userId); 
+          });
+
         newSocket.on('ROOMS_UPDATE', (rooms) => {
             console.log('ROOMS_UPDATE received', rooms);
             set({ rooms });
         })
         set({ socket: newSocket});
 
-        
     },
 
     closeSocket: () => {
