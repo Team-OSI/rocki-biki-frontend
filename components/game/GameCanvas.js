@@ -85,8 +85,8 @@ export function GameCanvas({ receivedPoseData, landmarks, socket }) {
     <Canvas shadows>
       <ambientLight />
       <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
-      <Scene receivedPoseData={receivedPoseData} landmarks={landmarks} socket={socket} />
-      {/* <Stats /> */}
+      <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
+      <Stats />
     </Canvas>
   </>
   );
