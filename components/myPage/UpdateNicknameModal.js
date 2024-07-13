@@ -12,8 +12,8 @@ export default function NicknameModal({ onClose, onSubmit }) {
   const handleSubmit = async () => {
     if (userNickname.trim() !== '' && selectedFile) {
       try {
-        await updateNickname(userNickname, selectedFile);
-        onSubmit(userNickname);
+        const profileImageUrl = await updateNickname(userNickname, selectedFile);
+        onSubmit(userNickname, profileImageUrl);
         onClose();
       } catch (error) {
         console.error('Failed to set nickname:', error);

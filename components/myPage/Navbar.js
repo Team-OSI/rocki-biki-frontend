@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
-import NicknameModal from './UpdateNicknameModal'; 
+import NicknameModal from './UpdateNicknameModal';
+import { getNickname } from '@/api/user/api';
 
-export default function Navbar({ userNickname, userProfileImage }) {
+export default function Navbar() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [nickname, setNickname] = useState(userNickname);
+  const [userNickname, setUserNickname] = useState("");
+  const [userProfileImage, setUserProfileImage] = useState(""); 
 
+  useEffect(() => {
+    const fetchNickname = async () => {
+      try {
+        const response = await getNickname();
+        setUserNickname(response.nickname);
+        setUserProfileImage(response.profileImage);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+  
+    fetchNickname();
+  }, []);
 
   const handleLogout = () => {
     Cookies.remove('JWT_TOKEN');
@@ -23,8 +38,10 @@ export default function Navbar({ userNickname, userProfileImage }) {
     setIsModalOpen(false);
   };
 
-  const handleNicknameSubmit = (newNickname) => {
-    setNickname(newNickname);
+  const handleNicknameSubmit = (newNickname, newProfileImage) => {
+    setUserNickname(newNickname);
+    setUserProfileImage(newProfileImage);
+    window.location.reload();
   };
 
   return (
