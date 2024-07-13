@@ -9,6 +9,7 @@ import NicknameModal from '@/components/lobby/NicknameModal';
 import Navbar from '@/components/lobby/Navbar';
 import useSocketStore from '@/store/socketStore';
 import {jwtDecode} from 'jwt-decode';
+import Cookies from 'js-cookie';
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 import { getNickname } from '@/api/user/api';
 
@@ -38,9 +39,26 @@ export default function Lobby() {
   }, []);
 
   useEffect(() => {
+    // const token = Cookies.get('JWT_TOKEN');
+    // const decoded = jwtDecode(token);
+    // console.log(decoded.sub);
     initSocket(process.env.NEXT_PUBLIC_NODE_SERVER);
     return () => closeSocket;
   },[initSocket, closeSocket]);
+
+  // useEffect(() => {
+    // const token = Cookies.get('JWT_TOKEN');
+  //   if (token) {
+  //     try {
+  //       const decoded = jwtDecode(token);
+  //       setNickname(decoded.sub);
+  //       initSocket(process.env.NEXT_PUBLIC_NODE_SERVER, decoded.sub);
+  //     } catch (error) {
+  //       console.error('Failed to decode JWT token:', error);
+  //     }
+  //   }
+  //   return () => closeSocket();
+  // }, [initSocket, closeSocket])
 
   useEffect(() => {
     setFilteredRooms(rooms);
