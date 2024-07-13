@@ -5,8 +5,12 @@ import { useRouter } from 'next/navigation';
 import Room from '@/components/lobby/Room';
 import RoomButton from '@/components/lobby/RoomButton';
 import RoomModal from '@/components/lobby/RoomModal';
+import NicknameModal from '@/components/lobby/NicknameModal';
+import Navbar from '@/components/lobby/Navbar';
 import useSocketStore from '@/store/socketStore';
+import {jwtDecode} from 'jwt-decode';
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
+import { getNickname } from '@/api/user/api';
 
 export default function Lobby() {
   const router = useRouter();
@@ -14,7 +18,24 @@ export default function Lobby() {
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
+  const [nickname, setNickname] = useState('');
+  const [showNicknameModal, setShowNicknameModal] = useState(false); 
+  const [userNickname, setUserNickname] = useState('');
+  const [userProfileImage, setUserProfileImage] = useState('')
 
+  useEffect(() => {
+    const fetchNickname = async () => {
+      try {
+        const response = await getNickname();
+        setUserProfileImage(response.profileImage);
+        setUserNickname(response.nickname);
+      } catch (err) {
+        setShowNicknameModal(true);
+      }
+    };
+
+    fetchNickname();
+  }, []);
 
   useEffect(() => {
     initSocket(process.env.NEXT_PUBLIC_NODE_SERVER);
@@ -51,12 +72,20 @@ export default function Lobby() {
     setFilteredRooms(filtered);
   };
 
+  const handleNicknameSubmit = async (nickname) => {
+    try {
+      await setNickname(nickname);
+      setUserNickname(nickname); 
+      setShowNicknameModal(false);
+    } catch (err) {
+      alert('Failed to set nickname');
+    }
+  };
+
   return (
     <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
-      <div className="absolute top-12 w-full flex flex-col items-center gap-4 font-bold">
-        <h1 className="text-8xl">로비</h1>
-      </div>
-      <div className="flex flex-col items-center w-full max-w-screen-md mt-40 mb-40">
+      <Navbar userNickname={userNickname} userProfileImage={userProfileImage} />
+      <div className="mt-32 flex flex-col items-center w-full max-w-screen-md">
         <div className="w-full p-6 bg-blue-100 rounded-lg shadow-lg">
           <div className="flex justify-center items-center mb-6">
             <input
@@ -71,12 +100,12 @@ export default function Lobby() {
           </div>
           <div className="max-h-96 overflow-y-auto">
             {filteredRooms.map((room, index) => (
-              <Room 
-                key={index} 
-                title={room.title} 
-                participants={`${room.participants}/2`} 
-                status={room.status || '참가하기'} 
-                onClick={() => goGame(room.roomId)} 
+              <Room
+                key={index}
+                title={room.title}
+                participants={`${room.participants}/2`}
+                status={room.status || '참가하기'}
+                onClick={() => goGame(room.roomId)}
               />
             ))}
           </div>
@@ -86,6 +115,12 @@ export default function Lobby() {
         <RoomModal
           onClose={() => setShowRoomModal(false)}
           onCreate={handleCreateRoom}
+        />
+      )}
+      {showNicknameModal && (
+        <NicknameModal
+          onClose={() => setShowNicknameModal(false)}
+          onSubmit={handleNicknameSubmit}
         />
       )}
     </div>

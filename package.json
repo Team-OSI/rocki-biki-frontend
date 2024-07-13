@@ -17,6 +17,7 @@
     "@react-three/fiber": "^8.16.8",
     "axios": "^1.7.2",
     "js-cookie": "^3.0.5",
+    "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "next": "14.2.4",
     "react": "^18",

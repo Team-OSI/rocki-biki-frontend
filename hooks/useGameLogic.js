@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useParams } from 'next/navigation';
 import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
@@ -32,6 +32,7 @@ const useGameLogic = () => {
   }, []);
   // 소켓 연결 설정
   const socket = useSocketStore(state => state.socket);
+  const useSkill = socketStore(state => state.useSkill);
 
   // 소켓 이벤트 리스너 설정
   useEffect(() => {

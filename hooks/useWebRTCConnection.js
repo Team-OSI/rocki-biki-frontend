@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
+import useSTT from '@/hooks/useSTT'
 
 const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
     const socket = useSocketStore(state => state.socket);
@@ -12,6 +13,16 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     const localStream = useRef();
     const dataChannel = useRef();
     const intervalId = useRef();
+
+    const { isRecognizing, finalTranscript, startRecognition, stopRecognition } = useSTT(
+        ({ finalTranscript, interimTranscript }) => {
+            console.log('Final:', finalTranscript);
+            console.log('Interim:', interimTranscript);
+        },
+        (error) => {
+            console.error('Speech recognition error:', error);
+        }
+    );
 
     useEffect(() => {
         if (!socket || !roomId) return;
@@ -58,6 +69,14 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         socket.on('candidate', onCandidate);
         socket.on('user_left', onUserLeft);
 
+        const handleUnload = (event) => {
+            leaveRoom();
+            window.location.href = '/lobby';
+            // router.push('/lobby');
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', handleUnload);
+
         return () => {
             socket.emit('leave room');
             socket.off('offer', onOffer);
@@ -67,8 +86,16 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             if (intervalId.current) {
                 clearInterval(intervalId.current);
             }
+            window.removeEventListener('beforeunload', handleUnload);
+            stopRecognition();
         };
     }, [socket, roomId]);
+
+    const leaveRoom = () => {
+        if (socket && roomId) {
+            socket.emit('leave room');
+        }
+    };
 
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
@@ -174,6 +201,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                 const offer = await peerConnection.current.createOffer();
                 await peerConnection.current.setLocalDescription(offer);
                 emitOffer(offer, roomId);
+                startRecognition();
             } catch (error) {
                 console.error('Error starting call:', error);
             }

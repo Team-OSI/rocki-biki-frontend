@@ -12,9 +12,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = Cookies.get('accessToken');
+    const token = Cookies.get('JWT_TOKEN');
     if(token) {
-      config.headers.Authorization = `Bearer $(token)`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -43,4 +43,46 @@ export const login = async (email, passWord) => {
   } catch (error) {
     throw error.response.data;
   }
+};
+
+export const setNickname = async (nickname, image) => {
+  const formData = new FormData();
+  formData.append('nickname', nickname);
+  formData.append('image', image);
+
+  const jwtToken = Cookies.get('JWT_TOKEN'); 
+
+  const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/set`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${jwtToken}` 
+    }
+  });
+  return response.data;
+};
+
+export const getNickname = async () => {
+  try {
+    const response = await api.get('/api/users/profile/get', {
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
+export const updateNickname = async (nickname, image) => {
+  const formData = new FormData();
+  formData.append('nickname', nickname);
+  formData.append('image', image);
+
+  const jwtToken = Cookies.get('JWT_TOKEN'); 
+  console.log(formData);
+  const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/update`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${jwtToken}` 
+    }
+  });
+  return response.data;
 };
