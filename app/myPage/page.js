@@ -1,34 +1,40 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getNickname } from '@/api/user/api';
-import { useState, useEffect } from 'react';
 import Navbar from '@/components/myPage/Navbar';
+import RecordingModal from "@/components/myPage/RecordingModal";
 
 export default function MyPage() {
-  const [userNickname, setUserNickname] = useState("");
-  const [userProfileImage, setUserProfileImage] = useState(""); 
+    const router = useRouter();
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchNickname = async () => {
-      try {
-        const response = await getNickname();
-        setUserNickname(response.nickname);
-        setUserProfileImage(response.profileImage);
-      } catch (err) {
-        setShowNicknameModal(true);
-      }
+    const goToLobby = () => {
+        router.push('/lobby');
     };
 
-    fetchNickname();
-  }, []);
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
-      <Navbar userNickname={userNickname} userProfileImage={userProfileImage}/>
-      <div className="mt-8">
-        <h1 className="text-2xl font-bold">Welcome, {userNickname}!</h1>
-      </div>
-    </div>
-  );
+    return (
+        <div className="min-h-screen flex flex-col items-center justify-center">
+            <Navbar />
+            <div className="mt-8">
+                <h1 className="text-2xl font-bold">Welcome!</h1>
+            </div>
+            <button
+                className="mt-4 bg-blue-500 text-white p-2 rounded-lg"
+                onClick={goToLobby}
+            >
+                Go Lobby!
+            </button>
+            <button
+                className="mt-4 bg-green-500 text-white p-2 rounded-lg"
+                onClick={openModal}
+            >
+                피격음 녹음
+            </button>
+            <RecordingModal isOpen={isModalOpen} onClose={closeModal} />
+        </div>
+    );
 }
