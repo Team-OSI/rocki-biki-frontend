@@ -71,6 +71,29 @@ export const getNickname = async () => {
   }
 };
 
+export const fetchAudioUrls = async (setAudioUrls) => {
+  try {
+    const response = await api.get('/api/users/profile/sound');
+    console.log('Fetched audio URLs:', response.data);
+    setAudioUrls(response.data);
+  } catch (error) {
+    console.error('Error fetching audio URLs:', error);
+    throw error; // 에러를 다시 던져서 호출자가 처리할 수 있게 합니다.
+  }
+};
+
+export const updateAudio = async (formData) => {
+
+  const jwtToken = Cookies.get('JWT_TOKEN');
+  const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/sound`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${jwtToken}`
+    }
+  });
+  return response.data;
+};
+
 export const updateNickname = async (nickname, image) => {
   const formData = new FormData();
   formData.append('nickname', nickname);
@@ -86,3 +109,5 @@ export const updateNickname = async (nickname, image) => {
   });
   return response.data;
 };
+
+
