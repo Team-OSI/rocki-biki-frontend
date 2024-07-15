@@ -7,30 +7,37 @@ import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
+import useGameLogic from '@/hooks/useGameLogic';
 
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
+    const { handleUseSkill } = useGameLogic();
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
         setRoomId(searchParams.get('roomId'));
     }, []);
-    
-    const [isGameStarted, setIsGameStarted] = useState(false);
+
     const [receivedPoseData, setReceivedPoseData] = useState({});
     const [landmarks, setLandmarks] = useState({});
     const landmarksRef = useRef(landmarks);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
+    const { gameStatus, startGame } = useGameLogic(); //game 로직
+
     const handleLandmarksUpdate = useCallback((newLandmarks) => {
         setLandmarks(newLandmarks);
     }, []);
 
+    useEffect(()=> {
+        landmarksRef.current = landmarks.landmarks
+    },[landmarks])
+
     useMotionCapture(localVideoRef, handleLandmarksUpdate);
 
     // WebRTC 연결 설정
-    const {socket, connectionState} = useWebRTCConnection(
+    const connectionState = useWebRTCConnection(
         roomId,
         localVideoRef,
         remoteVideoRef,
@@ -44,22 +51,22 @@ export default function GameMain() {
     );
 
     const handleReady = () => {
-        setIsGameStarted(true);
+        startGame();
     };
 
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
-        width: isGameStarted ? '200px' : 'calc(40vw - 10px)', 
-        height: isGameStarted ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
+        width: gameStatus === 'playing' ? '200px' : 'calc(40vw - 10px)',
+        height: gameStatus === 'playing' ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
         zIndex: 30,
-        ...(isGameStarted
+        ...(gameStatus === 'playing'
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : { 
                 top: '50%',
-                left: isLocal ? 'calc(50% + 5px)' : 'calc(50% - 40vw - 5px)', 
+                left: isLocal ? 'calc(50% + 5px)' : 'calc(50% - 40vw - 5px)',
                 transform: 'translate(0, -50%)'
-              }),
+            }),
     });
 
     const videoStyle = {
@@ -86,8 +93,13 @@ export default function GameMain() {
     useEffect(() => {
         const updateCanvasSize = () => {
             if (canvasRef.current) {
-              const { width, height } = canvasRef.current.getBoundingClientRect();
-              setCanvasSize({ width, height });
+                const { width, height } = canvasRef.current.getBoundingClientRect();
+                setCanvasSize(prevSize => {
+                    if (prevSize.width !== width || prevSize.height !== height) {
+                        return { width, height };
+                    }
+                    return prevSize;
+                });
             }
         };
 
@@ -107,7 +119,7 @@ export default function GameMain() {
                     autoPlay
                     playsInline
                 />
-                {!isGameStarted && (
+                {gameStatus === 'idle' && (
                     <Image
                         src="/images/ready_pose.webp"
                         alt="Ready Pose"
@@ -134,7 +146,7 @@ export default function GameMain() {
                         autoPlay
                         playsInline
                     />
-                    {!isGameStarted && (
+                    {gameStatus === 'idle' && (
                         <Image
                             src="/images/ready_pose.webp"
                             alt="Ready Pose"
@@ -146,7 +158,7 @@ export default function GameMain() {
                 </>
             </div>
             <div className="absolute inset-0" ref={canvasRef}>
-                {!isGameStarted ? (
+                {gameStatus === 'idle' ? (
                     <div className="absolute inset-0 z-40">
                         <ReadyCanvas
                             onReady={handleReady}
@@ -168,6 +180,7 @@ export default function GameMain() {
                                 poseLandmarks={landmarks.poseLandmarks}
                                 landmarks={landmarks.landmarks}
                                 canvasSize={canvasSize}
+                                onUseSkill={handleUseSkill}
                             />
                         </div>
                     </>

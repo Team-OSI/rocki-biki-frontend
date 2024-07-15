@@ -50,12 +50,12 @@ export const setNickname = async (nickname, image) => {
   formData.append('nickname', nickname);
   formData.append('image', image);
 
-  const jwtToken = Cookies.get('JWT_TOKEN'); 
+  const jwtToken = Cookies.get('JWT_TOKEN');
 
   const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/set`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
-      'Authorization': `Bearer ${jwtToken}` 
+      'Authorization': `Bearer ${jwtToken}`
     }
   });
   return response.data;
@@ -71,14 +71,18 @@ export const getNickname = async () => {
   }
 };
 
-export const updateNickname = async () => {
-  try {
-    const response = await api.post('/api/users/profile/update', {
-      nickname: nickname,
-      // email: email,
-    });
-    return response.data;
-  } catch (error) {
-    throw error.response.data;
-  }
+export const updateNickname = async (nickname, image) => {
+  const formData = new FormData();
+  formData.append('nickname', nickname);
+  formData.append('image', image);
+
+  const jwtToken = Cookies.get('JWT_TOKEN');
+  console.log(formData);
+  const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/update`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${jwtToken}`
+    }
+  });
+  return response.data;
 };

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
-import useSTT from '@/hooks/useSTT'; 
-import { useRouter } from 'next/navigation';
+import useSTT from '@/hooks/useSTT'
 
 const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
     const socket = useSocketStore(state => state.socket);
@@ -15,8 +14,6 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     const dataChannel = useRef();
     const intervalId = useRef();
 
-    const router = useRouter();
-
     const { isRecognizing, finalTranscript, startRecognition, stopRecognition } = useSTT(
         ({ finalTranscript, interimTranscript }) => {
             console.log('Final:', finalTranscript);
@@ -29,7 +26,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
 
     useEffect(() => {
         if (!socket || !roomId) return;
-    
+
         const initializeMedia = async () => {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 try {
@@ -48,30 +45,30 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                 setConnectionState('error');
             }
         };
-    
+
         initializeMedia();
-    
+
         const onOffer = (data) => {
             handleOffer(data.offer);
         };
-    
+
         const onAnswer = (data) => {
             handleAnswer(data.answer);
         };
-    
+
         const onCandidate = (data) => {
             handleCandidate(data.candidate);
         };
-    
+
         const onUserLeft = (data) => {
             console.log(`User ${data.userId} left the room`);
         };
-    
+
         socket.on('offer', onOffer);
         socket.on('answer', onAnswer);
         socket.on('candidate', onCandidate);
         socket.on('user_left', onUserLeft);
-        
+
         const handleUnload = (event) => {
             leaveRoom();
             window.location.href = '/lobby';
@@ -79,9 +76,9 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             event.returnValue = '';
         };
         window.addEventListener('beforeunload', handleUnload);
-        
+
         return () => {
-            leaveRoom();
+            socket.emit('leave room');
             socket.off('offer', onOffer);
             socket.off('answer', onAnswer);
             socket.off('candidate', onCandidate);
@@ -93,13 +90,13 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             stopRecognition();
         };
     }, [socket, roomId]);
-    
+
     const leaveRoom = () => {
         if (socket && roomId) {
             socket.emit('leave room');
         }
     };
-    
+
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -226,7 +223,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     }, 1000 / 20);
   };
 
-    return { socket, connectionState, isRecognizing, finalTranscript, startRecognition, stopRecognition };
+    return connectionState;
 };
 
 export default useWebRTCConnection;
