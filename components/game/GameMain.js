@@ -11,7 +11,7 @@ import useGameLogic from '@/hooks/useGameLogic';
 
 export default function GameMain() {
     const roomId = useRef(null);
-    const { gameStatus, startGame } = useGameLogic(); //game 로직
+    const { gameStatus } = useGameLogic(); //game 로직
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -49,7 +49,7 @@ export default function GameMain() {
     );
 
     const handleReady = () => {
-        startGame();
+        console.log('hho')
     };
 
     const videoContainerStyle = (isLocal) => ({
@@ -117,7 +117,7 @@ export default function GameMain() {
                     autoPlay
                     playsInline
                 />
-                {gameStatus === 'idle' && (
+                {gameStatus === 'waiting' && (
                     <Image
                         src="/images/ready_pose.webp"
                         alt="Ready Pose"
@@ -144,7 +144,7 @@ export default function GameMain() {
                         autoPlay
                         playsInline
                     />
-                    {gameStatus === 'idle' && (
+                    {gameStatus === 'waiting' && (
                         <Image
                             src="/images/ready_pose.webp"
                             alt="Ready Pose"
@@ -156,7 +156,7 @@ export default function GameMain() {
                 </>
             </div>
             <div className="absolute inset-0" ref={canvasRef}>
-                {gameStatus === 'idle' ? (
+                {gameStatus === 'waiting' ? (
                     <div className="absolute inset-0 z-40">
                         <ReadyCanvas
                             onReady={handleReady}

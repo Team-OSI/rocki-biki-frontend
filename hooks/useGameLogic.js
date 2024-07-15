@@ -4,7 +4,7 @@ import useGameStore from '@/store/gameStore';
 
 const useGameLogic = () => {
   const [roomId, setRoomId] = useState(null);
-  const setGameState = useGameStore(state => state.setGameState);
+  const { setGameState, gameStatus } = useGameStore();
   
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -19,6 +19,9 @@ const useGameLogic = () => {
 
     socket.on('gameState', handleGameUpdate);
 
+    // 방에 입장
+    socket.emit('joinRoom', roomId)
+
     return () => {
       socket.off('gameState');
     };
@@ -26,10 +29,10 @@ const useGameLogic = () => {
 
   // 게임 상태 업데이트 처리
   const handleGameUpdate = useCallback((newState) => {
-    if (socket) {
+    if (socket && setGameState) {
       setGameState(newState, socket.id);
     }
-  }, []);
+  }, [setGameState, socket]);
 
   // // 플레이어 입장 처리
   // const handlePlayerJoined = useCallback((player) => {
@@ -88,6 +91,7 @@ const useGameLogic = () => {
   // }, [skillUseFunction, roomId]);
 
   return {
+    gameStatus
   };
 };
 

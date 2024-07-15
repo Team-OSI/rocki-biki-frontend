@@ -10,9 +10,9 @@ const useSocketStore = create((set, get) => ({
     initSocket: (url) => {
         const newSocket = io(url);
         newSocket.on('ROOMS_UPDATE', (roomsData) => {
-            console.log('ROOMS_UPDATE received', roomsData);
             // 서버에서 받은 데이터를 Map으로 변환
             const roomsMap = new Map(Object.entries(roomsData))
+            console.log('ROOMS_UPDATE received', roomsMap);
             set({ rooms: roomsMap });
         })
         set({ socket : newSocket })
@@ -29,7 +29,6 @@ const useSocketStore = create((set, get) => ({
     addRoom: (room, callback) => {
         const { socket } = get();
         if (socket) {
-            console.log('add room: ', room)
             socket.emit('ADD_ROOM', room, (newRoom) => {
                 // 새 방을 받으면 rooms Map에 추가
                 if (callback) callback(newRoom);
@@ -42,20 +41,21 @@ const useSocketStore = create((set, get) => ({
         if (socket) {
             socket.emit('join room', roomId);
             // 방 참여 후 해당 방의 정보 업데이트
-            set(state => {
-                const newRooms = new Map(state.rooms);
-                const room = newRooms.get(roomId);
-                if (room) {
-                    newRooms.set(roomId, room);
-                }
-                return { rooms: newRooms }
-            })
+            // set(state => {
+            //     const newRooms = new Map(state.rooms);
+            //     const room = newRooms.get(roomId);
+            //     if (room) {
+            //         newRooms.set(roomId, room);
+            //     }
+            //     return { rooms: newRooms }
+            // })
         }
     },
 
     emitOffer: (offer, roomId) => {
         const { socket } = get();
         if (socket) {
+            console.log(offer, roomId)
             socket.emit('offer', { type: offer.type, sdp: offer.sdp, roomId });
         }
     },
@@ -63,6 +63,7 @@ const useSocketStore = create((set, get) => ({
     emitAnswer: (answer, roomId) => {
         const { socket } = get();
         if (socket) {
+            console.log(answer, roomId)
             socket.emit('answer', { type: answer.type, sdp: answer.sdp, roomId });
         }
     },
@@ -70,6 +71,7 @@ const useSocketStore = create((set, get) => ({
     emitCandidate: (candidate, roomId) => {
         const { socket } = get();
         if (socket) {
+            console.log(candidate, roomId)
             socket.emit('candidate', { candidate, roomId });
         }
     },

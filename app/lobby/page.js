@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Room from '@/components/lobby/Room';
 import RoomButton from '@/components/lobby/RoomButton';
@@ -10,7 +10,7 @@ import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/post
 
 export default function Lobby() {
   const router = useRouter();
-  const { initSocket, closeSocket, rooms, addRoom, joinRoom, getAllRooms } = useSocketStore();
+  const { initSocket, closeSocket, rooms, addRoom, joinRoom } = useSocketStore();
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
