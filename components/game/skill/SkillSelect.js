@@ -3,22 +3,19 @@ import ProgressButton from './ProgressButton';
 import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import SkillCanvas from './SkillCanvas';
 
-export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks }) {
+export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill }) {
   const canvasRef = useRef(null);
   const [buttonProgress, setButtonProgress] = useState({});
-  
+
   const [activeSkill, setActiveSkill] = useState(null);
   const [showShieldSkill, setShowShieldSkill] = useState(false);
   const [showHealSkill, setShowHealSkill] = useState(false);
   const [showAttackSkill, setShowAttackSkill] = useState(false);
 
   const [shieldImage, setShieldImage] = useState(null);
-  const [shieldBackImage, setShieldBackImage] = useState(null);
   const [healImage, setHealImage] = useState(null);
-  const [healBackImage, setHealBackImage] = useState(null);
   const [attackImage, setAttackImage] = useState(null);
-  const [attackBackImage, setAttackBackImage] = useState(null);
-  
+
   const buttonWidth = 120;
   const buttonHeight = 80;
 
@@ -56,19 +53,16 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     shield: {
       show: showShieldSkill,
       image: shieldImage,
-      backgroundImage: shieldBackImage,
       skillConfig: shieldSkill
     },
     heal: {
       show: showHealSkill,
       image: healImage,
-      backgroundImage: healBackImage,
       skillConfig: healSkill
     },
     attack: {
       show: showAttackSkill,
       image: attackImage,
-      backgroundImage: attackBackImage,
       skillConfig: attackSkill
     }
   };
@@ -87,14 +81,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     shield_img.onload = () => {
       console.log('Heart image loaded successfully');
       setShieldImage(shield_img);
-    };  
-    
-    const shield_back_img = new Image();
-    shield_back_img.src = '/images/shield_background.jpg';
-    shield_back_img.onload = () => {
-      console.log('Background image loaded successfully (Shield)');
-      setShieldBackImage(shield_back_img);
-    };  
+    };
 
     const heal_img = new Image();
     heal_img.src = '/images/crown.png';
@@ -103,25 +90,11 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       setHealImage(heal_img);
     };
 
-    const heal_back_img = new Image();
-    heal_back_img.src = '/images/heal_background.jpg';
-    heal_back_img.onload = () => {
-      console.log('Background image loaded successfully (Heal)');
-      setHealBackImage(heal_back_img);
-    };
-
     const attack_img = new Image();
     attack_img.src = '/images/tattoo.png';
     attack_img.onload = () => {
       console.log('Tattoo image loaded successfully');
       setAttackImage(attack_img);
-    };
-
-    const attack_back_img = new Image();
-    attack_back_img.src = '/images/attack_background.jpg';
-    attack_back_img.onload = () => {
-      console.log('Background image loaded successfully (Attack)');
-      setAttackBackImage(attack_back_img);
     };
   }, []);
 
@@ -173,6 +146,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       const newProgress = Math.min((prev[buttonId] || 0) + 0.05, 1);
       if (newProgress >= 1) {
         setActiveSkill(buttonId);
+        console.log("Calling onUseSkill with:", buttonId.toLowerCase());
+        onUseSkill(buttonId.toLowerCase());
         return { ...prev, [buttonId]: 0 };
       }
       return { ...prev, [buttonId]: newProgress };
@@ -234,7 +209,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             key={skillType}
             videoElement={localVideoRef.current}
             image={config.image}
-            backgroundImage={config.backgroundImage}
             onSkillComplete={handleSkillComplete}
             poseLandmarks={poseLandmarks}
             skillConfig={config.skillConfig}

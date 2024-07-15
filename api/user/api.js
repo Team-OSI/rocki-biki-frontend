@@ -71,6 +71,29 @@ export const getNickname = async () => {
   }
 };
 
+export const updateProfile = async (nickname, profileImage) => {
+  const jwtToken = Cookies.get('JWT_TOKEN');
+  const formData = new FormData();
+  formData.append('nickname', nickname);
+  if (profileImage instanceof File) {
+    formData.append('image', profileImage);
+  }
+
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/update`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${jwtToken}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('프로필 업데이트 중 오류 발생:', error);
+    throw error;
+  }
+};
+
+
 export const fetchAudioUrls = async (setAudioUrls) => {
   try {
     const response = await api.get('/api/users/profile/sound');
@@ -109,5 +132,3 @@ export const updateNickname = async (nickname, image) => {
   });
   return response.data;
 };
-
-
