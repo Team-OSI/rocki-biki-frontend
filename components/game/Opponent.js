@@ -135,14 +135,13 @@ export function Opponent({ position, landmarks, opponentData }) {
         const velocity = hand[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
         const damage = Math.floor(velocity * 10)
 
+          decreaseOpponentHealth(damage)
+          console.log('여긴때릴때 값:', damage)
+          // 데미지 정보를 서버로 전송
+          emitDamage(damage, roomId)
+          playHitSound()
+        
         setHit(true)
-
-        decreaseOpponentHealth(damage)
-
-        // 데미지 정보를 서버로 전송
-        emitDamage(damage, roomId)
-
-        playHitSound()
         lastHitTime.current = currentTime
         setTimeout(() => setHit(false), 200)
         // console.log('===velocity:', velocity, 'damage:',damage )
@@ -152,11 +151,11 @@ export function Opponent({ position, landmarks, opponentData }) {
   }, [landmarks, decreaseOpponentHealth, playHitSound, emitDamage])
 
   useFrame(() => {
-    if(count_optm.current % 5 === 0) {
+    // if(count_optm.current % 5 === 0) {
       checkHit();
-    }
-    if (count_optm.current > 1000000) count_optm.current = 0;
-    count_optm.current++;
+    // }
+    // if (count_optm.current > 1000000) count_optm.current = 0;
+    // count_optm.current++;
       // console.log('myhead',landmarks?.current?.head?.[0])
   })
 

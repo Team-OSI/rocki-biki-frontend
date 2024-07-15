@@ -11,7 +11,7 @@ import useGameLogic from '@/hooks/useGameLogic';
 
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
-    const { handleUseSkill } = useGameLogic();
+    const { gameStatus, startGame } = useGameLogic(); //game 로직
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -23,8 +23,6 @@ export default function GameMain() {
     const landmarksRef = useRef(landmarks);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
-
-    const { gameStatus, startGame } = useGameLogic(); //game 로직
 
     const handleLandmarksUpdate = useCallback((newLandmarks) => {
         setLandmarks(newLandmarks);
@@ -174,7 +172,7 @@ export default function GameMain() {
                                 landmarks={landmarks.landmarks}
                             />
                         </div>
-                        <div className="absolute inset-0 z-40 pointer-events-none">
+                        {/* <div className="absolute inset-0 z-40 pointer-events-none">
                             <SkillSelect
                                 localVideoRef={localVideoRef}
                                 poseLandmarks={landmarks.poseLandmarks}
@@ -182,7 +180,7 @@ export default function GameMain() {
                                 canvasSize={canvasSize}
                                 onUseSkill={handleUseSkill}
                             />
-                        </div>
+                        </div> */}
                     </>
                 )}
             </div>

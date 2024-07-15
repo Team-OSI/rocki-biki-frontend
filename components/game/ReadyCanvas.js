@@ -63,8 +63,8 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
-      setRemainingTime(5); // 타이머 초기화
     }
+    setRemainingTime(5); // 타이머 초기화
 
     timerRef.current = setInterval(() => {
       setRemainingTime((prevTime) => {

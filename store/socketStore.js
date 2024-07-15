@@ -1,10 +1,9 @@
 import {create} from 'zustand';
 import io from 'socket.io-client';
-import useGameStore from './gameStore';
 
 const useSocketStore = create((set, get) => ({
     socket: null,
-    lastEmittedPlayerRead: null, // 마지막으로 보낸 플레이어의 준비 상태를 저장
+    lastEmittedPlayerReady: null, // 마지막으로 보낸 플레이어의 준비 상태를 저장
     rooms: [],
     opponentSkill: null,
 
@@ -79,18 +78,19 @@ const useSocketStore = create((set, get) => ({
     emitDamage: (damage, roomId) => {
         const { socket } = get();
         if (socket) {
-            socket.emit('damage', { roomId: roomId.current, amount: damage });
+            console.log('한번만 보내는 emit: ', damage)
+            socket.emit('damage', { roomId: roomId.current, amount: damage, socketId: socket.id });
         }
     },
 
     // 플레이어 상태 보내기
-    emitPlayerReady: (state, roomId) => {
-        const { socket, lastEmittedPlayerRead } = get();
+    emitPlayerReady: (state) => {
+        const { socket, lastEmittedPlayerReady } = get();
         if (socket) {
             // 마지막으로 보낸 상태와 현재 상태가 다를 때만 emit
-            if(lastEmittedPlayerRead === null || lastEmittedPlayerRead !== state){
-                socket.emit('ready', {roomId: roomId, state: state});
-                set({ lastEmittedPlayerRead: state}) // 마지막 상태 업데이트
+            if(lastEmittedPlayerReady === null || lastEmittedPlayerReady !== state){
+                socket.emit('ready', state);
+                set({ lastEmittedPlayerReady: state}) // 마지막 상태 업데이트
             }
         }
     }

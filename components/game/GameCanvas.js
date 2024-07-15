@@ -43,24 +43,13 @@ function Scene({receivedPoseData, landmarks, socket}) {
 
   useEffect(() => {
     if (socket) {
-      const handleDamage = (data) => {
-        decreasePlayerHealth(data.amount);
-      };
-
       const handleOpponentSkillUsed = ({ skillType }) => {
         console.log('Opponent used skill:', skillType);
       };
 
-      console.log('Socket connected:', socket.connected)
-      socket.on('connect', () => console.log('Socket connected'))
-      socket.on('disconnect', () => console.log('Socket disconnected'))
-      socket.on('damage', handleDamage);
       socket.on('opponentSkillUsed', handleOpponentSkillUsed);
 
       return () => {
-        socket.off('damage');
-        socket.off('connect');
-        socket.off('disconnect');
         socket.off('opponentSkillUsed');
       };
     }

@@ -17,7 +17,7 @@ export default function Lobby() {
 
 
   useEffect(() => {
-    initSocket(process.env.NEXT_PUBLIC_NODE_SERVER);
+    initSocket(process.env.NEXT_PUBLIC_NODE_SERVER || 'http://localhost:7777');
     return () => closeSocket;
   },[initSocket, closeSocket]);
 
