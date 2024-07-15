@@ -1,13 +1,13 @@
 import React from 'react';
 
-export default function Room({ title, participants, status, onClick }) {
-  const isFull = participants === '2/2';
+export default function Room({ title, onClick }) {
+  const isFull = false;
   
   return (
     <div className="flex items-center justify-between p-4 bg-gray-100 rounded-lg shadow-md mb-4">
       <div>
         <h3 className="text-xl font-bold">{title}</h3>
-        <p className="text-sm text-gray-600">{participants}</p>
+        <p className="text-sm text-gray-600">{}</p>
       </div>
       <button 
         onClick={onClick} 

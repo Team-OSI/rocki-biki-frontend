@@ -6,56 +6,63 @@ const useGameStore = create((set, get) => ({
   opponentReadyState: false,
   gameStatus: 'waiting', // 'waiting', 'bothReady' ,'playing', 'skillTime' ,'finished', 'replaying'
   winner: null,
+  playerSkills: [null, null],
+  opponentSkills: [null, null],
   
-  setGameStatus: (status) => set({ gameStatus: status }),
+  setGameStatus: (status, socketId) => {
+    const playerIds = Object.keys(status.players);
+    const opponentId = playerIds.find(id => id !== socketId);
 
-  decreaseOpponentHealth: (amount) => {
-    set((state) => {
-      const newHealth = Math.max(0, state.opponentHealth - amount);
-      if (newHealth === 0) {
-        return { opponentHealth: newHealth, gameStatus: 'finished', winner: 'player' };
-      }
-      return { opponentHealth: newHealth };
-    });
-  },
-  decreasePlayerHealth: (amount) => {
-    set((state) => {
-      const newHealth = Math.max(0, state.playerHealth - amount);
-      if (newHealth === 0) {
-        return { playerHealth: newHealth, gameStatus: 'finished', winner: 'opponent' };
-      }
-      return { playerHealth: newHealth };
-    });
+    set(state => ({
+      gameStatus: status.gameStatus,
+      playerHealth: status.players[socketId].health,
+      opponentHealth: status.players[opponentId].health,
+      opponentReadyState: status.players[opponentId].ready,
+      winner: status.winner,
+      playerSkills: status.players[socketId].skill,
+      opponentSkills: status.players[opponentId].skill
+    }));
   },
 
-  resetGame: () => set({
-    opponentHealth: 100,
-    playerHealth: 100,
-    gameStatus: 'idle',
-    winner: null
-  }),
+  // decreaseOpponentHealth: (amount) => {
+  //   set((state) => {
+  //     const newHealth = Math.max(0, state.opponentHealth - amount);
+  //     if (newHealth === 0) {
+  //       return { opponentHealth: newHealth, gameStatus: 'finished', winner: 'player' };
+  //     }
+  //     return { opponentHealth: newHealth };
+  //   });
+  // },
+  // decreasePlayerHealth: (amount) => {
+  //   set((state) => {
+  //     const newHealth = Math.max(0, state.playerHealth - amount);
+  //     if (newHealth === 0) {
+  //       return { playerHealth: newHealth, gameStatus: 'finished', winner: 'opponent' };
+  //     }
+  //     return { playerHealth: newHealth };
+  //   });
+  // },
 
-  startGame: () => set({
-    opponentHealth: 100,
-    playerHealth: 100,
-    gameStatus: 'playing'
-  }),
+  // resetGame: () => set({
+  //   opponentHealth: 100,
+  //   playerHealth: 100,
+  //   gameStatus: 'idle',
+  //   winner: null
+  // }),
 
-  setOpponentReady: (state) => {
-    const currentState = get().opponentReadyState;
-    if (currentState !== state){
-      console.log('update setOpponentReady')
-      set({opponentReadyState: state})
-    }
-  },
-  handleDamage: (amount, socketId) => set((state) => {
-    if (state.gameStatus === "playing" && state.socket.id !== socketId) {
-      const newHealth = Math.max(0, state.playerHealth - amount);
-      console.log('Damage applied:', amount);
-      return { playerHealth: newHealth };
-    }
-    return state;
-  }),
+  // startGame: () => set({
+  //   opponentHealth: 100,
+  //   playerHealth: 100,
+  //   gameStatus: 'playing'
+  // }),
+
+  // setOpponentReady: (state) => {
+  //   const currentState = get().opponentReadyState;
+  //   if (currentState !== state){
+  //     console.log('update setOpponentReady')
+  //     set({opponentReadyState: state})
+  //   }
+  // },
 }));
 
 export default useGameStore;
