@@ -22,7 +22,7 @@ export default function Lobby() {
   },[initSocket, closeSocket]);
 
   useEffect(() => {
-
+    console.log(rooms)
   }, [rooms]);
 
 
@@ -72,13 +72,13 @@ export default function Lobby() {
             </div>
           </div>
           <div className="max-h-96 overflow-y-auto">
-          {getAllRooms().map(room => (
+          {Array.from(rooms).map(([roomId, room]) => (
             <Room 
-              key={room.roomId} 
-              title={room.title} 
-              participants={`${room.players.length}/2`} 
-              status={room.players.length < 2 ? '참가하기' : '경기중'} 
-              onClick={() => goGame(room.roomId)} 
+              key={roomId}
+              title={room.title}
+              participants={`${room.players.length}/2`}
+              status={room.players.length < 2 ? '참가하기' : '경기중'}
+              onClick={() => goGame(roomId)}
             />
           ))}
           </div>
