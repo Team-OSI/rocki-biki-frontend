@@ -33,7 +33,6 @@ export default function RecordingModal({ isOpen, onClose }) {
                     formData.append(`audio${i}`, recordings[i], `audio${i}.webm`);
                 }
             }
-
             await updateAudio(formData);
             handleClose();
         } catch (error) {
