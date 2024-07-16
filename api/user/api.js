@@ -45,6 +45,16 @@ export const login = async (email, passWord) => {
   }
 };
 
+export const getUserEmail = async () => {
+  try {
+    const response = await api.get('/api/users/getUserInfo');
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
+
 export const setNickname = async (nickname, image) => {
   const formData = new FormData();
   formData.append('nickname', nickname);
@@ -61,9 +71,10 @@ export const setNickname = async (nickname, image) => {
   return response.data;
 };
 
-export const getNickname = async () => {
+export const getNickname = async (userEmail) => {
   try {
     const response = await api.get('/api/users/profile/get', {
+      params: { userEmail }
     });
     return response.data;
   } catch (error) {
@@ -132,3 +143,21 @@ export const updateNickname = async (nickname, image) => {
   });
   return response.data;
 };
+
+export const getGameResults = async (userEmail, page = 0, size = 10, sort = 'DESC', sortField = 'createdAt') => {
+  try {
+    const response = await axios.post('/api/recent-result', {
+      userEmail,
+      page,
+      size,
+      sort,
+      sortField
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching game results:', error);
+    throw error;
+  }
+};
+
+
