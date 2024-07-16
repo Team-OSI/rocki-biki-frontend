@@ -50,8 +50,8 @@ const GameResultModal = ({ isOpen, onClose, userEmail }) => {
                         ref={index === results.length - 1 ? lastResultElementRef : null}
                         className={`flex justify-between items-center p-4 mb-4 rounded-lg ${
                             result.win
-                                ? 'bg-gradient-to-r from-blue-200 to-red-200'
-                                : 'bg-gradient-to-r from-red-200 to-blue-200'
+                                ? 'bg-blue-500'
+                                : 'bg-red-500'
                         }`}
                     >
                         <div className="flex items-center">
