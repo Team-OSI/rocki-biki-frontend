@@ -1,17 +1,15 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, {useEffect, useState} from 'react';
+import {useRouter} from 'next/navigation';
 import Room from '@/components/lobby/Room';
 import RoomButton from '@/components/lobby/RoomButton';
 import RoomModal from '@/components/lobby/RoomModal';
 import NicknameModal from '@/components/lobby/NicknameModal';
 import Navbar from '@/components/lobby/Navbar';
 import useSocketStore from '@/store/socketStore';
-import {jwtDecode} from 'jwt-decode';
-import Cookies from 'js-cookie';
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
-import { getNickname } from '@/api/user/api';
+import {getNickname, getUserEmail} from '@/api/user/api';
 
 export default function Lobby() {
   const router = useRouter();
@@ -19,23 +17,32 @@ export default function Lobby() {
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
+  const [userEmail, setUserEmail] = useState([]);
   const [nickname, setNickname] = useState('');
   const [showNicknameModal, setShowNicknameModal] = useState(false); 
   const [userNickname, setUserNickname] = useState('');
   const [userProfileImage, setUserProfileImage] = useState('')
 
   useEffect(() => {
-    const fetchNickname = async () => {
-      try {
-        const response = await getNickname();
-        setUserProfileImage(response.profileImage);
-        setUserNickname(response.nickname);
-      } catch (err) {
-        setShowNicknameModal(true);
+    const initializeUser = async () => {
+      const email = await getUserEmail();
+      setUserEmail(email);
+
+      if (email) {
+        try {
+          const response = await getNickname(email);
+          setUserProfileImage(response.profileImage);
+          setUserNickname(response.nickname);
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+          setShowNicknameModal(true);
+        }
+      } else {
+        console.error("No user email found");
       }
     };
 
-    fetchNickname();
+    initializeUser();
   }, []);
 
   useEffect(() => {
@@ -102,7 +109,7 @@ export default function Lobby() {
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
-      <Navbar userNickname={userNickname} userProfileImage={userProfileImage} />
+      <Navbar userEmail={userEmail} userNickname={userNickname} userProfileImage={userProfileImage} />
       <div className="mt-32 flex flex-col items-center w-full max-w-screen-md">
         <div className="w-full p-6 bg-blue-100 rounded-lg shadow-lg">
           <div className="flex justify-center items-center mb-6">
