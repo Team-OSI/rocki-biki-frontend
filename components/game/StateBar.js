@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import useGameStore from '../../store/gameStore'
+import useSocketStore from '@/store/socketStore';
 
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, setGameStatus, winner } = useGameStore();
+  const socket = useSocketStore(state => state.socket);
+
   const [count, setCount] = useState(3000);
 
   useEffect(()=>{
@@ -13,7 +16,7 @@ export default function StateBar() {
       }, 1000);
     } else if (count === 0 || gameStatus === 'finished') {
       clearInterval(timer);
-      if (count === 0){
+      if (count === 0) {
         setGameStatus('finished');
       }
     }
@@ -54,7 +57,7 @@ export default function StateBar() {
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-8 rounded-lg text-center">
             <h2 className="text-2xl font-bold mb-4">
-              {winner === 'player' ? '승리!' : winner === 'opponent' ? '패배!' : '시간 초과!'}
+              {winner === socket.id ? '승리!' :  '패배!'}
             </h2>
             <button 
               onClick={handleRestart}

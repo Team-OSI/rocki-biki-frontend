@@ -1,26 +1,20 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
 
 const useGameLogic = () => {
-  const [roomId, setRoomId] = useState(null);
-  const { setGameState, gameStatus } = useGameStore();
-  
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    setRoomId(searchParams.get('roomId'));
-  }, []);
+
+  const { setGameStatus, gameStatus } = useGameStore();
+
   // 소켓 연결 설정
   const socket = useSocketStore(state => state.socket);
+
 
   // 소켓 이벤트 리스너 설정
   useEffect(() => {
     if (!socket) return;
 
     socket.on('gameState', handleGameUpdate);
-
-    // 방에 입장
-    socket.emit('joinRoom', roomId)
 
     return () => {
       socket.off('gameState');
@@ -29,10 +23,9 @@ const useGameLogic = () => {
 
   // 게임 상태 업데이트 처리
   const handleGameUpdate = useCallback((newState) => {
-    if (socket && setGameState) {
-      setGameState(newState, socket.id);
-    }
-  }, [setGameState, socket]);
+    console.log('게임 상태 업데이트 처리: ', newState)
+    setGameStatus(newState, socket.id);
+  }, [setGameStatus, socket]);
 
   // // 플레이어 입장 처리
   // const handlePlayerJoined = useCallback((player) => {

@@ -8,10 +8,22 @@ import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
 import useGameLogic from '@/hooks/useGameLogic';
+import useGameStore from '@/store/gameStore';
+import useSocketStore from '@/store/socketStore';
 
 export default function GameMain() {
     const roomId = useRef(null);
-    const { gameStatus } = useGameLogic(); //game 로직
+    const bgmSoundRef = useRef(null);
+
+    useEffect(() => {
+        bgmSoundRef.current = new Audio('./sounds/bgm.MP3');
+      }, []);
+
+    const playBgmSound = useCallback(() => {
+    if (bgmSoundRef.current) {
+        bgmSoundRef.current.play();
+    }
+    }, []);
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -48,8 +60,14 @@ export default function GameMain() {
         () => landmarksRef.current
     );
 
+    const { gameStatus } = useGameLogic(); //game 로직
+    const myReady = useGameStore(state => state.myReady);
+    const opponentReady = useGameStore(state => state.opponentReadyState)
+    const emitGameStart = useSocketStore(state => state.emitGameStart);
+
     const handleReady = () => {
-        console.log('hho')
+        playBgmSound();
+        emitGameStart();
     };
 
     const videoContainerStyle = (isLocal) => ({
@@ -111,13 +129,15 @@ export default function GameMain() {
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
             <div style={videoContainerStyle(true)}>
                 <video
-                    className="scale-x-[-1] opacity-80 mt-2"
+                    className={`scale-x-[-1] opacity-80 mt-2 transition-transform  ${
+                        (myReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
+                      }`}
                     ref={localVideoRef}
                     style={videoStyle}
                     autoPlay
                     playsInline
                 />
-                {gameStatus === 'waiting' && (
+                {!myReady && (
                     <Image
                         src="/images/ready_pose.webp"
                         alt="Ready Pose"
@@ -138,13 +158,15 @@ export default function GameMain() {
                     </div>
                 )}
                     <video
-                        className="scale-x-[-1] opacity-80 mt-2"
+                        className={`scale-x-[-1] opacity-80 mt-2 transition-transform  ${
+                            (opponentReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
+                          }`}
                         ref={remoteVideoRef}
                         style={videoStyle}
                         autoPlay
                         playsInline
                     />
-                    {gameStatus === 'waiting' && (
+                    {(!opponentReady && connectionState === 'connected') && (
                         <Image
                             src="/images/ready_pose.webp"
                             alt="Ready Pose"
@@ -156,7 +178,7 @@ export default function GameMain() {
                 </>
             </div>
             <div className="absolute inset-0" ref={canvasRef}>
-                {gameStatus === 'waiting' ? (
+                {gameStatus === 'waiting' || gameStatus === 'bothReady' ? (
                     <div className="absolute inset-0 z-40">
                         <ReadyCanvas
                             onReady={handleReady}

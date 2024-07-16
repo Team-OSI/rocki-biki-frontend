@@ -87,8 +87,7 @@ const useSocketStore = create((set, get) => ({
     emitDamage: (damage) => {
         const { socket } = get();
         if (socket) {
-            console.log('한번만 보내는 emit: ', damage)
-            socket.emit('damage', { amount: damage });
+            socket.emit('attackDamage', { amount: damage });
         }
     },
 
@@ -98,9 +97,16 @@ const useSocketStore = create((set, get) => ({
         if (socket) {
             // 마지막으로 보낸 상태와 현재 상태가 다를 때만 emit
             if(lastEmittedPlayerReady === null || lastEmittedPlayerReady !== state){
-                socket.emit('ready', state);
+                socket.emit('ready', { state: state });
                 set({ lastEmittedPlayerReady: state}) // 마지막 상태 업데이트
             }
+        }
+    },
+    // 게임 시작하기
+    emitGameStart: () => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('start')
         }
     },
     // Map을 사용하는 새로운 유틸리티 메서드들

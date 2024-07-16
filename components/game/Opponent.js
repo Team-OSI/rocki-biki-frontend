@@ -84,7 +84,6 @@ export function Opponent({ position, landmarks, opponentData }) {
   const headRef = useRef(null)
   const [hit, setHit] = useState(false)
   const lastHitTime = useRef(0)
-  const decreaseOpponentHealth = useGameStore(state => state.decreaseOpponentHealth)
   const emitDamage = useSocketStore(state => state.emitDamage)
   const count_optm = useRef(0)
   const roomId = useRef('')
@@ -135,10 +134,8 @@ export function Opponent({ position, landmarks, opponentData }) {
         const velocity = hand[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
         const damage = Math.floor(velocity * 10)
 
-          decreaseOpponentHealth(damage)
-          console.log('여긴때릴때 값:', damage)
           // 데미지 정보를 서버로 전송
-          emitDamage(damage, roomId)
+          emitDamage(damage)
           playHitSound()
         
         setHit(true)
@@ -148,7 +145,7 @@ export function Opponent({ position, landmarks, opponentData }) {
       }
       // console.log('distance:', distance)
     })
-  }, [landmarks, decreaseOpponentHealth, playHitSound, emitDamage])
+  }, [landmarks, playHitSound, emitDamage])
 
   useFrame(() => {
     // if(count_optm.current % 5 === 0) {

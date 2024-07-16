@@ -8,6 +8,7 @@ import {useEffect, useState} from 'react';
 import useGameStore from '@/store/gameStore';
 import StateBar from './StateBar';
 import useSocketStore from "@/store/socketStore";
+import { Ring } from './Ring';
 
 const skillBackgrounds = {
   default: '/images/default_background.jpg',
@@ -61,8 +62,9 @@ function Scene({receivedPoseData, landmarks, socket}) {
       <pointLight position={[10, 10, 10]} intensity={1} />
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
       <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} socket={socket}/>
-      {/*<Environment preset='sunset' background />*/}
-      <BackGround texturePath={background} />
+      <Environment preset='sunset' background />
+      {/* <BackGround texturePath={background} /> */}
+      <Ring />
     </>
   );
 }
