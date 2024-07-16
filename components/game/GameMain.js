@@ -8,8 +8,9 @@ import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
 import useGameLogic from '@/hooks/useGameLogic';
-import useGameStore from '@/store/gameStore';
+import { useRouter } from 'next/navigation';
 import useSocketStore from '@/store/socketStore';
+import useGameStore from '@/store/gameStore';
 
 export default function GameMain() {
     const roomId = useRef(null);
@@ -24,11 +25,14 @@ export default function GameMain() {
         bgmSoundRef.current.play();
     }
     }, []);
+    const { gameStatus } = useGameLogic(); //game 로직
+    const router = useRouter();
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
-        roomId.current = searchParams.get('roomId');
-    }, [roomId]);
+        const roomIdFromUrl = searchParams.get('roomId');
+        roomId.current = roomIdFromUrl;
+    }, []);
 
     const [receivedPoseData, setReceivedPoseData] = useState({});
     const [landmarks, setLandmarks] = useState({});
@@ -43,6 +47,23 @@ export default function GameMain() {
     useEffect(()=> {
         landmarksRef.current = landmarks.landmarks
     },[landmarks])
+
+    useEffect(() => {
+        const onRoomClosed = () => {
+          router.push('/lobby');
+        };
+    
+        const socket = useSocketStore.getState().socket;
+        if (socket) {
+          socket.on('ROOM_CLOSE', onRoomClosed);
+        }
+    
+        return () => {
+          if (socket) {
+            socket.off('ROOM_CLOSE', onRoomClosed);
+          }
+        };
+      }, [router]);
 
     useMotionCapture(localVideoRef, handleLandmarksUpdate);
 
@@ -60,7 +81,6 @@ export default function GameMain() {
         () => landmarksRef.current
     );
 
-    const { gameStatus } = useGameLogic(); //game 로직
     const myReady = useGameStore(state => state.myReady);
     const opponentReady = useGameStore(state => state.opponentReadyState)
     const emitGameStart = useSocketStore(state => state.emitGameStart);
