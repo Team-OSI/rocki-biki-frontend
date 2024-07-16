@@ -112,7 +112,7 @@ export const fetchAudioUrls = async (setAudioUrls) => {
     setAudioUrls(response.data);
   } catch (error) {
     console.error('Error fetching audio URLs:', error);
-    throw error; // 에러를 다시 던져서 호출자가 처리할 수 있게 합니다.
+    throw error;
   }
 };
 
@@ -146,7 +146,7 @@ export const updateNickname = async (nickname, image) => {
 
 export const getGameResults = async (userEmail, page = 0, size = 10, sort = 'DESC', sortField = 'createdAt') => {
   try {
-    const response = await axios.post('/api/recent-result', {
+    const response = await api.post('/api/recent-result', {
       userEmail,
       page,
       size,

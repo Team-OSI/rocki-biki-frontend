@@ -25,7 +25,7 @@ export default function Lobby() {
 
   useEffect(() => {
     const initializeUser = async () => {
-      const email = getUserEmail();
+      const email = await getUserEmail();
       setUserEmail(email);
 
       if (email) {

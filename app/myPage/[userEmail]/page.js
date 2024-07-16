@@ -1,42 +1,51 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { FaCog } from 'react-icons/fa'; // 톱니바퀴 아이콘을 위해 react-icons 설치 필요
+import { FaCog } from 'react-icons/fa';
 import Navbar from '@/components/myPage/Navbar';
 import RecordingModal from "@/components/myPage/RecordingModal";
-import ProfileEditModal from "@/components/myPage/ProfileEditModal"; // 새로 만들 컴포넌트
-import { getNickname, updateProfile } from '@/api/user/api';
+import ProfileEditModal from "@/components/myPage/ProfileEditModal";
 import GameResultModal from "@/components/myPage/GameResultModal";
-import Cookies from "js-cookie";
-import {jwtDecode} from "jwt-decode"; // updateProfile API 함수 추가 필요
+import { getNickname, updateProfile } from '@/api/user/api';
+import Cookies from 'js-cookie';
+import {jwtDecode} from "jwt-decode";
 
-export default function MyPage({ userEmail }) {
+export default function MyPage() {
+    const params = useParams();
+    let { userEmail } = params;
+    userEmail = decodeURIComponent(userEmail)
     const router = useRouter();
     const [isCurrentUser, setIsCurrentUser] = useState(false);
     const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
     const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
     const [isGameResultModalOpen, setIsGameResultModalOpen] = useState(false);
-    const [userNickname, setUserNickname] = useState("");
-    const [userProfileImage, setUserProfileImage] = useState("");
+    const [userNickname, setUserNickname] = useState('');
+    const [userProfileImage, setUserProfileImage] = useState('');
 
     useEffect(() => {
         fetchUserData();
-    }, []);
+    }, [userEmail]);
 
     useEffect(() => {
         const currentUserEmail = getCurrentUserEmail();
         setIsCurrentUser(currentUserEmail === userEmail);
-        fetchUserData();
     }, [userEmail]);
 
     const getCurrentUserEmail = () => {
         const token = Cookies.get('JWT_TOKEN');
-        const decoded = jwtDecode(token);
-        return decoded.sub;
+        if (!token) {
+            return null;
+        }
+        try {
+            const decoded = jwtDecode(token);  // jwtDecode 함수 호출
+            return decoded.sub;
+        } catch (error) {
+            console.error('JWT decoding failed:', error);
+            return null;
+        }
     };
-
 
     const fetchUserData = async () => {
         try {
@@ -58,8 +67,8 @@ export default function MyPage({ userEmail }) {
     const openProfileEditModal = () => setIsProfileEditModalOpen(true);
     const closeProfileEditModal = () => setIsProfileEditModalOpen(false);
 
-    const openGameResultModal = () => setIsGameResultModalOpen(true)
-    const closeGameResultModal = ()=> setIsGameResultModalOpen(false)
+    const openGameResultModal = () => setIsGameResultModalOpen(true);
+    const closeGameResultModal = () => setIsGameResultModalOpen(false);
 
     const handleProfileUpdate = async (newNickname, newProfileImage) => {
         try {
@@ -71,7 +80,6 @@ export default function MyPage({ userEmail }) {
             console.error("프로필 업데이트 실패:", err);
         }
     };
-
 
     return (
         <div className="min-h-screen flex flex-col">

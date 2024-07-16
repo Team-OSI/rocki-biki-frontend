@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 
-export default function Navbar({ userEmail ,userNickname, userProfileImage }) {
+export default function Navbar({ userEmail, userNickname, userProfileImage }) {
   const router = useRouter();
   const handleLogout = () => {
     Cookies.remove('JWT_TOKEN');
@@ -28,7 +28,11 @@ export default function Navbar({ userEmail ,userNickname, userProfileImage }) {
                     className="w-8 h-8 rounded-full mr-2"
                 />
             )}
-            <Link href="/mypage/[userEmail]" as={`/mypage/${userEmail}`} className="text-gray-300 hover:text-white">
+            {/*<Link href="/myPage" className="text-gray-300 hover:text-white">*/}
+            {/*  {userNickname}*/}
+            {/*</Link>*/}
+
+            <Link href={`/myPage/${encodeURIComponent(userEmail)}`} className="text-gray-300 hover:text-white">
               {userNickname}
             </Link>
             <button
