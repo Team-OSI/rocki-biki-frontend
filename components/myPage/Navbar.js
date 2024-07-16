@@ -29,16 +29,16 @@ export default function Navbar({ userNickname, userProfileImage, onNicknameUpdat
   return (
       <>
         <nav className="bg-gray-800 p-4 fixed w-full top-0 left-0 z-10">
-          <div className="container mx-auto flex items-center justify-between">
-            <div className="flex items-center flex-grow">
+          <div className="container mx-auto flex items-center">
+            <div className="flex items-center w-1/3">
               <Link href="/" className="text-gray-300 hover:text-white">
                 Main
               </Link>
             </div>
-            <div className="text-white text-lg font-bold">
+            <div className="text-white text-lg font-bold w-1/3 text-center">
               My Page
             </div>
-            <div className="flex items-center flex-grow justify-end">
+            <div className="flex items-center justify-end w-1/3">
               {userProfileImage && (
                   <img
                       src={userProfileImage}
@@ -46,7 +46,10 @@ export default function Navbar({ userNickname, userProfileImage, onNicknameUpdat
                       className="w-8 h-8 rounded-full mr-2"
                   />
               )}
-              <div className="text-gray-300 hover:text-white cursor-pointer" onClick={handleNicknameClick}>
+              <div
+                  className="text-gray-300 hover:text-white cursor-pointer"
+                  onClick={handleNicknameClick}
+              >
                 {userNickname}
               </div>
               <button
