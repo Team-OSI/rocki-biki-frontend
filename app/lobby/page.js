@@ -73,13 +73,14 @@ export default function Lobby() {
           </div>
           <div className="max-h-96 overflow-y-auto">
           {Array.from(rooms).map(([roomId, room]) => (
-            <Room 
-              key={roomId}
-              title={room.title}
-              participants={`${room.players.length}/2`}
-              status={room.players.length < 2 ? '참가하기' : '경기중'}
-              onClick={() => goGame(roomId)}
-            />
+             <Room 
+             key={roomId}
+             title={room.title}
+             player1={room.players[0]}
+             player2={room.players[1]}
+             status={room.players.length < 2 ? false : true}
+             onClick={() => goGame(roomId)}
+           /> 
           ))}
           </div>
         </div>

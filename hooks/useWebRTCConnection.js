@@ -15,7 +15,6 @@ const useWebRTCConnection = ( roomId, localVideoRef, remoteVideoRef, onDataRecei
 
     useEffect(() => {
         if (!socket || !roomId) return;
-        console.log(roomId)
 
         const initializeMedia = async () => {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
