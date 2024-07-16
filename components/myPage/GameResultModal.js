@@ -24,8 +24,9 @@ const GameResultModal = ({ isOpen, onClose, userEmail }) => {
         setLoading(true);
         getGameResults(userEmail, page)
             .then(response => {
-                setResults(prev => [...prev, ...response.content]);
-                setHasMore(!response.last);
+                const content = Array.isArray(response.content) ? response.content : [];
+                setResults(prev => [...prev, ...content]);
+                setHasMore(!response.last); // response.last가 true면 더 이상 데이터가 없음
                 setLoading(false);
             })
             .catch(err => {
@@ -38,7 +39,7 @@ const GameResultModal = ({ isOpen, onClose, userEmail }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="bg-white rounded-lg p-8 max-w-4xl w-full max-h-[80vh] overflow-y-auto relative">
                 <h2 className="text-2xl font-bold mb-4">대전 기록</h2>
                 {results.length === 0 && !loading && (
                     <p className="text-center text-gray-500">대전 기록이 없습니다.</p>
@@ -79,13 +80,13 @@ const GameResultModal = ({ isOpen, onClose, userEmail }) => {
                     </div>
                 ))}
                 {loading && <p>Loading...</p>}
+                <button
+                    onClick={onClose}
+                    className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg text-lg w-full"
+                >
+                    닫기
+                </button>
             </div>
-            <button
-                onClick={onClose}
-                className="absolute top-4 right-4 text-white text-2xl"
-            >
-                &times;
-            </button>
         </div>
     );
 };

@@ -10,12 +10,12 @@ import ProfileEditModal from "@/components/myPage/ProfileEditModal";
 import GameResultModal from "@/components/myPage/GameResultModal";
 import { getNickname, updateProfile } from '@/api/user/api';
 import Cookies from 'js-cookie';
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 export default function MyPage() {
     const params = useParams();
     let { userEmail } = params;
-    userEmail = decodeURIComponent(userEmail)
+    userEmail = decodeURIComponent(userEmail);
     const router = useRouter();
     const [isCurrentUser, setIsCurrentUser] = useState(false);
     const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
@@ -39,7 +39,7 @@ export default function MyPage() {
             return null;
         }
         try {
-            const decoded = jwtDecode(token);  // jwtDecode 함수 호출
+            const decoded = jwtDecode(token); // jwtDecode 함수 호출
             return decoded.sub;
         } catch (error) {
             console.error('JWT decoding failed:', error);
@@ -91,7 +91,7 @@ export default function MyPage() {
                 <div className="flex flex-col items-center relative">
                     <div className="w-80 h-80 rounded-full overflow-hidden mb-4">
                         <Image
-                            src={userProfileImage || '/default-profile.jpg'}
+                            src={userProfileImage || '/images/default_profile.png'}
                             alt="Profile"
                             width={320}
                             height={320}
@@ -107,26 +107,28 @@ export default function MyPage() {
                         )}
                     </div>
                 </div>
-                <button
-                    className="mt-6 bg-blue-500 text-white px-4 py-2 rounded-lg text-lg"
-                    onClick={goToLobby}
-                >
-                    Go Lobby!
-                </button>
-                {isCurrentUser && (
+                <div className="flex flex-col items-center space-y-4 mt-6">
                     <button
-                        className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg text-lg"
-                        onClick={openRecordingModal}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg text-lg w-40"
+                        onClick={goToLobby}
                     >
-                        피격음 녹음
+                        Go Lobby!
                     </button>
-                )}
-                <button
-                    className="mt-6 bg-blue-500 text-white px-4 py-2 rounded-lg text-lg"
-                    onClick={openGameResultModal}
-                >
-                    대전 기록
-                </button>
+                    {isCurrentUser && (
+                        <button
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg text-lg w-40"
+                            onClick={openRecordingModal}
+                        >
+                            피격음 녹음
+                        </button>
+                    )}
+                    <button
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg text-lg w-40"
+                        onClick={openGameResultModal}
+                    >
+                        대전 기록
+                    </button>
+                </div>
             </div>
             {isCurrentUser && (
                 <>
