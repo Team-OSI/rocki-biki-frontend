@@ -8,10 +8,13 @@ import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
 import useGameLogic from '@/hooks/useGameLogic';
+import { useRouter } from 'next/navigation';
+import useSocketStore from '@/store/socketStore';
 
 export default function GameMain() {
     const [roomId, setRoomId] = useState(null);
     const { gameStatus, startGame } = useGameLogic(); //game 로직
+    const router = useRouter();
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -35,6 +38,23 @@ export default function GameMain() {
     useEffect(()=> {
         landmarksRef.current = landmarks.landmarks
     },[landmarks])
+
+    useEffect(() => {
+        const onRoomClosed = () => {
+          router.push('/lobby');
+        };
+    
+        const socket = useSocketStore.getState().socket;
+        if (socket) {
+          socket.on('ROOM_CLOSE', onRoomClosed);
+        }
+    
+        return () => {
+          if (socket) {
+            socket.off('ROOM_CLOSE', onRoomClosed);
+          }
+        };
+      }, [router]);
 
     useMotionCapture(localVideoRef, handleLandmarksUpdate);
 

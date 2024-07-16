@@ -7,14 +7,28 @@ const useSocketStore = create((set, get) => ({
     rooms: new Map(),
     opponentSkill: null,
 
-    initSocket: (url) => {
-        const newSocket = io(url);
+    initSocket: (url, onRoomClosed) => {
+        let newSocket;
+
+        newSocket = io(url, {
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5,
+            forceNew: false,
+          });
+
         newSocket.on('ROOMS_UPDATE', (roomsData) => {
             console.log('ROOMS_UPDATE received', roomsData);
             // 서버에서 받은 데이터를 Map으로 변환
             const roomsMap = new Map(Object.entries(roomsData))
             set({ rooms: roomsMap });
         })
+
+        newSocket.on('ROOM_CLOSE', () => {
+            if (onRoomClosed) onRoomClosed();
+            alert('The room owner has left. Redirecting to the lobby.');
+          });
+
         set({ socket : newSocket })
     },
 
