@@ -146,7 +146,7 @@ export const updateNickname = async (nickname, image) => {
 
 export const getGameResults = async (userEmail, page = 0, size = 10, sort = 'DESC', sortField = 'createdAt') => {
   try {
-    const response = await api.post('/api/recent-result', {
+    const response = await api.post('/api/game/recent-result', {
       userEmail,
       page,
       size,
