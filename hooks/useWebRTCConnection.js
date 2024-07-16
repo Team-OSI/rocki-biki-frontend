@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
 
-const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
+const useWebRTCConnection = ( roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
     const socket = useSocketStore(state => state.socket);
     const emitOffer = useSocketStore(state => state.emitOffer);
     const emitAnswer = useSocketStore(state => state.emitAnswer);
@@ -15,6 +15,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
 
     useEffect(() => {
         if (!socket || !roomId) return;
+        console.log(roomId)
 
         const initializeMedia = async () => {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {

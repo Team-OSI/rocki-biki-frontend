@@ -42,14 +42,14 @@ const useSocketStore = create((set, get) => ({
         if (socket) {
             socket.emit('join room', roomId);
             // 방 참여 후 해당 방의 정보 업데이트
-            set(state => {
-                const newRooms = new Map(state.rooms);
-                const room = newRooms.get(roomId);
-                if (room) {
-                    newRooms.set(roomId, room);
-                }
-                return { rooms: newRooms }
-            })
+            // set(state => {
+            //     const newRooms = new Map(state.rooms);
+            //     const room = newRooms.get(roomId);
+            //     if (room) {
+            //         newRooms.set(roomId, room);
+            //     }
+            //     return { rooms: newRooms }
+            // })
         }
     },
 

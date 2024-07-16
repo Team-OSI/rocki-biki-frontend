@@ -10,13 +10,17 @@ import SkillSelect from './skill/SkillSelect';
 import useGameLogic from '@/hooks/useGameLogic';
 
 export default function GameMain() {
-    const roomId = useRef(null);
+    const [roomId, setRoomId] = useState(null);
     const { gameStatus, startGame } = useGameLogic(); //game 로직
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
-        roomId.current = searchParams.get('roomId');
-    }, [roomId]);
+        const roomIdFromUrl = searchParams.get('roomId');
+        if (roomIdFromUrl) {
+            setRoomId(roomIdFromUrl);
+        }
+        console.log(roomIdFromUrl); // null 방지 확인
+    }, []);
 
     const [receivedPoseData, setReceivedPoseData] = useState({});
     const [landmarks, setLandmarks] = useState({});
@@ -36,7 +40,7 @@ export default function GameMain() {
 
     // WebRTC 연결 설정
     const connectionState = useWebRTCConnection(
-        roomId.current,
+        roomId,
         localVideoRef,
         remoteVideoRef,
         (receivedData) => {
