@@ -7,6 +7,7 @@ import RoomButton from '@/components/lobby/RoomButton';
 import RoomModal from '@/components/lobby/RoomModal';
 import useSocketStore from '@/store/socketStore';
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
+import useUserStore from '@/store/userStore';
 
 export default function Lobby() {
   const router = useRouter();
@@ -14,21 +15,23 @@ export default function Lobby() {
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
-
+  const { setSocketId, setNickname } = useUserStore();
 
   useEffect(() => {
-    initSocket(process.env.NEXT_PUBLIC_NODE_SERVER || 'http://localhost:7777');
+    const socket = initSocket(process.env.NEXT_PUBLIC_NODE_SERVER || 'http://localhost:7777');
+
+    socket.on('connect', () => {
+      setSocketId(socket.id);
+      setNickname('123');
+    });
+
     return () => closeSocket;
-  },[initSocket, closeSocket]);
+  }, [initSocket, closeSocket]);
 
   useEffect(() => {
-    console.log(rooms)
-  }, [rooms]);
-
-
-  // useEffect(() => {
-  //   filterRooms();
-  // }, [rooms, searchTerm]);
+    console.log(rooms);
+    filterRooms();
+  }, [rooms, searchTerm]);
 
   const goGame = (roomId) => {
     joinRoom(roomId);
@@ -45,13 +48,12 @@ export default function Lobby() {
     setSearchTerm(e.target.value);
   };
 
-  // const filterRooms = () => {
-  //   const filtered = Object.entries(rooms).filter(([roomId, room])=> 
-  //     room.title.toLowerCase().includes(searchTerm.toLowerCase())
-  //   );
-  //   setFilteredRooms(filtered);
-  // };
-
+  const filterRooms = () => {
+    const filtered = Object.entries(rooms).filter(([roomId, room]) =>
+      room.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredRooms(filtered);
+  };
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
@@ -72,16 +74,16 @@ export default function Lobby() {
             </div>
           </div>
           <div className="max-h-96 overflow-y-auto">
-          {Array.from(rooms).map(([roomId, room]) => (
-             <Room 
-             key={roomId}
-             title={room.title}
-             player1={room.players[0]}
-             player2={room.players[1]}
-             status={room.players.length < 2 ? false : true}
-             onClick={() => goGame(roomId)}
-           /> 
-          ))}
+            {filteredRooms.map(([roomId, room]) => (
+              <Room 
+                key={roomId}
+                title={room.title}
+                player1={room.players[0]}
+                player2={room.players[1]}
+                status={room.players.length < 2 ? false : true}
+                onClick={() => goGame(roomId)}
+              />
+            ))}
           </div>
         </div>
       </div>

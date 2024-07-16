@@ -22,6 +22,7 @@
     "react": "^18",
     "react-dom": "^18",
     "socket.io-client": "^4.7.5",
+    "string-similarity": "^4.0.4",
     "three": "^0.166.0",
     "zustand": "^4.5.4"
   },

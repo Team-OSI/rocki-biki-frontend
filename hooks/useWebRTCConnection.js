@@ -1,21 +1,53 @@
 import { useEffect, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
+import useSTT from '@/hooks/useSTT'; 
+import { useRouter } from 'next/navigation';
+import stringSimilarity from 'string-similarity';
 
-const useWebRTCConnection = ( roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
+const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
     const socket = useSocketStore(state => state.socket);
     const emitOffer = useSocketStore(state => state.emitOffer);
     const emitAnswer = useSocketStore(state => state.emitAnswer);
     const emitCandidate = useSocketStore(state => state.emitCandidate);
-
+    
     const [connectionState, setConnectionState] = useState('disconnected');
     const peerConnection = useRef();
     const localStream = useRef();
     const dataChannel = useRef();
     const intervalId = useRef();
 
+    const router = useRouter();
+    const words = ["넌 이미 죽어있다", "너무 아파", "오조사마"];
+
+    const { isRecognizing, finalTranscript, startRecognition, stopRecognition } = useSTT(
+        ({ finalTranscript, interimTranscript }) => {
+            console.log('Final:', finalTranscript);
+            console.log('Interim:', interimTranscript);
+
+            if (interimTranscript.includes("럭키비키")) {
+                console.log("들어옴!")
+                const spokenPhrase = extractPhraseAfterLuckyVicky(interimTranscript);
+                console.log(spokenPhrase);
+                if (spokenPhrase) {
+                    const mostSimilarWord = findMostSimilarWord(spokenPhrase, words);
+                    console.log('Most Similar Word:', mostSimilarWord);
+                }
+            }
+        },
+        (error) => {
+            console.error('Speech recognition error:', error);
+        }
+    );
+
+    const extractPhraseAfterLuckyVicky = (transcript) => {
+        const parts = transcript.split("럭키 비키");
+        console.log(parts);
+        return parts.length > 1 ? parts[1].trim() : '';
+    };
+
     useEffect(() => {
         if (!socket || !roomId) return;
-
+    
         const initializeMedia = async () => {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 try {
@@ -34,32 +66,40 @@ const useWebRTCConnection = ( roomId, localVideoRef, remoteVideoRef, onDataRecei
                 setConnectionState('error');
             }
         };
-
+    
         initializeMedia();
-
+    
         const onOffer = (data) => {
             handleOffer(data.offer);
         };
-
+    
         const onAnswer = (data) => {
             handleAnswer(data.answer);
         };
-
+    
         const onCandidate = (data) => {
             handleCandidate(data.candidate);
         };
-
+    
         const onUserLeft = (data) => {
             console.log(`User ${data.userId} left the room`);
         };
-
+    
         socket.on('offer', onOffer);
         socket.on('answer', onAnswer);
         socket.on('candidate', onCandidate);
         socket.on('user_left', onUserLeft);
-
+        
+        const handleUnload = (event) => {
+            leaveRoom();
+            window.location.href = '/lobby';
+            // router.push('/lobby');
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', handleUnload);
+        
         return () => {
-            socket.emit('leave room');
+            leaveRoom();
             socket.off('offer', onOffer);
             socket.off('answer', onAnswer);
             socket.off('candidate', onCandidate);
@@ -67,9 +107,17 @@ const useWebRTCConnection = ( roomId, localVideoRef, remoteVideoRef, onDataRecei
             if (intervalId.current) {
                 clearInterval(intervalId.current);
             }
+            window.removeEventListener('beforeunload', handleUnload);
+            stopRecognition();
         };
     }, [socket, roomId]);
-
+    
+    const leaveRoom = () => {
+        if (socket && roomId) {
+            socket.emit('leave room');
+        }
+    };
+    
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -174,28 +222,42 @@ const useWebRTCConnection = ( roomId, localVideoRef, remoteVideoRef, onDataRecei
                 const offer = await peerConnection.current.createOffer();
                 await peerConnection.current.setLocalDescription(offer);
                 emitOffer(offer, roomId);
+                startRecognition();
             } catch (error) {
                 console.error('Error starting call:', error);
             }
         }
     };
 
-  const startSendingData = () => {
-    intervalId.current = setInterval(() => {
-      if (dataChannel.current && dataChannel.current.readyState === 'open') {
-        const landmarks = getLandmarks();
-        if (landmarks) {
-          const message = {
-            type: 'pose',
-            pose: landmarks
-          };
-          dataChannel.current.send(JSON.stringify(message));
-        }
-      }
-    }, 1000 / 20);
-  };
+    const startSendingData = () => {
+        intervalId.current = setInterval(() => {
+            if (dataChannel.current && dataChannel.current.readyState === 'open') {
+                const landmarks = getLandmarks();
+                if (landmarks) {
+                    const message = {
+                        type: 'pose',
+                        pose: landmarks
+                    };
+                    dataChannel.current.send(JSON.stringify(message));
+                }
+            }
+        }, 1000 / 20);
+    };
 
-    return connectionState;
+    const findMostSimilarWord = (input, wordsList) => {
+        let highestSimilarity = 0;
+        let mostSimilarWord = '';
+        wordsList.forEach(word => {
+            const similarity = stringSimilarity.compareTwoStrings(input, word);
+            if (similarity > highestSimilarity) {
+                highestSimilarity = similarity;
+                mostSimilarWord = word;
+            }
+        });
+        return mostSimilarWord;
+    };
+
+    return { socket, connectionState, isRecognizing, finalTranscript, startRecognition, stopRecognition };
 };
 
 export default useWebRTCConnection;
