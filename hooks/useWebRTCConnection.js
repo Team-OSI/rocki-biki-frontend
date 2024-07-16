@@ -192,7 +192,7 @@ const useWebRTCConnection = ( roomId, localVideoRef, remoteVideoRef, onDataRecei
           dataChannel.current.send(JSON.stringify(message));
         }
       }
-    }, 1000 / 20);
+    }, 1000 / 30);
   };
 
     return connectionState;

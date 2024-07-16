@@ -11,8 +11,13 @@ import useGameLogic from '@/hooks/useGameLogic';
 import { useRouter } from 'next/navigation';
 import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
+import useWorkerStore from '@/store/workerStore';
+
+let frameCount = 0;
+const LOG_INTERVAL = 60;
 
 export default function GameMain() {
+    const { initWorker, terminateWorker, sharedArray } = useWorkerStore();
     const roomId = useRef(null);
     const bgmSoundRef = useRef(null);
 
@@ -40,13 +45,83 @@ export default function GameMain() {
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
-    const handleLandmarksUpdate = useCallback((newLandmarks) => {
-        setLandmarks(newLandmarks);
-    }, []);
+    const handleLandmarksUpdate = useCallback((data) => {
+        if (!sharedArray) return;
+
+        const { resultOffset, resultLength } = data;
+        const result = sharedArray.slice(resultOffset, resultOffset + resultLength);
+        let index = 0;
+        // console.log('2. Result: ', result);
+
+        // landmarks 파싱
+        const landmarks = {};
+        if (result[index++]) { // landmarks 존재 여부
+            const keys = ['head', 'leftHand', 'rightHand'];
+            keys.forEach(key => {
+                landmarks[key] = [
+                    [result[index++], result[index++], result[index++]], // position
+                    [result[index++], result[index++]], // rotation
+                    result[index++] // state
+                ];
+            });
+        }
+
+        // poseLandmarks 파싱
+        const poseLandmarks = {};
+        if (result[index++]) { // poseLandmarks 존재 여부
+            const keys = ['nose', 'rightEye', 'leftShoulder', 'rightShoulder', 'leftElbow', 'rightElbow', 'leftWrist', 'rightWrist', 'leftIndex', 'rightIndex'];
+            keys.forEach(key => {
+                poseLandmarks[key] = {
+                    x: result[index++],
+                    y: result[index++],
+                    z: result[index++]
+                };
+            });
+        }
+
+        frameCount++;
+        if (frameCount % LOG_INTERVAL === 0) {
+            console.log('Parsed poseLandmarks - nose:', poseLandmarks['nose']);
+        }
+
+        setLandmarks({
+            landmarks: landmarks,
+            poseLandmarks: poseLandmarks
+        });
+    }, [sharedArray]);
 
     useEffect(()=> {
         landmarksRef.current = landmarks.landmarks
     },[landmarks])
+
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !localVideoRef.current) return;
+
+        const initializeWorker = async () => {
+            if (localVideoRef.current.videoWidth && localVideoRef.current.videoHeight) {
+                try {
+                    await initWorker(localVideoRef.current.videoWidth, localVideoRef.current.videoHeight);
+                } catch (error) {
+                    console.error('Failed to initialize worker:', error);
+                }
+            }
+        };
+
+        const handleVideoLoad = () => {
+            initializeWorker();
+        };
+
+        localVideoRef.current.addEventListener('loadedmetadata', handleVideoLoad);
+
+        return () => {
+            if (localVideoRef.current) {
+                localVideoRef.current.removeEventListener('loadedmetadata', handleVideoLoad);
+            }
+            terminateWorker();
+        };
+    }, [initWorker, terminateWorker]);
+
 
     useEffect(() => {
         const onRoomClosed = () => {
@@ -65,7 +140,7 @@ export default function GameMain() {
         };
       }, [router]);
 
-    useMotionCapture(localVideoRef, handleLandmarksUpdate);
+    useMotionCapture(handleLandmarksUpdate);
 
     // WebRTC 연결 설정
     const connectionState = useWebRTCConnection(
