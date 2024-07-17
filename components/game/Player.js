@@ -115,7 +115,7 @@ export function Player({ position, landmarks }) {
   return (
     <>
     <group ref={groupRef} position={position} >
-        {landmarks.head && (
+        {landmarks?.head && (
         <Head
           ref={headRef}
           position={new THREE.Vector3(landmarks.head[0][0], landmarks.head[0][1], landmarks.head[0][2])}
@@ -126,7 +126,7 @@ export function Player({ position, landmarks }) {
         )}
         {headRef.current && <CameraControls target={headRef} />}
 
-        {landmarks.rightHand && (
+        {landmarks?.rightHand && (
           <Hand
             position={landmarks.rightHand[0]}
             rotation={[(landmarks.rightHand[1][0]-Math.PI), Math.PI , -(landmarks.rightHand[1][1]-Math.PI/2)]}
@@ -135,7 +135,7 @@ export function Player({ position, landmarks }) {
             color = 'blue'
           />
         )}
-        {landmarks.leftHand && (
+        {landmarks?.leftHand && (
           <Hand
             position={landmarks.leftHand[0]}
             rotation={[-(landmarks.leftHand[1][0]-Math.PI), 0 ,-(landmarks.leftHand[1][1]+Math.PI/2)]}

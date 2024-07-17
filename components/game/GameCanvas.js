@@ -8,6 +8,7 @@ import {useEffect, useState} from 'react';
 import useGameStore from '@/store/gameStore';
 import StateBar from './StateBar';
 import useSocketStore from "@/store/socketStore";
+import { Ring } from './Ring';
 
 const skillBackgrounds = {
   default: '/images/default_background.jpg',
@@ -43,24 +44,13 @@ function Scene({receivedPoseData, landmarks, socket}) {
 
   useEffect(() => {
     if (socket) {
-      const handleDamage = (data) => {
-        decreasePlayerHealth(data.amount);
-      };
-
       const handleOpponentSkillUsed = ({ skillType }) => {
         console.log('Opponent used skill:', skillType);
       };
 
-      console.log('Socket connected:', socket.connected)
-      socket.on('connect', () => console.log('Socket connected'))
-      socket.on('disconnect', () => console.log('Socket disconnected'))
-      socket.on('damage', handleDamage);
       socket.on('opponentSkillUsed', handleOpponentSkillUsed);
 
       return () => {
-        socket.off('damage');
-        socket.off('connect');
-        socket.off('disconnect');
         socket.off('opponentSkillUsed');
       };
     }
@@ -72,8 +62,9 @@ function Scene({receivedPoseData, landmarks, socket}) {
       <pointLight position={[10, 10, 10]} intensity={1} />
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
       <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} socket={socket}/>
-      {/*<Environment preset='sunset' background />*/}
-      <BackGround texturePath={background} />
+      <Environment preset='sunset' background />
+      {/* <BackGround texturePath={background} /> */}
+      <Ring />
     </>
   );
 }
@@ -85,8 +76,8 @@ export function GameCanvas({ receivedPoseData, landmarks, socket }) {
     <Canvas shadows>
       <ambientLight />
       <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
-      <Scene receivedPoseData={receivedPoseData} landmarks={landmarks} socket={socket} />
-      {/* <Stats /> */}
+      <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
+      <Stats />
     </Canvas>
   </>
   );

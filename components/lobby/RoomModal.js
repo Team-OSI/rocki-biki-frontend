@@ -3,10 +3,9 @@ import React, { useState } from 'react';
 
 export default function RoomModal({ onClose, onCreate }) {
   const [title, setTitle] = useState('');
-  const [participants, setParticipants] = useState('1/2');
   
   const handleCreate = () => {
-    onCreate({ title, participants, status: '참가하기' });
+    onCreate({ title });
     onClose();
   };
 

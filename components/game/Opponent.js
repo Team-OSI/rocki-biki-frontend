@@ -5,6 +5,7 @@ import { useFrame} from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import useGameStore from '../../store/gameStore';
+import useSocketStore from '@/store/socketStore';
 
 
 
@@ -58,8 +59,8 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
     useEffect(() => {
       scene.traverse((child) => {
         if (child.isMesh) {
-          child.material = child.material.clone()
-          child.material.color.set('red')
+          child.material = child.material.clone();
+          child.material.color.set('red');
         }
       });
     }, [scene]);
@@ -78,12 +79,12 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
 
 OpponentHand.displayName = "OpponentHand";
 
-export function Opponent({ position, landmarks, opponentData, socket }) {
+export function Opponent({ position, landmarks, opponentData }) {
   const groupRef = useRef(null)
   const headRef = useRef(null)
   const [hit, setHit] = useState(false)
   const lastHitTime = useRef(0)
-  const decreaseOpponentHealth = useGameStore((state) => state.decreaseOpponentHealth)
+  const emitDamage = useSocketStore(state => state.emitDamage)
   const count_optm = useRef(0)
   const roomId = useRef('')
   const hitSoundRef = useRef(null);
@@ -129,36 +130,29 @@ export function Opponent({ position, landmarks, opponentData, socket }) {
 
       const distance = headPosition.distanceTo(handPosition)
 
-      if (distance < 1.3 && currentTime - lastHitTime.current > 1000) {
+      if (distance < 1.4 && currentTime - lastHitTime.current > 1000) {
         const velocity = hand[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
         const damage = Math.floor(velocity * 10)
 
-        setHit(true)
-        decreaseOpponentHealth(damage)
+          // 데미지 정보를 서버로 전송
+          emitDamage(damage)
+          playHitSound()
         
-        // 데미지 정보를 서버로 전송
-        if(socket){
-          // console.log('Emitting damage:', { roomId: roomId.current, amount: damage });
-          socket.emit('damage', { roomId: roomId.current, amount: damage });
-        } else {
-          // console.log('Socket not available');
-        }
-
-        playHitSound()
+        setHit(true)
         lastHitTime.current = currentTime
         setTimeout(() => setHit(false), 200)
-        // console.log('===velocity:', velocity, 'damage:',damage, )
+        // console.log('===velocity:', velocity, 'damage:',damage )
       }
       // console.log('distance:', distance)
     })
-  }, [landmarks, decreaseOpponentHealth, playHitSound])
+  }, [landmarks, playHitSound, emitDamage])
 
   useFrame(() => {
-    if(count_optm.current % 10 === 0) {
-      checkHit()
-    }
-    if (count_optm.current > 1000000) count_optm.current = 0;
-    count_optm.current++;
+    // if(count_optm.current % 5 === 0) {
+      checkHit();
+    // }
+    // if (count_optm.current > 1000000) count_optm.current = 0;
+    // count_optm.current++;
       // console.log('myhead',landmarks?.current?.head?.[0])
   })
 
