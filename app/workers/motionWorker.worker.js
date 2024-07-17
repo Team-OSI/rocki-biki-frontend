@@ -75,7 +75,7 @@ self.onmessage = async function(e) {
 
 function flatResult(result) {
     // result 객체를 1차원 Float32Array로 변환
-    const flattened = [0];
+    const flattened = [1];
 
     // updatedLandmarks 처리
     for (const key in result.updatedLandmarks) {
@@ -107,8 +107,14 @@ function processVideoFrame(imageData) {
     const poseResult = poseLandmarker.detectForVideo(offscreenCanvas, timestamp);
 
     const result = processLandmarks(faceResult, handResult, poseResult);
+    const jsonResult = JSON.stringify(result);
     const flattenResult = flatResult(result);
     sharedArray.set(flattenResult);
+
+    frameCount++;
+    if (frameCount % LOG_INTERVAL === 0) {
+        console.log("Worker 측 데이터:", jsonResult.substring(0, 500));
+    }
 
     self.postMessage({
         type: 'LANDMARKS_UPDATED',

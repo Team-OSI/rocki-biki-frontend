@@ -153,14 +153,18 @@ export default function GameMain() {
 
         // landmarks 파싱
         const landmarks = {};
-        if (result[index++]) { // landmarks 존재 여부
+        if (result[0]) { // landmarks 존재 여부
             const keys = ['head', 'leftHand', 'rightHand'];
             keys.forEach(key => {
-                landmarks[key] = [
-                    [result[index++], result[index++], result[index++]], // position
-                    [result[index++], result[index++]], // rotation
-                    result[index++] // state
-                ];
+                const position = [result[index++], result[index++], result[index++]]; // position
+                let rotation;
+                if (key === 'head') {
+                    rotation = [result[index++], result[index++], result[index++]]; // head rotation (3 values)
+                } else {
+                    rotation = [result[index++], result[index++]]; // hand rotation (2 values)
+                }
+                const state = result[index++]; // state
+                landmarks[key] = [position, rotation, state];
             });
         }
 
@@ -179,7 +183,11 @@ export default function GameMain() {
 
         frameCount++;
         if (frameCount % LOG_INTERVAL === 0) {
-            console.log('Parsed poseLandmarks - nose:', poseLandmarks['nose']);
+            // console.log('Parsed poseLandmarks - nose:', poseLandmarks['nose']);
+            console.log('Parsed poseLandmarks - head:', landmarks['head']);
+            console.log('Parsed poseLandmarks - leftHand:', landmarks['leftHand']);
+            console.log('Parsed poseLandmarks - rightHand:', landmarks['rightHand']);
+            console.log('Parsed Landmarks - nose:', poseLandmarks['nose']);
         }
 
         setLandmarks({

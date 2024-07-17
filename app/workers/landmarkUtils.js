@@ -78,7 +78,7 @@ const processPoseLandmarks = (poseLandmarks) => {
     }
     frameCount++;
     if (frameCount % LOG_INTERVAL === 0) {
-        console.log('Mediapipe 결과 - nose: ', poseLandmarks[0]);
+        // console.log('Mediapipe 결과 - nose: ', poseLandmarks[0]);
         //     console.log('Mediapipe 결과 - rightEye: ', poseLandmarks[2]);
         //     console.log('Mediapipe 결과 - leftShoulder: ', poseLandmarks[11]);
         //     console.log('Mediapipe 결과 - rightShoulder: ', poseLandmarks[12]);
