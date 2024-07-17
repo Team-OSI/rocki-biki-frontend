@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FaCog } from 'react-icons/fa';
-import Navbar from '@/components/myPage/Navbar';
 import RecordingModal from "@/components/myPage/RecordingModal";
 import ProfileEditModal from "@/components/myPage/ProfileEditModal";
 import GameResultModal from "@/components/myPage/GameResultModal";
 import { getNickname, updateProfile } from '@/api/user/api';
 import Cookies from 'js-cookie';
 import { jwtDecode } from "jwt-decode";
+import {useTitle} from "@/app/contexts/TitleContext";
 
 export default function MyPage() {
     const params = useParams();
@@ -23,6 +23,11 @@ export default function MyPage() {
     const [isGameResultModalOpen, setIsGameResultModalOpen] = useState(false);
     const [userNickname, setUserNickname] = useState('');
     const [userProfileImage, setUserProfileImage] = useState('');
+    const { setTitle } = useTitle();
+
+    useEffect(() => {
+        setTitle("My Page")
+    }, [setTitle]);
 
     useEffect(() => {
         fetchUserData();
@@ -83,10 +88,6 @@ export default function MyPage() {
 
     return (
         <div className="min-h-screen flex flex-col">
-            <Navbar
-                userNickname={userNickname}
-                userProfileImage={userProfileImage}
-            />
             <div className="flex-grow flex flex-col items-center justify-center">
                 <div className="flex flex-col items-center relative">
                     <div className="w-80 h-80 rounded-full overflow-hidden mb-4">
