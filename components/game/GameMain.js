@@ -41,7 +41,6 @@ export default function GameMain() {
     const remoteVideoRef = useRef(null);
 
     const handleLandmarksUpdate = useCallback((newLandmarks) => {
-        console.log("handleLandmarksUpdate called with:", newLandmarks); // 로그 추가
         landmarksRef.current = newLandmarks.landmarks
         setLandmarks(newLandmarks);
     }, []);

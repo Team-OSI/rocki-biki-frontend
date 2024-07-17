@@ -4,7 +4,7 @@ import { forwardRef, useRef, useEffect, useState, useCallback, useImperativeHand
 import { useFrame} from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
-import useGameStore from '../../store/gameStore';
+import useGaugeStore from '@/store/gaugeStore';
 import useSocketStore from '@/store/socketStore';
 
 
@@ -118,6 +118,12 @@ export function Opponent({ position, landmarks, opponentData }) {
   const roomId = useRef('')
   const hitSoundRef = useRef(null);
 
+  // 게이지 구현
+  const { 
+    resetGauge, 
+    getGaugeDamage, 
+  } = useGaugeStore();
+
   useEffect(() => {
     hitSoundRef.current = new Audio('./sounds/hit.MP3');
   }, []);
@@ -139,17 +145,21 @@ export function Opponent({ position, landmarks, opponentData }) {
     const headPosition = new THREE.Vector3()
     headRef.current.getWorldPosition(headPosition)
 
-    const hands = [landmarks.leftHand, landmarks.rightHand]
+    const hands = [
+      { landmark: landmarks.leftHand, name: 'left' },
+      { landmark: landmarks.rightHand, name: 'right' }
+    ];
+
     const currentTime = performance.now()
 
-    hands.forEach((hand, index) => {
+    hands.forEach(({ landmark, name }) => {
       // console.log(hand[2])
-      if(hand[2] !== 0) return // 주먹상태인지 확인
+      if(landmark[2] !== 0) return // 주먹상태인지 확인
 
       const handPosition = new THREE.Vector3(
-        (hand[0][0] - 0.5) * 4,
-        -(hand[0][1] - 0.5) * 4,
-        -(hand[0][2] * 30)
+        (landmark[0][0] - 0.5) * 4,
+        -(landmark[0][1] - 0.5) * 4,
+        -(landmark[0][2] * 30)
       )
       // Opponent의 회전을 적용합니다 (y축 주위로 180도 회전).
       // handPosition.applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
@@ -160,9 +170,11 @@ export function Opponent({ position, landmarks, opponentData }) {
       const distance = headPosition.distanceTo(handPosition)
 
       if (distance < 1.4 && currentTime - lastHitTime.current > 1000) {
-        const velocity = hand[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
-        const damage = Math.floor(velocity * 20) / 3
+        const velocity = landmark[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
+        const gaugeDamage = getGaugeDamage(name);
+        const damage = (Math.floor(velocity * 20) / 3) + gaugeDamage;
 
+        console.log("=========dagame:", damage)
         // 데미지 정보를 서버로 전송
         emitDamage(damage)
         playHitSound()
@@ -175,19 +187,20 @@ export function Opponent({ position, landmarks, opponentData }) {
         const hitDirection = handPosition.clone().sub(headPosition).normalize()
         const hitImpulse = hitDirection.multiplyScalar(5) // 조절 가능한 힘
         headRef.current.addHitImpulse(hitImpulse)
+
+        resetGauge(name)
       }
-      // console.log('distance:', distance)
     })
   }, [landmarks, playHitSound, emitDamage])
 
   useFrame(() => {
-    if(count_optm.current % 5 === 0) {
-      checkHit();
-    }
-    if (count_optm.current > 1000000) count_optm.current = 0;
-    count_optm.current++;
-      console.log('myhead',landmarks?.current?.head?.[0])
+  if(count_optm.current % 2 === 0) {
+    checkHit();
+  }
+  if (count_optm.current > 1000000) count_optm.current = 0;
+  count_optm.current++;
   })
+
 
   return (
     <group ref={groupRef} position={position} rotation={[0, Math.PI, 0]}>
