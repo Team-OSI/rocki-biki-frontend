@@ -5,12 +5,41 @@ const nextConfig = {
   },
   reactStrictMode: false,
   webpack: (config, { isServer }) => {
-    config.experiments = {
-      asyncWebAssembly: true,
-      layers: true,
-    };
-
+    if (!isServer) {
+      config.output.globalObject = 'self';
+      config.module.rules.push({
+        test: /\.worker\.js$/,
+        use: [
+          {
+            loader: 'worker-loader',
+            options: {
+              filename: 'static/[hash].worker.js',
+              publicPath: '/_next/',
+              esModule: true,
+            },
+          },
+          'babel-loader',
+        ],
+      });
+    }
     return config;
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+        ],
+      },
+    ];
   },
 };
 
