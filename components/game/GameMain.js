@@ -3,7 +3,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import { GameCanvas } from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
-import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
@@ -51,26 +50,26 @@ export default function GameMain() {
 
                 // 새로운 캔버스 생성 및 컨텍스트 가져오기
                 originalCanvas = document.createElement('canvas');
-                originalCanvas.width = videoRef.current.videoWidth;
-                originalCanvas.height = videoRef.current.videoHeight;
+                originalCanvas.width = videoRef.current.videoWidth / 3;
+                originalCanvas.height = videoRef.current.videoHeight / 3;
                 originalCtx = originalCanvas.getContext('2d', { willReadFrequently: true });
 
                 // OffscreenCanvas 생성
-                const offscreenCanvas = new OffscreenCanvas(videoRef.current.videoWidth, videoRef.current.videoHeight);
-                await initWorker(videoRef.current.videoWidth, videoRef.current.videoHeight);
+                const offscreenCanvas = new OffscreenCanvas(originalCanvas.width, originalCanvas.height);
+                await initWorker(originalCanvas.width, originalCanvas.height);
 
                 const worker = useWorkerStore.getState().worker;
                 worker.postMessage({
                     type: 'VIDEO_INIT',
                     offscreenCanvas: offscreenCanvas,
-                    width: videoRef.current.videoWidth,
-                    height: videoRef.current.videoHeight
+                    width: originalCanvas.width,
+                    height: originalCanvas.height
                 }, [offscreenCanvas]);
 
                 const sendVideoFrame = () => {
                     if (videoRef.current && originalCtx) {
-                        originalCtx.drawImage(videoRef.current, 0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
-                        const imageData = originalCtx.getImageData(0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
+                        originalCtx.drawImage(videoRef.current, 0, 0, originalCanvas.width, originalCanvas.height);
+                        const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
 
                         worker.postMessage({
                             type: 'VIDEO_FRAME',

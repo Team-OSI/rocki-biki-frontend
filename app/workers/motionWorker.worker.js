@@ -94,6 +94,9 @@ function flatResult(result) {
     return new Float32Array(flattened);
 }
 
+let frameCount = 0;
+const LOG_INTERVAL = 60;
+
 function processVideoFrame(imageData) {
     if (!isInitialized) return;
 

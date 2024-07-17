@@ -18,7 +18,6 @@ const useWorkerStore = create((set, get) => {
                 try {
                     const MotionWorker = (await import('../app/workers/motionWorker.worker.js')).default;
                     const worker = new MotionWorker();
-                    const SHARED_BUFFER_SIZE = videoWidth * videoHeight; // 여유있게 2배로 설정
 
                     const sharedBuffer = new SharedArrayBuffer(SHARED_BUFFER_SIZE);
                     const sharedArray = new Float32Array(sharedBuffer);
