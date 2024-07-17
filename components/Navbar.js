@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+'use client';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
-import NicknameModal from './UpdateNicknameModal';
+import React, { useState } from 'react';
+import NicknameModal from './lobby/NicknameModal';
+import {useTitle} from "@/app/contexts/TitleContext";
 
-export default function Navbar({ userNickname, userProfileImage, onNicknameUpdate }) {
+export default function Navbar({ userEmail, userNickname, userProfileImage, onNicknameUpdate }) {
+  const { title } = useTitle();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -36,22 +40,19 @@ export default function Navbar({ userNickname, userProfileImage, onNicknameUpdat
               </Link>
             </div>
             <div className="text-white text-lg font-bold w-1/3 text-center">
-              My Page
+              {title}
             </div>
             <div className="flex items-center justify-end w-1/3">
               {userProfileImage && (
                   <img
                       src={userProfileImage}
-                      alt={`${userNickname}의 프로필`}
+                      alt={`${userNickname}'s profile`}
                       className="w-8 h-8 rounded-full mr-2"
                   />
               )}
-              <div
-                  className="text-gray-300 hover:text-white cursor-pointer"
-                  onClick={handleNicknameClick}
-              >
+              <Link href={`/myPage/${encodeURIComponent(userEmail)}`} className="text-gray-300 hover:text-white">
                 {userNickname}
-              </div>
+              </Link>
               <button
                   className="text-gray-300 hover:text-white ml-4"
                   onClick={handleLogout}

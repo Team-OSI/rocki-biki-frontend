@@ -55,27 +55,29 @@ const GameResultModal = ({ isOpen, onClose, userEmail }) => {
                         }`}
                     >
                         <div className="flex items-center">
-                            <Image
-                                src={result.myProfileImage || '/default-profile.jpg'}
-                                alt="My Profile"
-                                width={50}
-                                height={50}
-                                className="rounded-full mr-4"
-                            />
-                            <span>{result.myNickname}</span>
+                            <div className="relative w-12 h-12 mr-4">
+                                <Image
+                                    src={result.userProfileImage || '/default-profile.jpg'}
+                                    alt="My Profile"
+                                    layout="fill"
+                                    className="rounded-full object-cover"
+                                />
+                            </div>
+                            <span>{result.userName}</span>
                         </div>
-                        <div className="text-lg font-bold">
+                        <div className="text-lg font-bold text-center w-16">
                             {result.win ? 'WIN' : 'LOSE'}
                         </div>
                         <div className="flex items-center">
-                            <span>{result.opponentNickname}</span>
-                            <Image
-                                src={result.opponentProfileImage || '/default-profile.jpg'}
-                                alt="Opponent Profile"
-                                width={50}
-                                height={50}
-                                className="rounded-full ml-4"
-                            />
+                            <span>{result.opponentName}</span>
+                            <div className="relative w-12 h-12 ml-4">
+                                <Image
+                                    src={result.opponentProfileImage || '/default-profile.jpg'}
+                                    alt="Opponent Profile"
+                                    layout="fill"
+                                    className="rounded-full object-cover"
+                                />
+                            </div>
                         </div>
                     </div>
                 ))}
