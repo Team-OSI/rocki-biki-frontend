@@ -6,11 +6,17 @@ const nextConfig = {
       config.output.globalObject = 'self';
       config.module.rules.push({
         test: /\.worker\.js$/,
-        loader: 'worker-loader',
-        options: {
-          filename: 'static/[hash].worker.js',
-          publicPath: '/_next/',
-        },
+        use: [
+          {
+            loader: 'worker-loader',
+            options: {
+              filename: 'static/[hash].worker.js',
+              publicPath: '/_next/',
+              esModule: true,
+            },
+          },
+          'babel-loader',
+        ],
       });
     }
     return config;

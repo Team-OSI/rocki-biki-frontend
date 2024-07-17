@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-const SHARED_BUFFER_SIZE = 1024 * 1024;
+const SHARED_BUFFER_SIZE = 10 * 1024 * 1024;
 
 const useWorkerStore = create((set, get) => {
     let initializationPromise = null;
@@ -16,7 +16,7 @@ const useWorkerStore = create((set, get) => {
 
             initializationPromise = new Promise(async (resolve, reject) => {
                 try {
-                    const MotionWorker = (await import('../workers/motionWorker.worker.js')).default;
+                    const MotionWorker = (await import('../app/workers/motionWorker.worker.js')).default;
                     const worker = new MotionWorker();
                     const SHARED_BUFFER_SIZE = videoWidth * videoHeight; // 여유있게 2배로 설정
 
