@@ -15,6 +15,10 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/opponent-head.glb')
     const opacity = 0.9
+    const [hitImpulse, setHitImpulse] = useState(new THREE.Vector3())
+    const originalPosition = useRef(new THREE.Vector3());
+    const currentVelocity = useRef(new THREE.Vector3())
+
     useImperativeHandle(
       ref,
       () => ({
@@ -26,13 +30,16 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
         },
         position: localRef.current?.position,
         rotation: localRef.current?.rotation,
+        addHitImpulse: (impulse) => setHitImpulse(prev => prev.add(impulse)),
       }),
       [localRef], 
     )
   
     useEffect(() => {
       if (localRef.current) {
-        localRef.current.position.set((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -(position.z+0.01) * 15)
+        const newPos = new THREE.Vector3((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -(position.z+0.01) * 15)
+        localRef.current.position.copy(newPos)
+        originalPosition.current.copy(newPos)
         if (rotation) {
           localRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
         }
@@ -46,6 +53,28 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
         material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
       })
     }, [materials, hit])
+
+    useFrame((state, delta) => {
+      if (localRef.current) {
+        // Apply hit impulse
+        currentVelocity.current.add(hitImpulse)
+        
+        // Move head
+        localRef.current.position.add(currentVelocity.current.clone().multiplyScalar(delta))
+        
+        // Spring force towards original position
+        const displacement = localRef.current.position.clone().sub(originalPosition.current)
+        const springForce = displacement.clone().multiplyScalar(-1) // Increase for stiffer spring
+        currentVelocity.current.add(springForce.multiplyScalar(delta))
+        
+        // Damping
+        currentVelocity.current.multiplyScalar(0.85) //0.94
+        
+        // Reset hit impulse
+        setHitImpulse(new THREE.Vector3())
+      }
+    })
+
     return <primitive ref={localRef} object={scene} scale={scale} name={name} />
   })
   
@@ -65,14 +94,14 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
       });
     }, [scene]);
 
-    useFrame(() => {
+    useEffect(() => {
       if (localRef.current && position) {
         if (rotation) {
           localRef.current.rotation.set(rotation[0],rotation[1],rotation[2])
         }
         localRef.current.position.set((position[0]-0.5)*4, -(position[1]-0.5)*4, -position[2]*30)
       }
-    })
+    }, [position, rotation])
   
     return <primitive ref={localRef} object={scene.clone()} scale={scale} name={name} />
   })
@@ -132,16 +161,20 @@ export function Opponent({ position, landmarks, opponentData }) {
 
       if (distance < 1.4 && currentTime - lastHitTime.current > 1000) {
         const velocity = hand[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
-        const damage = Math.floor(velocity * 10) / 2
+        const damage = Math.floor(velocity * 20) / 3
 
-          // 데미지 정보를 서버로 전송
-          emitDamage(damage)
-          playHitSound()
+        // 데미지 정보를 서버로 전송
+        emitDamage(damage)
+        playHitSound()
         
         setHit(true)
         lastHitTime.current = currentTime
         setTimeout(() => setHit(false), 500)
-        // console.log('===velocity:', velocity, 'damage:',damage )
+
+        // 타격 위치 설정
+        const hitDirection = handPosition.clone().sub(headPosition).normalize()
+        const hitImpulse = hitDirection.multiplyScalar(5) // 조절 가능한 힘
+        headRef.current.addHitImpulse(hitImpulse)
       }
       // console.log('distance:', distance)
     })
@@ -150,7 +183,7 @@ export function Opponent({ position, landmarks, opponentData }) {
   useFrame(() => {
     if(count_optm.current % 5 === 0) {
       checkHit();
-    // }
+    }
     if (count_optm.current > 1000000) count_optm.current = 0;
     count_optm.current++;
       console.log('myhead',landmarks?.current?.head?.[0])

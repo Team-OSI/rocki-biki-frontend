@@ -3,7 +3,7 @@ import useGameStore from '../../store/gameStore'
 import useSocketStore from '@/store/socketStore';
 
 export default function StateBar() {
-  const { gameStatus, opponentHealth, playerHealth, setGameStatus, winner } = useGameStore();
+  const { gameStatus, opponentHealth, playerHealth, winner } = useGameStore();
   const socket = useSocketStore(state => state.socket);
 
   const [count, setCount] = useState(3000);
@@ -23,11 +23,13 @@ export default function StateBar() {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [gameStatus, count, setGameStatus])
+  }, [gameStatus, count])
 
   useEffect(() => {
     if (gameStatus === 'playing') {
       setCount(3000);  // 게임 시작 시 카운트를 60초로 초기화
+    } else if (gameStatus === 'finished') {
+
     }
   }, [gameStatus]);
 
