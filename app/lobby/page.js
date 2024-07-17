@@ -9,6 +9,7 @@ import NicknameModal from '@/components/lobby/NicknameModal';
 import useSocketStore from '@/store/socketStore';
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 import useUserStore from '@/store/userStore';
+import { useTitle } from "@/app/contexts/TitleContext";
 
 export default function Lobby() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function Lobby() {
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [userNickname, setUserNickname] = useState('');
   const [userProfileImage, setUserProfileImage] = useState('')
+  const { setTitle } = useTitle();
 
   useEffect(() => {
     // const token = Cookies.get('JWT_TOKEN');
@@ -33,6 +35,10 @@ export default function Lobby() {
     });
     return () => closeSocket;
   },[initSocket, closeSocket]);
+
+  useEffect(() => {
+    setTitle("Lobby")
+  }, [setTitle]);
 
   useEffect(() => {
     console.log(rooms);

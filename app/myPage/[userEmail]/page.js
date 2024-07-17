@@ -10,7 +10,7 @@ import GameResultModal from "@/components/myPage/GameResultModal";
 import { getNickname, updateProfile } from '@/api/user/api';
 import Cookies from 'js-cookie';
 import { jwtDecode } from "jwt-decode";
-import {useTitle} from "@/app/contexts/TitleContext";
+import { useTitle } from "@/app/contexts/TitleContext";
 
 export default function MyPage() {
     const params = useParams();

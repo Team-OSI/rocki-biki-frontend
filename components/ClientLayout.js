@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { getUserEmail, getNickname } from '@/api/user/api';
 import Navbar from '@/components/Navbar'; // Navbar 경로를 실제 위치로 수정하세요.
-import {TitleProvider} from "@/app/contexts/TitleContext";
+import { TitleProvider } from "@/app/contexts/TitleContext";
 
 export default function ClientLayout({ children }) {
     const [userEmail, setUserEmail] = useState('');
     const [userNickname, setUserNickname] = useState('');
     const [userProfileImage, setUserProfileImage] = useState('');
     const pathname = usePathname();
-    const showNavbar = pathname !== '/';
+    const showNavbar = (pathname !== '/' && pathname !== '/game');
 
     useEffect(() => {
         const initializeUser = async () => {
@@ -37,13 +37,17 @@ export default function ClientLayout({ children }) {
     return (
         <TitleProvider>
             {showNavbar && (
-                <Navbar
-                    userEmail={userEmail}
-                    userNickname={userNickname}
-                    userProfileImage={userProfileImage}
-                />
+                <div className="flex-shrink-0">
+                    <Navbar
+                        userEmail={userEmail}
+                        userNickname={userNickname}
+                        userProfileImage={userProfileImage}
+                    />
+                </div>
             )}
-            <main>{children}</main>
+            <div className="flex-grow flex justify-center items-center">
+                <main className="w-full">{children}</main>
+            </div>
         </TitleProvider>
     );
 }
