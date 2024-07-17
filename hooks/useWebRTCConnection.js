@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
+
 import useSTT from '@/hooks/useSTT'; 
 import { useRouter } from 'next/navigation';
 import stringSimilarity from 'string-similarity';
@@ -19,6 +20,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     const router = useRouter();
     const words = ["넌 이미 죽어있다", "너무 아파", "오조사마"];
 
+
     const { isRecognizing, finalTranscript, startRecognition, stopRecognition } = useSTT(
         ({ finalTranscript, interimTranscript }) => {
             console.log('Final:', finalTranscript);
@@ -33,6 +35,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                     console.log('Most Similar Word:', mostSimilarWord);
                 }
             }
+
         },
         (error) => {
             console.error('Speech recognition error:', error);
@@ -89,7 +92,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         socket.on('answer', onAnswer);
         socket.on('candidate', onCandidate);
         socket.on('user_left', onUserLeft);
-        
+
         const handleUnload = (event) => {
             leaveRoom();
             window.location.href = '/lobby';
@@ -97,7 +100,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             event.returnValue = '';
         };
         window.addEventListener('beforeunload', handleUnload);
-        
+
         return () => {
             leaveRoom();
             socket.off('offer', onOffer);
@@ -111,13 +114,13 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             stopRecognition();
         };
     }, [socket, roomId]);
-    
+
     const leaveRoom = () => {
         if (socket && roomId) {
             socket.emit('leave room');
         }
     };
-    
+  
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]

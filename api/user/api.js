@@ -159,4 +159,3 @@ export const getGameResults = async (userEmail, page = 0, size = 10, sort = 'DES
     throw error;
   }
 };
-

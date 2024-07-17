@@ -8,7 +8,7 @@ const useSocketStore = create((set, get) => ({
     rooms: [],
     opponentSkill: null,
 
-    initSocket: (url) => {
+    initSocket: (url, userId) => {
         const newSocket = io(url);
         
         const existingSocket = get().socket;
@@ -16,6 +16,11 @@ const useSocketStore = create((set, get) => ({
             existingSocket.close();
             set({ socket: null });
         }
+
+        newSocket.on('connect', () => {
+            newSocket.emit('USER_CONNECT', userId); 
+          });
+
 
         newSocket.on('ROOMS_UPDATE', (rooms) => {
             console.log('ROOMS_UPDATE received', rooms);

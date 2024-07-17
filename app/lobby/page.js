@@ -1,13 +1,16 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, {useEffect, useState} from 'react';
+import {useRouter} from 'next/navigation';
 import Room from '@/components/lobby/Room';
 import RoomButton from '@/components/lobby/RoomButton';
 import RoomModal from '@/components/lobby/RoomModal';
+import NicknameModal from '@/components/lobby/NicknameModal';
+import Navbar from '@/components/lobby/Navbar';
 import useSocketStore from '@/store/socketStore';
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 import useUserStore from '@/store/userStore';
+import {getNickname, getUserEmail} from '@/api/user/api';
 
 export default function Lobby() {
   const router = useRouter();
@@ -16,17 +19,60 @@ export default function Lobby() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
   const { setSocketId, setNickname } = useUserStore();
+  const [userEmail, setUserEmail] = useState([]);
+  const [nickname, setNickname] = useState('');
+  const [showNicknameModal, setShowNicknameModal] = useState(false); 
+  const [userNickname, setUserNickname] = useState('');
+  const [userProfileImage, setUserProfileImage] = useState('')
 
   useEffect(() => {
+    const initializeUser = async () => {
+      const email = await getUserEmail();
+      setUserEmail(email);
+
+      if (email) {
+        try {
+          const response = await getNickname(email);
+          setUserProfileImage(response.profileImage);
+          setUserNickname(response.nickname);
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+          setShowNicknameModal(true);
+        }
+      } else {
+        console.error("No user email found");
+      }
+    };
+
+    initializeUser();
+  }, []);
+
+  useEffect(() => {
+    // const token = Cookies.get('JWT_TOKEN');
+    // const decoded = jwtDecode(token);
+    // console.log(decoded.sub);
     const socket = initSocket(process.env.NEXT_PUBLIC_NODE_SERVER || 'http://localhost:7777');
 
     socket.on('connect', () => {
       setSocketId(socket.id);
       setNickname('123');
     });
-
     return () => closeSocket;
-  }, [initSocket, closeSocket]);
+  },[initSocket, closeSocket]);
+
+  // useEffect(() => {
+    // const token = Cookies.get('JWT_TOKEN');
+  //   if (token) {
+  //     try {
+  //       const decoded = jwtDecode(token);
+  //       setNickname(decoded.sub);
+  //       initSocket(process.env.NEXT_PUBLIC_NODE_SERVER, decoded.sub);
+  //     } catch (error) {
+  //       console.error('Failed to decode JWT token:', error);
+  //     }
+  //   }
+  //   return () => closeSocket();
+  // }, [initSocket, closeSocket])
 
   useEffect(() => {
     console.log(rooms);
@@ -55,12 +101,20 @@ export default function Lobby() {
     setFilteredRooms(filtered);
   };
 
+  const handleNicknameSubmit = async (nickname) => {
+    try {
+      await setNickname(nickname);
+      setUserNickname(nickname); 
+      setShowNicknameModal(false);
+    } catch (err) {
+      alert('Failed to set nickname');
+    }
+  };
+
   return (
     <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
-      <div className="absolute top-12 w-full flex flex-col items-center gap-4 font-bold">
-        <h1 className="text-8xl">로비</h1>
-      </div>
-      <div className="flex flex-col items-center w-full max-w-screen-md mt-40 mb-40">
+      <Navbar userEmail={userEmail} userNickname={userNickname} userProfileImage={userProfileImage} />
+      <div className="mt-32 flex flex-col items-center w-full max-w-screen-md">
         <div className="w-full p-6 bg-blue-100 rounded-lg shadow-lg">
           <div className="flex justify-center items-center mb-6">
             <input
@@ -82,6 +136,7 @@ export default function Lobby() {
                 player2={room.players[1]}
                 status={room.players.length < 2 ? false : true}
                 onClick={() => goGame(roomId)}
+
               />
             ))}
           </div>
@@ -91,6 +146,12 @@ export default function Lobby() {
         <RoomModal
           onClose={() => setShowRoomModal(false)}
           onCreate={handleCreateRoom}
+        />
+      )}
+      {showNicknameModal && (
+        <NicknameModal
+          onClose={() => setShowNicknameModal(false)}
+          onSubmit={handleNicknameSubmit}
         />
       )}
     </div>
