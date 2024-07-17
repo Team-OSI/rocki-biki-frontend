@@ -21,10 +21,6 @@ export default function Lobby() {
     return () => closeSocket;
   },[initSocket, closeSocket]);
 
-  useEffect(() => {
-    console.log(rooms)
-  }, [rooms]);
-
 
   // useEffect(() => {
   //   filterRooms();

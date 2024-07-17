@@ -31,10 +31,11 @@ function BackGround( { texturePath }) {
   return null;
 }
 
-function Scene({receivedPoseData, landmarks, socket}) {
+function Scene({receivedPoseData, landmarks}) {
   const decreasePlayerHealth = useGameStore(state => state.decreasePlayerHealth)
   const [background, setBackground] = useState(skillBackgrounds.default);
-  const opponentSkill = useSocketStore(state => state.opponentSkill)
+  const opponentSkill = useSocketStore(state => state.opponentSkill);
+  const socket = useSocketStore(state=> state.socket);
 
   useEffect(() => {
     if (opponentSkill) {
@@ -61,15 +62,15 @@ function Scene({receivedPoseData, landmarks, socket}) {
       <ambientLight intensity={0.7} />
       <pointLight position={[10, 10, 10]} intensity={1} />
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
-      <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} socket={socket}/>
+      <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData}/>
+      <Ring scale={2}/>
       <Environment preset='sunset' background />
       {/* <BackGround texturePath={background} /> */}
-      <Ring />
     </>
   );
 }
 
-export function GameCanvas({ receivedPoseData, landmarks, socket }) {
+export function GameCanvas({ receivedPoseData, landmarks }) {
   return (
   <>
   <StateBar />

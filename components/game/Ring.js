@@ -1,13 +1,13 @@
 import { useGLTF } from '@react-three/drei'
 
-function Model({ position }) {
+function Model({ position, scale }) {
   const { scene } = useGLTF('/models/bg.glb')
-  return <primitive object={scene} position={position}/>
+  return <primitive object={scene} position={position} scale={[scale,scale,scale]}/>
 }
 
-export function Ring() {
+export function Ring({scale}) {
   return (
-      <Model position={[0, -5, 0]}/>
+      <Model position={[0, -6, 0]} scale={scale}/>
   )
 }
 

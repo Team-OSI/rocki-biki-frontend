@@ -4,6 +4,7 @@ import { forwardRef, useRef, useEffect, useImperativeHandle, useMemo, useCallbac
 import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three';
+import useGaugeStore from '@/store/gaugeStore';
 
 // player 머리 불러오기
 const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
@@ -13,6 +14,12 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
     useImperativeHandle(
       ref,
       () => ({
+        getWorldPosition: (target) => {
+          if (localRef.current) {
+            return localRef.current.getWorldPosition(target || new THREE.Vector3())
+          }
+          return new THREE.Vector3()
+        },
         position: localRef.current?.position,
         rotation: localRef.current?.rotation,
       }),
@@ -21,19 +28,22 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
     
      useEffect(() => {
        Object.values(materials).forEach((material) => {
-         material.transparent = true
-         material.opacity = opacity
+        material.transparent = true;
+        material.opacity = opacity;
+        material.depthWrite = false;
+        // material.side = THREE.DoubleSide;
+        // material.blending = THREE.AdditiveBlending;  
        })
      }, [materials, opacity])
   
-    useFrame(() => {
+     useEffect(() => {
       if (localRef.current && position) {
         localRef.current.position.set((position.x - 0.5) * 5, - (position.y - 0.5) * 5, - (position.z+0.01) * 15)
         if (rotation) {
           localRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
         }
       }
-    })
+    },[position, rotation])
     return <primitive ref={localRef} object={scene} scale={scale} name={name} />
   })
   Head.displayName = "Head";
@@ -73,7 +83,7 @@ const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref
     changeColor();
   }, [changeColor]);
 
-    useFrame(() => {
+  useEffect(() => {
       if (localRef.current && position) {
         if (rotation) {
           // localRef.current.rotation.set((rotation[0]-Math.PI/6)*0.5, 0, -(rotation[2]-Math.PI/2));
@@ -81,7 +91,7 @@ const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref
         }
         localRef.current.position.set((position[0]-0.5)*4, -(position[1]-0.5)*4, -position[2]*30)
       }
-    })
+    },[position, rotation])
   
     return <primitive ref={localRef} object={scene} scale={scale} name={name} />
   })
@@ -112,6 +122,35 @@ function CameraControls({target}){
 export function Player({ position, landmarks }) {
   const groupRef = useRef(null)
   const headRef = useRef(null)
+    // 게이지 구현
+    const { 
+      updateGauge, 
+      headChargeDistance 
+    } = useGaugeStore();
+    useFrame(() => {
+        updateGauges();
+      }
+    )
+  const updateGauges = useCallback(() => {
+    if(!headRef.current || !landmarks.leftHand || !landmarks.rightHand) return
+
+    const headPosition = new THREE.Vector3()
+    headRef.current.getWorldPosition(headPosition)
+
+    ;['left', 'right'].forEach(hand => {
+      const handPos = new THREE.Vector3(
+        (landmarks[`${hand}Hand`][0][0] - 0.5) * 4,
+        -(landmarks[`${hand}Hand`][0][1] - 0.5) * 4,
+        -landmarks[`${hand}Hand`][0][2] * 30
+      );
+      
+      const distanceToHead = handPos.distanceTo(headPosition);
+      const isCharging = distanceToHead < headChargeDistance;
+      
+      updateGauge(hand, isCharging);
+    });
+  }, [landmarks, updateGauge, headChargeDistance])
+
   return (
     <>
     <group ref={groupRef} position={position} >

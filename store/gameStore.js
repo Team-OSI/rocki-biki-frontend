@@ -11,7 +11,6 @@ const useGameStore = create((set, get) => ({
   opponentSkills: [null, null],
   
   setGameStatus: (status, socketId) => {
-    console.log('****',status)
     const playerIds = Object.keys(status.players);
     const opponentId = playerIds.find(id => id !== socketId);
 

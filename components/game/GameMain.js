@@ -3,6 +3,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import { GameCanvas } from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
+import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
@@ -14,6 +15,7 @@ import useWorkerStore from '@/store/workerStore';
 
 let frameCount = 0;
 const LOG_INTERVAL = 60;
+import GaugeUi from './GaugeUi';
 
 export default function GameMain() {
     const { initWorker, terminateWorker, setWorkerMessageHandler, sharedArray, isInitialized } = useWorkerStore();
@@ -242,10 +244,10 @@ export default function GameMain() {
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
-        width: gameStatus === 'playing' ? '200px' : 'calc(40vw - 10px)',
-        height: gameStatus === 'playing' ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
+        width: (['playing', 'finished'].includes(gameStatus)) ? '200px' : 'calc(40vw - 10px)',
+        height: ['playing', 'finished'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
         zIndex: 30,
-        ...(gameStatus === 'playing'
+        ...(['playing', 'finished'].includes(gameStatus)
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : { 
                 top: '50%',
@@ -296,6 +298,7 @@ export default function GameMain() {
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
+            {gameStatus === 'playing' && <GaugeUi />}
             <div style={videoContainerStyle(true)}>
                 <video
                     className={`scale-x-[-1] opacity-80 mt-2 transition-transform  ${

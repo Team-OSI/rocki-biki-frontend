@@ -1,34 +1,34 @@
 import { useEffect, useState } from 'react';
 import useGameStore from '../../store/gameStore'
 import useSocketStore from '@/store/socketStore';
+import useGaugeStore from '@/store/gaugeStore';
 
 export default function StateBar() {
-  const { gameStatus, opponentHealth, playerHealth, setGameStatus, winner } = useGameStore();
+  const { gameStatus, opponentHealth, playerHealth, winner } = useGameStore();
   const socket = useSocketStore(state => state.socket);
+  const { hitGauge, maxGauge } = useGaugeStore();
 
   const [count, setCount] = useState(3000);
 
   useEffect(()=>{
     let timer;
+
     if (gameStatus === 'playing' && count > 0) {
       timer = setInterval(() => {
         setCount((prevCount) => prevCount - 1);
       }, 1000);
     } else if (count === 0 || gameStatus === 'finished') {
       clearInterval(timer);
-      if (count === 0) {
-        setGameStatus('finished');
-      }
     }
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [gameStatus, count, setGameStatus])
+  }, [gameStatus, count, hitGauge])
 
   useEffect(() => {
     if (gameStatus === 'playing') {
       setCount(3000);  // 게임 시작 시 카운트를 60초로 초기화
-    }
+    } 
   }, [gameStatus]);
 
   const handleRestart = () => {

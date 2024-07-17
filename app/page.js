@@ -13,7 +13,6 @@ export default function App() {
 
   useEffect(() => {
     const token = Cookies.get('JWT_TOKEN');
-    console.log(token);
     if (token) {
       setLogin(true);
     }
