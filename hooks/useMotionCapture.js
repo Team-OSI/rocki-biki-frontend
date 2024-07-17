@@ -20,7 +20,7 @@ const processLandmarks = (faceResult, handResult, poseResult, prevLandmarks, las
     const hands = handResult.landmarks || [];
 
     const maxHeadMovement = 0.8;
-    const maxHandMovement = 2.9;
+    const maxHandMovement = 4;
 
     const newLandmarks = {
         head: face.length > 0 && face[1] ?

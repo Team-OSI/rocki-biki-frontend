@@ -21,8 +21,11 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
     
      useEffect(() => {
        Object.values(materials).forEach((material) => {
-         material.transparent = true
-         material.opacity = opacity
+        material.transparent = true;
+        material.opacity = opacity;
+        material.depthWrite = false;
+        // material.side = THREE.DoubleSide;
+        // material.blending = THREE.AdditiveBlending;  
        })
      }, [materials, opacity])
   
