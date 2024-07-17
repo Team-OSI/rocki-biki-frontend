@@ -3,6 +3,18 @@ import { Camera } from '@mediapipe/camera_utils';
 import { initializeDetectors, processPoseLandmarks } from '@/lib/mediapipe/tasksVision';
 import { isValidMovement, calculateHandRotation, calc_hand_center, determineHandState, calc_head_rotation_2d } from '@/lib/utils/motionUtils';
 
+function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+  
+function interpolateMotion(prevLandmark, nextLandmark, t) {
+return [
+    lerp(prevLandmark[0], nextLandmark[0], t),
+    lerp(prevLandmark[1], nextLandmark[1], t),
+    lerp(prevLandmark[2], nextLandmark[2], t),
+];
+}
+
 const processLandmarks = (faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks) => {
     const face = faceResult.faceLandmarks?.[0] || [];
     const hands = handResult.landmarks || [];
@@ -81,26 +93,60 @@ export function useMotionCapture(localVideoRef, onLandmarksUpdate) {
     const lastValidLandmarksRef = useRef(null);
 
     const detectFrameRef = useRef(null);
+    
+    const frameCountRef = useRef(0);
+    const lastRealLandmarksRef = useRef(null);
 
     useEffect(() => {
         detectFrameRef.current = async () => {
+
             if (!detectors || !localVideoRef.current) return;
 
-            const timestamp = performance.now();
-            const faceResult = detectors.faceLandmarker.detectForVideo(localVideoRef.current, timestamp);
-            const handResult = detectors.handLandmarker.detectForVideo(localVideoRef.current, timestamp);
-            const poseResult = detectors.poseLandmarker.detectForVideo(localVideoRef.current, timestamp);
+            frameCountRef.current += 1;
+            if (frameCountRef.current % 2 === 0 ){
+                // 실제 모션 캡처 수행 (30fps)
+                const timestamp = performance.now();
+                const faceResult = detectors.faceLandmarker.detectForVideo(localVideoRef.current, timestamp);
+                const handResult = detectors.handLandmarker.detectForVideo(localVideoRef.current, timestamp);
+                const poseResult = detectors.poseLandmarker.detectForVideo(localVideoRef.current, timestamp);
 
-            const {updatedLandmarks, updatedPoseLandmarks, newPrevLandmarks, newLastValidLandmarks} =
-                processLandmarks(faceResult, handResult, poseResult, prevLandmarksRef.current, lastValidLandmarksRef.current);
+                const {updatedLandmarks, updatedPoseLandmarks, newPrevLandmarks, newLastValidLandmarks} =
+                    processLandmarks(faceResult, handResult, poseResult, prevLandmarksRef.current, lastValidLandmarksRef.current);
+    
+                prevLandmarksRef.current = newPrevLandmarks;
+                lastValidLandmarksRef.current = newLastValidLandmarks;
+                lastRealLandmarksRef.current = updatedLandmarks;
 
-            prevLandmarksRef.current = newPrevLandmarks;
-            lastValidLandmarksRef.current = newLastValidLandmarks;
-
-            onLandmarksUpdate({
-                landmarks: updatedLandmarks,
-                poseLandmarks: updatedPoseLandmarks
-            });
+                onLandmarksUpdate({
+                    landmarks: updatedLandmarks,
+                    poseLandmarks: updatedPoseLandmarks
+                });
+            } else {
+                // 중간 프레임 보간 (60fps 중 나머지 30fps)
+                const t = frameCountRef.current / 2
+                if (lastRealLandmarksRef.current && prevLandmarksRef.current) {
+                    const interpolatedLandmarks = {
+                        head: [
+                            interpolateMotion(prevLandmarksRef.current.head[0], lastRealLandmarksRef.current.head[0],t),
+                            interpolateMotion(prevLandmarksRef.current.head[1], lastRealLandmarksRef.current.head[1], t)
+                        ],
+                        leftHand: [
+                            interpolateMotion(prevLandmarksRef.current.leftHand[0], lastRealLandmarksRef.current.leftHand[0], t),
+                            interpolateMotion(prevLandmarksRef.current.leftHand[1], lastRealLandmarksRef.current.leftHand[1], t),
+                            prevLandmarksRef.current.leftHand[2] // 손 상태는 보간x
+                        ],
+                        rightHand: [
+                            interpolateMotion(prevLandmarksRef.current.rightHand[0], lastRealLandmarksRef.current.rightHand[0], t),
+                            interpolateMotion(prevLandmarksRef.current.rightHand[1], lastRealLandmarksRef.current.rightHand[1], t),
+                            prevLandmarksRef.current.rightHand[2] // 손 상태는 보간x
+                        ]
+                    };
+                    onLandmarksUpdate({
+                        landmarks: interpolatedLandmarks,
+                        poseLandmarks: null // 포즈 랜드마크 보간 x
+                    });
+                }
+            };
         };
     }, [detectors, localVideoRef, onLandmarksUpdate]);
 
@@ -133,7 +179,7 @@ export function useMotionCapture(localVideoRef, onLandmarksUpdate) {
                 onFrame: () => detectFrameRef.current(),
                 width: 448,
                 height: 336,
-                frameRate: 20
+                frameRate: 44
             });
             await cameraRef.current.start();
         };

@@ -36,17 +36,20 @@ export default function GameMain() {
 
     const [receivedPoseData, setReceivedPoseData] = useState({});
     const [landmarks, setLandmarks] = useState({});
-    const landmarksRef = useRef(landmarks);
+    const landmarksRef = useRef({landmarks: null, poseLandmarks: null});
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
     const handleLandmarksUpdate = useCallback((newLandmarks) => {
+        console.log("handleLandmarksUpdate called with:", newLandmarks); // 로그 추가
+        landmarksRef.current = newLandmarks.landmarks
         setLandmarks(newLandmarks);
     }, []);
 
-    useEffect(()=> {
-        landmarksRef.current = landmarks.landmarks
-    },[landmarks])
+    // useEffect(()=> {
+    //     console.log("landmarks updated:", landmarks); // 로그 추가
+    //     landmarksRef.current = landmarks.landmarks
+    // },[landmarks])
 
     useEffect(() => {
         const onRoomClosed = () => {
