@@ -17,8 +17,6 @@ const useGaugeStore = create((set, get) => ({
         newGauge[hand] = Math.max(0, newGauge[hand] - state.gaugeDrainRate);
       }
 
-      console.log(`${hand} gauge: ${newGauge[hand]}`);
-
       return { hitGauge: newGauge };
     });
   },

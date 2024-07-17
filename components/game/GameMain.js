@@ -11,6 +11,7 @@ import useGameLogic from '@/hooks/useGameLogic';
 import { useRouter } from 'next/navigation';
 import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
+import GaugeUi from './GaugeUi';
 
 export default function GameMain() {
     const roomId = useRef(null);
@@ -95,10 +96,10 @@ export default function GameMain() {
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
-        width: gameStatus === 'playing' ? '200px' : 'calc(40vw - 10px)',
-        height: gameStatus === 'playing' ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
+        width: (['playing', 'finished'].includes(gameStatus)) ? '200px' : 'calc(40vw - 10px)',
+        height: ['playing', 'finished'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
         zIndex: 30,
-        ...(gameStatus === 'playing'
+        ...(['playing', 'finished'].includes(gameStatus)
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : { 
                 top: '50%',
@@ -149,6 +150,7 @@ export default function GameMain() {
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
+            {gameStatus === 'playing' && <GaugeUi />}
             <div style={videoContainerStyle(true)}>
                 <video
                     className={`scale-x-[-1] opacity-80 mt-2 transition-transform  ${

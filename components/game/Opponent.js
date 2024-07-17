@@ -170,28 +170,28 @@ export function Opponent({ position, landmarks, opponentData }) {
       const distance = headPosition.distanceTo(handPosition)
 
       if (distance < 1.4 && currentTime - lastHitTime.current > 1000) {
-        const velocity = landmark[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
+        // const velocity = landmark[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
         const gaugeDamage = getGaugeDamage(name);
-        const damage = (Math.floor(velocity * 20) / 3) + gaugeDamage;
+        const damage = gaugeDamage // + (Math.floor(velocity * 20) / 3);
 
-        console.log("=========dagame:", damage)
         // 데미지 정보를 서버로 전송
-        emitDamage(damage)
-        playHitSound()
-        
-        setHit(true)
-        lastHitTime.current = currentTime
-        setTimeout(() => setHit(false), 500)
+        if (damage > 5) {
+          emitDamage(damage)
+          playHitSound()
+          setHit(true)
+          lastHitTime.current = currentTime
+          setTimeout(() => setHit(false), 500)
+        }
 
         // 타격 위치 설정
         const hitDirection = handPosition.clone().sub(headPosition).normalize()
-        const hitImpulse = hitDirection.multiplyScalar(5) // 조절 가능한 힘
+        const hitImpulse = hitDirection.multiplyScalar(gaugeDamage) // 조절 가능한 힘
         headRef.current.addHitImpulse(hitImpulse)
 
         resetGauge(name)
       }
     })
-  }, [landmarks, playHitSound, emitDamage])
+  }, [landmarks, playHitSound, emitDamage, getGaugeDamage, resetGauge])
 
   useFrame(() => {
   if(count_optm.current % 2 === 0) {
