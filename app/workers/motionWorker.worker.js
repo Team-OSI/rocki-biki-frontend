@@ -5,6 +5,7 @@ let faceLandmarker, handLandmarker, poseLandmarker;
 let isInitialized = false;
 let offscreenCanvas, offscreenCtx, sharedArray;
 let videoWidth, videoHeight;
+let prevLandmarks, lastValidLandmarks = null;
 let lastProcessTime = 0;
 const frameInterval = 1000 / 10;
 
@@ -106,10 +107,13 @@ function processVideoFrame(imageData) {
     const handResult = handLandmarker.detectForVideo(offscreenCanvas, timestamp);
     const poseResult = poseLandmarker.detectForVideo(offscreenCanvas, timestamp);
 
-    const result = processLandmarks(faceResult, handResult, poseResult);
+    const result = processLandmarks(faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks);
     const jsonResult = JSON.stringify(result);
     const flattenResult = flatResult(result);
     sharedArray.set(flattenResult);
+
+    prevLandmarks = result.newPrevLandmarks;
+    lastValidLandmarks = result.newLastValidLandmarks;
 
     frameCount++;
     if (frameCount % LOG_INTERVAL === 0) {
