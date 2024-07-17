@@ -104,7 +104,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
       [landmarks, calculatePoseSimilarity, similarityThreshold, extractRequiredLandmarks, emitPlayerReady, playerReady]);
 
   useEffect(()=>{
-    console.log('readyState: ',gameStatus)
+    // console.log('readyState: ',gameStatus)
     if (gameStatus === 'bothReady') {
       if(!timerRef.current){
         startTimer();

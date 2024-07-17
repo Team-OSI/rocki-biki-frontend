@@ -17,7 +17,108 @@ let frameCount = 0;
 const LOG_INTERVAL = 60;
 
 export default function GameMain() {
-    const { initWorker, terminateWorker, sharedArray } = useWorkerStore();
+    const { initWorker, terminateWorker, setWorkerMessageHandler, sharedArray, isInitialized } = useWorkerStore();
+    const canvasRef = useRef(null);
+    const videoRef = useRef(null);
+    const [isCanvasReady, setIsCanvasReady] = useState(false);
+
+    useEffect(() => {
+        if (canvasRef.current) {
+            setIsCanvasReady(true);
+        }
+    }, [canvasRef]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined' || !videoRef.current) return;
+        let videoStream = null;
+        let originalCanvas = null;
+        let originalCtx = null;
+
+        const setupVideoAndWorker = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                videoRef.current.srcObject = stream;
+                videoStream = stream;
+                await new Promise((resolve) => {
+                    videoRef.current.onloadedmetadata = resolve;
+                });
+
+                try {
+                    await videoRef.current.play();
+                } catch (playError) {
+                    console.warn("Video play was interrupted:", playError);
+                }
+
+                // 새로운 캔버스 생성 및 컨텍스트 가져오기
+                originalCanvas = document.createElement('canvas');
+                originalCanvas.width = videoRef.current.videoWidth;
+                originalCanvas.height = videoRef.current.videoHeight;
+                originalCtx = originalCanvas.getContext('2d', { willReadFrequently: true });
+
+                // OffscreenCanvas 생성
+                const offscreenCanvas = new OffscreenCanvas(videoRef.current.videoWidth, videoRef.current.videoHeight);
+                await initWorker(videoRef.current.videoWidth, videoRef.current.videoHeight);
+
+                const worker = useWorkerStore.getState().worker;
+                worker.postMessage({
+                    type: 'VIDEO_INIT',
+                    offscreenCanvas: offscreenCanvas,
+                    width: videoRef.current.videoWidth,
+                    height: videoRef.current.videoHeight
+                }, [offscreenCanvas]);
+
+                const sendVideoFrame = () => {
+                    if (videoRef.current && originalCtx) {
+                        originalCtx.drawImage(videoRef.current, 0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
+                        const imageData = originalCtx.getImageData(0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
+
+                        worker.postMessage({
+                            type: 'VIDEO_FRAME',
+                            imageData: imageData
+                        }, [imageData.data.buffer]);
+                    }
+                    requestAnimationFrame(sendVideoFrame);
+                };
+                requestAnimationFrame(sendVideoFrame);
+            } catch (err) {
+                console.error("Error setting up video and worker:", err);
+            }
+        };
+
+        setupVideoAndWorker();
+
+        return () => {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+            if (videoRef.current) {
+                videoRef.current.srcObject = null;
+            }
+        };
+    }, [initWorker]);
+
+    // 캔버스 초기화를 위한 별도의 useEffect
+    useEffect(() => {
+        if (canvasRef.current) {
+            canvasRef.current.width = 640;
+            canvasRef.current.height = 480;
+            console.log('Canvas dimensions:', canvasRef.current.width, 'x', canvasRef.current.height);
+        } else {
+            console.error('Canvas reference is null after mount');
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isInitialized) {
+            setWorkerMessageHandler((e) => {
+                if (e.data.type === 'LANDMARKS_UPDATED') {
+                    // 랜드마크 업데이트 처리
+                    handleLandmarksUpdate(e.data);
+                }
+            });
+        }
+    }, [isInitialized, setWorkerMessageHandler]);
+
     const roomId = useRef(null);
     const bgmSoundRef = useRef(null);
 
@@ -42,7 +143,6 @@ export default function GameMain() {
     const [receivedPoseData, setReceivedPoseData] = useState({});
     const [landmarks, setLandmarks] = useState({});
     const landmarksRef = useRef(landmarks);
-    const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
     const handleLandmarksUpdate = useCallback((data) => {
@@ -51,7 +151,6 @@ export default function GameMain() {
         const { resultOffset, resultLength } = data;
         const result = sharedArray.slice(resultOffset, resultOffset + resultLength);
         let index = 0;
-        // console.log('2. Result: ', result);
 
         // landmarks 파싱
         const landmarks = {};
@@ -94,35 +193,6 @@ export default function GameMain() {
         landmarksRef.current = landmarks.landmarks
     },[landmarks])
 
-
-    useEffect(() => {
-        if (typeof window === 'undefined' || !localVideoRef.current) return;
-
-        const initializeWorker = async () => {
-            if (localVideoRef.current.videoWidth && localVideoRef.current.videoHeight) {
-                try {
-                    await initWorker(localVideoRef.current.videoWidth, localVideoRef.current.videoHeight);
-                } catch (error) {
-                    console.error('Failed to initialize worker:', error);
-                }
-            }
-        };
-
-        const handleVideoLoad = () => {
-            initializeWorker();
-        };
-
-        localVideoRef.current.addEventListener('loadedmetadata', handleVideoLoad);
-
-        return () => {
-            if (localVideoRef.current) {
-                localVideoRef.current.removeEventListener('loadedmetadata', handleVideoLoad);
-            }
-            terminateWorker();
-        };
-    }, [initWorker, terminateWorker]);
-
-
     useEffect(() => {
         const onRoomClosed = () => {
           router.push('/lobby');
@@ -140,12 +210,10 @@ export default function GameMain() {
         };
       }, [router]);
 
-    useMotionCapture(handleLandmarksUpdate);
-
     // WebRTC 연결 설정
     const connectionState = useWebRTCConnection(
         roomId.current,
-        localVideoRef,
+        videoRef,
         remoteVideoRef,
         (receivedData) => {
             // console.log('Received data:', receivedData);
@@ -199,12 +267,12 @@ export default function GameMain() {
     };
 
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
-    const canvasRef = useRef(null);
+    const cameraRef = useRef(null);
 
     useEffect(() => {
         const updateCanvasSize = () => {
-            if (canvasRef.current) {
-                const { width, height } = canvasRef.current.getBoundingClientRect();
+            if (cameraRef.current) {
+                const { width, height } = cameraRef.current.getBoundingClientRect();
                 setCanvasSize(prevSize => {
                     if (prevSize.width !== width || prevSize.height !== height) {
                         return { width, height };
@@ -227,7 +295,7 @@ export default function GameMain() {
                     className={`scale-x-[-1] opacity-80 mt-2 transition-transform  ${
                         (myReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
                       }`}
-                    ref={localVideoRef}
+                    ref={videoRef}
                     style={videoStyle}
                     autoPlay
                     playsInline
@@ -272,7 +340,7 @@ export default function GameMain() {
                     )}
                 </>
             </div>
-            <div className="absolute inset-0" ref={canvasRef}>
+            <div className="absolute inset-0" ref={cameraRef}>
                 {gameStatus === 'waiting' || gameStatus === 'bothReady' ? (
                     <div className="absolute inset-0 z-40">
                         <ReadyCanvas

@@ -4,6 +4,8 @@ let faceLandmarker, handLandmarker, poseLandmarker;
 let isInitialized = false;
 let offscreenCanvas, offscreenCtx, sharedArray;
 let videoWidth, videoHeight;
+let lastProcessTime = 0;
+const frameInterval = 1000 / 10;
 
 async function initializeDetectors() {
     const vision = await FilesetResolver.forVisionTasks(
@@ -46,7 +48,6 @@ async function initializeDetectors() {
         minPosePresenceConfidence: 0.5,
         minTrackingConfidence: 0.5
     });
-
     console.log('mediapipe 로드 완료~~~~!!');
 }
 
@@ -56,16 +57,18 @@ self.onmessage = async function(e) {
         await initializeDetectors();
         isInitialized = true;
         self.postMessage({type: 'INIT_COMPLETE'});
-        console.log('워커 초기화 성공');
+        console.log('워커 초기화 성공!!');
     } else if (e.data.type === 'VIDEO_INIT') {
         offscreenCanvas = e.data.offscreenCanvas;
-        offscreenCtx = offscreenCanvas.getContext('2d');
+        offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
         videoWidth = e.data.width;
         videoHeight = e.data.height;
     } else if (e.data.type === 'VIDEO_FRAME') {
-        offscreenCtx.drawImage(e.data.bitmap, 0, 0);
-        e.data.bitmap.close();
-        processVideoFrame();
+        const currentTime = performance.now();
+        if (currentTime - lastProcessTime >= frameInterval) {
+            processVideoFrame(e.data.imageData);
+            lastProcessTime = currentTime;
+        }
     }
 };
 
@@ -90,10 +93,10 @@ function flatResult(result) {
     return new Float32Array(flattened);
 }
 
-function processVideoFrame() {
+function processVideoFrame(imageData) {
     if (!isInitialized) return;
-    // console.log('Processing video frame', imageData.width, imageData.height);
 
+    offscreenCtx.putImageData(imageData, 0, 0);
     const timestamp = performance.now();
     const faceResult = faceLandmarker.detectForVideo(offscreenCanvas, timestamp);
     const handResult = handLandmarker.detectForVideo(offscreenCanvas, timestamp);
