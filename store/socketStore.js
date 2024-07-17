@@ -8,7 +8,7 @@ const useSocketStore = create((set, get) => ({
     rooms: [],
     opponentSkill: null,
 
-    initSocket: (url) => {
+    initSocket: (url, userId) => {
         const newSocket = io(url);
         
         const existingSocket = get().socket;
@@ -16,6 +16,11 @@ const useSocketStore = create((set, get) => ({
             existingSocket.close();
             set({ socket: null });
         }
+
+        newSocket.on('connect', () => {
+            newSocket.emit('USER_CONNECT', userId); 
+          });
+
 
         newSocket.on('ROOMS_UPDATE', (rooms) => {
             console.log('ROOMS_UPDATE received', rooms);
@@ -58,6 +63,7 @@ const useSocketStore = create((set, get) => ({
     emitOffer: (offer, roomId) => {
         const { socket } = get();
         if (socket) {
+            console.log(offer, roomId)
             socket.emit('offer', { type: offer.type, sdp: offer.sdp, roomId });
         }
     },
@@ -65,6 +71,7 @@ const useSocketStore = create((set, get) => ({
     emitAnswer: (answer, roomId) => {
         const { socket } = get();
         if (socket) {
+            console.log(answer, roomId)
             socket.emit('answer', { type: answer.type, sdp: answer.sdp, roomId });
         }
     },
@@ -72,35 +79,70 @@ const useSocketStore = create((set, get) => ({
     emitCandidate: (candidate, roomId) => {
         const { socket } = get();
         if (socket) {
+            console.log(candidate, roomId)
             socket.emit('candidate', { candidate, roomId });
         }
     },
 
-    useSkill: () => (skillType, roomId) => {
+    useSkill: () => (skillType) => {
         const { socket } = get();
         if (socket) {
-            socket.emit('useSkill', { roomId, skillType, timeStamp: Date.now() });
+            socket.emit('castSkill', { skillType, timeStamp: Date.now() });
         }
     },
 
     // 데미지 보내기
-    emitDamage: (damage, roomId) => {
+    emitDamage: (damage) => {
         const { socket } = get();
         if (socket) {
-            socket.emit('damage', { roomId: roomId.current, amount: damage });
+            socket.emit('attackDamage', { amount: damage });
         }
     },
 
     // 플레이어 상태 보내기
-    emitPlayerReady: (state, roomId) => {
-        const { socket, lastEmittedPlayerRead } = get();
+    emitPlayerReady: (state) => {
+        const { socket, lastEmittedPlayerReady } = get();
         if (socket) {
             // 마지막으로 보낸 상태와 현재 상태가 다를 때만 emit
-            if(lastEmittedPlayerRead === null || lastEmittedPlayerRead !== state){
-                socket.emit('ready', {roomId: roomId, state: state});
-                set({ lastEmittedPlayerRead: state}) // 마지막 상태 업데이트
+            if(lastEmittedPlayerReady === null || lastEmittedPlayerReady !== state){
+                socket.emit('ready', { state: state });
+                set({ lastEmittedPlayerReady: state}) // 마지막 상태 업데이트
             }
         }
+    },
+    // 게임 시작하기
+    emitGameStart: () => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('start')
+        }
+    },
+    // Map을 사용하는 새로운 유틸리티 메서드들
+    getRoomById: (roomId) => {
+        return get().rooms.get(roomId);
+    },
+
+    getAllRooms: () => {
+        return Array.from(get().rooms.values());
+    },
+
+    updateRoom: (roomId, updateFn) => {
+        set(state => {
+            const newRooms = new Map(state.rooms);
+            const room = newRooms.get(roomId);
+            if (room) {
+                newRooms.set(roomId, updateFn(room));
+            }
+            return { rooms: newRooms };
+        });
+    },
+
+    removeRoom: (roomId) => {
+        set(state => {
+            const newRooms = new Map(state.rooms);
+            newRooms.delete(roomId);
+            return { rooms: newRooms };
+        });
     }
 }));
 
