@@ -18,7 +18,7 @@ export default function Lobby() {
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
-  const { setSocketId, setNickname } = useUserStore();
+  const { setSocketId, setMyNickname } = useUserStore();
   const [userEmail, setUserEmail] = useState([]);
   const [nickname, setNickname] = useState('');
   const [showNicknameModal, setShowNicknameModal] = useState(false); 
@@ -55,7 +55,7 @@ export default function Lobby() {
 
     socket.on('connect', () => {
       setSocketId(socket.id);
-      setNickname('123');
+      setUserNickname('123');
     });
     return () => closeSocket;
   },[initSocket, closeSocket]);

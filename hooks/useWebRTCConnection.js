@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
-
 import useSTT from '@/hooks/useSTT'; 
 import { useRouter } from 'next/navigation';
 import stringSimilarity from 'string-similarity';
@@ -12,6 +11,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     const emitCandidate = useSocketStore(state => state.emitCandidate);
     
     const [connectionState, setConnectionState] = useState('disconnected');
+    const [awaitingInterim, setAwaitingInterim] = useState(false);
     const peerConnection = useRef();
     const localStream = useRef();
     const dataChannel = useRef();
@@ -20,32 +20,28 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     const router = useRouter();
     const words = ["넌 이미 죽어있다", "너무 아파", "오조사마"];
 
-
     const { isRecognizing, finalTranscript, startRecognition, stopRecognition } = useSTT(
         ({ finalTranscript, interimTranscript }) => {
             console.log('Final:', finalTranscript);
             console.log('Interim:', interimTranscript);
 
-            if (interimTranscript.includes("럭키비키")) {
-                console.log("들어옴!")
-                const spokenPhrase = extractPhraseAfterLuckyVicky(interimTranscript);
-                console.log(spokenPhrase);
-                if (spokenPhrase) {
-                    const mostSimilarWord = findMostSimilarWord(spokenPhrase, words);
-                    console.log('Most Similar Word:', mostSimilarWord);
-                }
+            if (finalTranscript.includes("럭키비키")) {
+                setAwaitingInterim(true);
             }
 
+            if (awaitingInterim && interimTranscript) {
+                processTranscript(interimTranscript);
+                setAwaitingInterim(false);
+            }
         },
         (error) => {
             console.error('Speech recognition error:', error);
         }
     );
 
-    const extractPhraseAfterLuckyVicky = (transcript) => {
-        const parts = transcript.split("럭키 비키");
-        console.log(parts);
-        return parts.length > 1 ? parts[1].trim() : '';
+    const processTranscript = (transcript) => {
+        const mostSimilarWord = findMostSimilarWord(transcript, words);
+        console.log('Most Similar Word:', mostSimilarWord);
     };
 
     useEffect(() => {
@@ -92,7 +88,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         socket.on('answer', onAnswer);
         socket.on('candidate', onCandidate);
         socket.on('user_left', onUserLeft);
-
+        
         const handleUnload = (event) => {
             leaveRoom();
             window.location.href = '/lobby';
@@ -100,7 +96,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             event.returnValue = '';
         };
         window.addEventListener('beforeunload', handleUnload);
-
+        
         return () => {
             leaveRoom();
             socket.off('offer', onOffer);
@@ -114,13 +110,13 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             stopRecognition();
         };
     }, [socket, roomId]);
-
+    
     const leaveRoom = () => {
         if (socket && roomId) {
             socket.emit('leave room');
         }
     };
-  
+    
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]

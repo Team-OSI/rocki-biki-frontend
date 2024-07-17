@@ -9,7 +9,7 @@ const useUserStore = create((set, get) => ({
     console.log('socketId:', id);
   },
   
-  setNickname: (name) => {
+  setMyNickname: (name) => {
     set({ nickname: name });
     console.log('nickname:', name);
   },
