@@ -61,7 +61,7 @@ const useSTT = (onResult, onError) => {
         if (recognition.current && !isRecognizing) {
             setFinalTranscript('');
             setIsRecognizing(true);
-            console.log("!!!!");
+            console.log("Recording Start!!!!!");
             recognition.current.start();
         }
     };

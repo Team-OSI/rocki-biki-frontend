@@ -3,7 +3,7 @@ import ProgressButton from './ProgressButton';
 import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import SkillCanvas from './SkillCanvas';
 
-export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill }) {
+export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill, interimTranscript, finalTranscript }) {
   const canvasRef = useRef(null);
   const [buttonProgress, setButtonProgress] = useState({});
 
@@ -185,6 +185,36 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     setShowAttackSkill(false);
     setActiveSkill(null);
   }, []);
+
+  useEffect(() => {
+    if (finalTranscript) {
+      console.log('Final Transcript:', finalTranscript);
+      processTranscript(finalTranscript);
+    }
+  }, [finalTranscript]);
+
+  const processTranscript = (transcript) => {
+    const commands = transcript.split(' ');
+    const luckyVickyIndex = commands.indexOf('럭키 비키');
+    console.log(transcript);
+
+    if (luckyVickyIndex !== -1 && luckyVickyIndex < commands.length - 1) {
+      const nextCommand = commands[luckyVickyIndex + 1];
+      switch (nextCommand) {
+        case '힐':
+          setActiveSkill('Heal');
+          break;
+        case '공격':
+          setActiveSkill('Attack');
+          break;
+        case '방어':
+          setActiveSkill('Shield');
+          break;
+        default:
+          console.log('Unknown command:', nextCommand);
+      }
+    }
+  };
 
   return (
     <div className='skill-select-container' style={{ width: canvasSize.width, height: canvasSize.height, position: 'absolute', top: 0, left: 0 }}>

@@ -11,38 +11,29 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     const emitCandidate = useSocketStore(state => state.emitCandidate);
     
     const [connectionState, setConnectionState] = useState('disconnected');
-    const [awaitingInterim, setAwaitingInterim] = useState(false);
+    // const [awaitingInterim, setAwaitingInterim] = useState(false);
     const peerConnection = useRef();
     const localStream = useRef();
     const dataChannel = useRef();
     const intervalId = useRef();
 
     const router = useRouter();
-    const words = ["넌 이미 죽어있다", "너무 아파", "오조사마"];
+    // const words = ["넌 이미 죽어있다", "너무 아파", "오조사마"];
 
-    const { isRecognizing, finalTranscript, startRecognition, stopRecognition } = useSTT(
+    const { isRecognizing, finalTranscript, startRecognition, stopRecognition, interimTranscript } = useSTT(
         ({ finalTranscript, interimTranscript }) => {
             console.log('Final:', finalTranscript);
             console.log('Interim:', interimTranscript);
-
-            if (finalTranscript.includes("럭키비키")) {
-                setAwaitingInterim(true);
-            }
-
-            if (awaitingInterim && interimTranscript) {
-                processTranscript(interimTranscript);
-                setAwaitingInterim(false);
-            }
         },
         (error) => {
             console.error('Speech recognition error:', error);
         }
     );
 
-    const processTranscript = (transcript) => {
-        const mostSimilarWord = findMostSimilarWord(transcript, words);
-        console.log('Most Similar Word:', mostSimilarWord);
-    };
+    // const processTranscript = (transcript) => {
+    //     const mostSimilarWord = findMostSimilarWord(transcript, words);
+    //     console.log('Most Similar Word:', mostSimilarWord);
+    // };
 
     useEffect(() => {
         if (!socket || !roomId) return;
@@ -221,7 +212,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                 const offer = await peerConnection.current.createOffer();
                 await peerConnection.current.setLocalDescription(offer);
                 emitOffer(offer, roomId);
-                startRecognition();
+                // startRecognition();
             } catch (error) {
                 console.error('Error starting call:', error);
             }
@@ -243,20 +234,20 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         }, 1000 / 20);
     };
 
-    const findMostSimilarWord = (input, wordsList) => {
-        let highestSimilarity = 0;
-        let mostSimilarWord = '';
-        wordsList.forEach(word => {
-            const similarity = stringSimilarity.compareTwoStrings(input, word);
-            if (similarity > highestSimilarity) {
-                highestSimilarity = similarity;
-                mostSimilarWord = word;
-            }
-        });
-        return mostSimilarWord;
-    };
+    // const findMostSimilarWord = (input, wordsList) => {
+    //     let highestSimilarity = 0;
+    //     let mostSimilarWord = '';
+    //     wordsList.forEach(word => {
+    //         const similarity = stringSimilarity.compareTwoStrings(input, word);
+    //         if (similarity > highestSimilarity) {
+    //             highestSimilarity = similarity;
+    //             mostSimilarWord = word;
+    //         }
+    //     });
+    //     return mostSimilarWord;
+    // };
 
-    return { socket, connectionState, isRecognizing, finalTranscript, startRecognition, stopRecognition };
+    return { socket, connectionState, isRecognizing, finalTranscript, interimTranscript, startRecognition, stopRecognition };
 };
 
 export default useWebRTCConnection;
