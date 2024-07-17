@@ -10,10 +10,17 @@ const useSocketStore = create((set, get) => ({
 
     initSocket: (url, userId) => {
         const newSocket = io(url);
+        
+        const existingSocket = get().socket;
+        if (existingSocket) {
+            existingSocket.close();
+            set({ socket: null });
+        }
 
         newSocket.on('connect', () => {
             newSocket.emit('USER_CONNECT', userId); 
           });
+
 
         newSocket.on('ROOMS_UPDATE', (rooms) => {
             console.log('ROOMS_UPDATE received', rooms);
@@ -26,7 +33,7 @@ const useSocketStore = create((set, get) => ({
             setTimeout(() => set({ opponentSkill: null }), 5000);
         });
         set({ socket: newSocket});
-
+        return newSocket;
     },
 
     closeSocket: () => {

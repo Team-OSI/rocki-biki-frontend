@@ -9,6 +9,7 @@ import NicknameModal from '@/components/lobby/NicknameModal';
 import Navbar from '@/components/lobby/Navbar';
 import useSocketStore from '@/store/socketStore';
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
+import useUserStore from '@/store/userStore';
 import {getNickname, getUserEmail} from '@/api/user/api';
 
 export default function Lobby() {
@@ -17,6 +18,7 @@ export default function Lobby() {
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRooms, setFilteredRooms] = useState([]);
+  const { setSocketId, setNickname } = useUserStore();
   const [userEmail, setUserEmail] = useState([]);
   const [nickname, setNickname] = useState('');
   const [showNicknameModal, setShowNicknameModal] = useState(false); 
@@ -49,7 +51,12 @@ export default function Lobby() {
     // const token = Cookies.get('JWT_TOKEN');
     // const decoded = jwtDecode(token);
     // console.log(decoded.sub);
-    initSocket(process.env.NEXT_PUBLIC_NODE_SERVER);
+    const socket = initSocket(process.env.NEXT_PUBLIC_NODE_SERVER || 'http://localhost:7777');
+
+    socket.on('connect', () => {
+      setSocketId(socket.id);
+      setNickname('123');
+    });
     return () => closeSocket;
   },[initSocket, closeSocket]);
 
@@ -68,10 +75,7 @@ export default function Lobby() {
   // }, [initSocket, closeSocket])
 
   useEffect(() => {
-    setFilteredRooms(rooms);
-  }, [rooms]);
-
-  useEffect(() => {
+    console.log(rooms);
     filterRooms();
   }, [rooms, searchTerm]);
 
@@ -82,7 +86,7 @@ export default function Lobby() {
 
   const handleCreateRoom = (roomData) => {
     addRoom(roomData, (newRoom) => {
-      goGame(newRoom.roomId);
+      goGame(newRoom);
     });
   };
 
@@ -91,7 +95,7 @@ export default function Lobby() {
   };
 
   const filterRooms = () => {
-    const filtered = rooms.filter(room => 
+    const filtered = Object.entries(rooms).filter(([roomId, room]) =>
       room.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredRooms(filtered);
@@ -124,13 +128,15 @@ export default function Lobby() {
             </div>
           </div>
           <div className="max-h-96 overflow-y-auto">
-            {filteredRooms.map((room, index) => (
-              <Room
-                key={index}
+            {filteredRooms.map(([roomId, room]) => (
+              <Room 
+                key={roomId}
                 title={room.title}
-                participants={`${room.participants}/2`}
-                status={room.status || '참가하기'}
-                onClick={() => goGame(room.roomId)}
+                player1={room.players[0]}
+                player2={room.players[1]}
+                status={room.players.length < 2 ? false : true}
+                onClick={() => goGame(roomId)}
+
               />
             ))}
           </div>

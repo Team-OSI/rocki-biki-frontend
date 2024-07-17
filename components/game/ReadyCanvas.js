@@ -8,7 +8,7 @@ import {throttle} from 'lodash';
 export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const canvasRef = useRef(null);
   const timerRef = useRef(null);
-  const opponentReadyState = useGameStore(state => state.opponentReadyState);
+  const { gameStatus, setMyReady } = useGameStore();
   const [similarityResult, setSimilarityResult] = useState(null);
   const [remainingTime, setRemainingTime] = useState(5);
   const [playerReady, setPlayerReady] = useState(false);
@@ -63,8 +63,8 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const startTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
-      setRemainingTime(5); // 타이머 초기화
     }
+    setRemainingTime(5); // 타이머 초기화
 
     timerRef.current = setInterval(() => {
       setRemainingTime((prevTime) => {
@@ -89,12 +89,14 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
       if (similarity >= similarityThreshold) {
         if(!playerReady){
           setPlayerReady(true)
-          emitPlayerReady(true, roomIdRef.current);
+          setMyReady(true)
+          emitPlayerReady(true);
         }
       } else {
         if(playerReady){
           setPlayerReady(false)
-          emitPlayerReady(false, roomIdRef.current);
+          setMyReady(false)
+          emitPlayerReady(false);
         }
       }
     }
@@ -102,9 +104,8 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
       [landmarks, calculatePoseSimilarity, similarityThreshold, extractRequiredLandmarks, emitPlayerReady, playerReady]);
 
   useEffect(()=>{
-    console.log('=====', playerReady, opponentReadyState)
-    if (playerReady && opponentReadyState) {
-      console.log("ready_fin")
+    console.log('readyState: ',gameStatus)
+    if (gameStatus === 'bothReady') {
       if(!timerRef.current){
         startTimer();
       }
@@ -115,7 +116,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
       }
       setRemainingTime(5);
     }
-  },[landmarks, playerReady, startTimer, opponentReadyState, checkReadyPose])
+  },[landmarks, playerReady, startTimer, checkReadyPose ])
 
 
   useEffect(() => {

@@ -8,14 +8,30 @@ import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
 import useGameLogic from '@/hooks/useGameLogic';
+import { useRouter } from 'next/navigation';
+import useSocketStore from '@/store/socketStore';
+import useGameStore from '@/store/gameStore';
 
 export default function GameMain() {
-    const [roomId, setRoomId] = useState(null);
-    const { handleUseSkill } = useGameLogic();
+    const roomId = useRef(null);
+    const bgmSoundRef = useRef(null);
+
+    useEffect(() => {
+        bgmSoundRef.current = new Audio('./sounds/bgm.MP3');
+      }, []);
+
+    const playBgmSound = useCallback(() => {
+    if (bgmSoundRef.current) {
+        bgmSoundRef.current.play();
+    }
+    }, []);
+    const { gameStatus } = useGameLogic(); //game 로직
+    const router = useRouter();
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
-        setRoomId(searchParams.get('roomId'));
+        const roomIdFromUrl = searchParams.get('roomId');
+        roomId.current = roomIdFromUrl;
     }, []);
 
     const [receivedPoseData, setReceivedPoseData] = useState({});
@@ -23,8 +39,6 @@ export default function GameMain() {
     const landmarksRef = useRef(landmarks);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
-
-    const { gameStatus, startGame } = useGameLogic(); //game 로직
 
     const handleLandmarksUpdate = useCallback((newLandmarks) => {
         setLandmarks(newLandmarks);
@@ -34,11 +48,28 @@ export default function GameMain() {
         landmarksRef.current = landmarks.landmarks
     },[landmarks])
 
+    useEffect(() => {
+        const onRoomClosed = () => {
+          router.push('/lobby');
+        };
+    
+        const socket = useSocketStore.getState().socket;
+        if (socket) {
+          socket.on('ROOM_CLOSE', onRoomClosed);
+        }
+    
+        return () => {
+          if (socket) {
+            socket.off('ROOM_CLOSE', onRoomClosed);
+          }
+        };
+      }, [router]);
+
     useMotionCapture(localVideoRef, handleLandmarksUpdate);
 
     // WebRTC 연결 설정
     const connectionState = useWebRTCConnection(
-        roomId,
+        roomId.current,
         localVideoRef,
         remoteVideoRef,
         (receivedData) => {
@@ -50,8 +81,13 @@ export default function GameMain() {
         () => landmarksRef.current
     );
 
+    const myReady = useGameStore(state => state.myReady);
+    const opponentReady = useGameStore(state => state.opponentReadyState)
+    const emitGameStart = useSocketStore(state => state.emitGameStart);
+
     const handleReady = () => {
-        startGame();
+        playBgmSound();
+        emitGameStart();
     };
 
     const videoContainerStyle = (isLocal) => ({
@@ -113,13 +149,15 @@ export default function GameMain() {
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
             <div style={videoContainerStyle(true)}>
                 <video
-                    className="scale-x-[-1] opacity-80 mt-2"
+                    className={`scale-x-[-1] opacity-80 mt-2 transition-transform  ${
+                        (myReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
+                      }`}
                     ref={localVideoRef}
                     style={videoStyle}
                     autoPlay
                     playsInline
                 />
-                {gameStatus === 'idle' && (
+                {!myReady && (
                     <Image
                         src="/images/ready_pose.webp"
                         alt="Ready Pose"
@@ -140,13 +178,15 @@ export default function GameMain() {
                     </div>
                 )}
                     <video
-                        className="scale-x-[-1] opacity-80 mt-2"
+                        className={`scale-x-[-1] opacity-80 mt-2 transition-transform  ${
+                            (opponentReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
+                          }`}
                         ref={remoteVideoRef}
                         style={videoStyle}
                         autoPlay
                         playsInline
                     />
-                    {gameStatus === 'idle' && (
+                    {(!opponentReady && connectionState === 'connected') && (
                         <Image
                             src="/images/ready_pose.webp"
                             alt="Ready Pose"
@@ -158,7 +198,7 @@ export default function GameMain() {
                 </>
             </div>
             <div className="absolute inset-0" ref={canvasRef}>
-                {gameStatus === 'idle' ? (
+                {gameStatus === 'waiting' || gameStatus === 'bothReady' ? (
                     <div className="absolute inset-0 z-40">
                         <ReadyCanvas
                             onReady={handleReady}
@@ -174,7 +214,7 @@ export default function GameMain() {
                                 landmarks={landmarks.landmarks}
                             />
                         </div>
-                        <div className="absolute inset-0 z-40 pointer-events-none">
+                        {/* <div className="absolute inset-0 z-40 pointer-events-none">
                             <SkillSelect
                                 localVideoRef={localVideoRef}
                                 poseLandmarks={landmarks.poseLandmarks}
@@ -182,7 +222,7 @@ export default function GameMain() {
                                 canvasSize={canvasSize}
                                 onUseSkill={handleUseSkill}
                             />
-                        </div>
+                        </div> */}
                     </>
                 )}
             </div>
