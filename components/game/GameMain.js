@@ -71,7 +71,6 @@ export default function GameMain() {
     const {
         connectionState,
         finalTranscript,
-        interimTranscript,
     } = useWebRTCConnection(
         roomId.current,
         localVideoRef,
@@ -224,7 +223,6 @@ export default function GameMain() {
                                 landmarks={landmarks.landmarks}
                                 canvasSize={canvasSize}
                                 onUseSkill={handleUseSkill}
-                                interimTranscript={interimTranscript}
                                 finalTranscript={finalTranscript}
                             />
                         </div>

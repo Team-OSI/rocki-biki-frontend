@@ -1,8 +1,10 @@
 "use client"
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {throttle} from "lodash";
+import stringSimilarity from 'string-similarity';
 
-const similarityThreshold = 0.70;   // 포즈 유사도 임계값
+const similarityThreshold = 0.70;
+const voiceSimilarityThreshold = 0.60;   // 포즈 유사도 임계값
 const SKILL_DURATION = 5;           // 스킬 지속 시간
 
 export default function SkillCanvas(
@@ -12,6 +14,7 @@ export default function SkillCanvas(
         onSkillComplete,
         poseLandmarks,
         skillConfig,
+        finalTranscript,
         width = 640,
         height = 480
     }) {
@@ -21,6 +24,7 @@ export default function SkillCanvas(
     const [remainingTime, setRemainingTime] = useState(SKILL_DURATION);
     const [isSkillActive, setIsSkillActive] = useState(false);
     const timerRef = useRef(null);
+    const [voiceSimilarityResult, setVoiceSimilarityResult] = useState(null);
     // const [landmarkCoordinates, setLandmarkCoordinates] = useState({});  // 디버깅용
 
     // 타이머 시작 함수
@@ -79,6 +83,13 @@ export default function SkillCanvas(
         return similarities.reduce((sum, similarity) => sum + similarity, 0) / similarities.length;
     };
 
+    // 음성 유사도 계산 함수
+    const calculateVoiceSimilarity = (transcript, targetReading) => {
+        console.log(transcript,"::", targetReading);
+        if (!transcript || !targetReading) return 0;
+        return stringSimilarity.compareTwoStrings(transcript, targetReading);
+    };
+
     const skillConfigRef = useRef(skillConfig);
     useEffect(() => {
         skillConfigRef.current = skillConfig;
@@ -123,8 +134,11 @@ export default function SkillCanvas(
 
                 if (Object.values(detectedPose).every(landmark => landmark)) {
                     const poseSimilarity = calculatePoseSimilarity(detectedPose, skillConfig.targetPose);
+                    const voiceSimilarity = calculateVoiceSimilarity(finalTranscript, skillConfig.skillReading);
+                    console.log(voiceSimilarity)
                     return () => {
                         setSimilarityResult(poseSimilarity);
+                        setVoiceSimilarityResult(voiceSimilarity);
                         setIsSkillActive(poseSimilarity >= similarityThreshold);
                     };
                     // setLandmarkCoordinates(detectedPose);
@@ -132,7 +146,7 @@ export default function SkillCanvas(
             }
             return null;
         }, 500), // 500ms마다 최대 한 번 실행
-        [skillConfig.targetPose, calculatePoseSimilarity]
+        [skillConfig.targetPose, calculatePoseSimilarity, finalTranscript, skillConfig.skillReading]
     );
 
     useEffect(() => {
@@ -165,6 +179,7 @@ export default function SkillCanvas(
                 {similarityResult !== null && (
                     <div id="similarity" style={{ color: skillConfig.textColor }}>
                         <p>Similarity: {similarityResult.toFixed(2)}</p>
+                        <p>Voice Similarity: {voiceSimilarityResult?.toFixed(2)}</p>
                         {isSkillActive && remainingTime > 0 && (
                             <p>{skillConfig.activationMessage} ({skillConfig.name} Skill 발동!!)</p>
                         )}
