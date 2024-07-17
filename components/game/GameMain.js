@@ -218,7 +218,7 @@ export default function GameMain() {
       }, [router]);
 
     // WebRTC 연결 설정
-    const connectionState = useWebRTCConnection(
+    const { connectionState } = useWebRTCConnection(
         roomId.current,
         videoRef,
         remoteVideoRef,
@@ -300,7 +300,7 @@ export default function GameMain() {
             {gameStatus === 'playing' && <GaugeUi />}
             <div style={videoContainerStyle(true)}>
                 <video
-                    className={`scale-x-[-1] opacity-80 mt-2 transition-transform  ${
+                    className={`scale-x-[-1] opacity-80 mt-5 transition-transform  ${
                         (myReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
                       }`}
                     ref={videoRef}
@@ -329,7 +329,7 @@ export default function GameMain() {
                     </div>
                 )}
                     <video
-                        className={`scale-x-[-1] opacity-80 mt-2 transition-transform  ${
+                        className={`scale-x-[-1] opacity-80 mt-5 transition-transform  ${
                             (opponentReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
                           }`}
                         ref={remoteVideoRef}

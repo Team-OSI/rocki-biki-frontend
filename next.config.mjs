@@ -24,6 +24,7 @@ const nextConfig = {
     }
     return config;
   },
+
   async headers() {
     return [
       {
@@ -35,7 +36,7 @@ const nextConfig = {
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
+            value: 'credentialless', // 'require-corp'에서 변경
           },
         ],
       },
