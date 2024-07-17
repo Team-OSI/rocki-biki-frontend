@@ -108,17 +108,17 @@ function processVideoFrame(imageData) {
     const poseResult = poseLandmarker.detectForVideo(offscreenCanvas, timestamp);
 
     const result = processLandmarks(faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks);
-    const jsonResult = JSON.stringify(result);
+    // const jsonResult = JSON.stringify(result);
     const flattenResult = flatResult(result);
     sharedArray.set(flattenResult);
 
     prevLandmarks = result.newPrevLandmarks;
     lastValidLandmarks = result.newLastValidLandmarks;
 
-    frameCount++;
-    if (frameCount % LOG_INTERVAL === 0) {
-        console.log("Worker 측 데이터:", jsonResult.substring(0, 500));
-    }
+    // frameCount++;
+    // if (frameCount % LOG_INTERVAL === 0) {
+    //     console.log("Worker 측 데이터:", jsonResult.substring(0, 500));
+    // }
 
     self.postMessage({
         type: 'LANDMARKS_UPDATED',
