@@ -3,7 +3,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import { GameCanvas } from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
-import { useMotionCapture } from '@/hooks/useMotionCapture';
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
