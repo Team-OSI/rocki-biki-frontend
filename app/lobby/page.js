@@ -10,6 +10,7 @@ import useSocketStore from '@/store/socketStore';
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 import useUserStore from '@/store/userStore';
 import { useTitle } from "@/app/contexts/TitleContext";
+import {getNickname, getUserEmail} from "@/api/user/api";
 
 export default function Lobby() {
   const router = useRouter();
@@ -19,9 +20,31 @@ export default function Lobby() {
   const [filteredRooms, setFilteredRooms] = useState([]);
   const { setSocketId, setMyNickname } = useUserStore();
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const [userNickname, setUserNickname] = useState('');
   const [userProfileImage, setUserProfileImage] = useState('')
   const { setTitle } = useTitle();
+
+  useEffect(() => {
+    const initializeUser = async () => {
+      const email = await getUserEmail();
+      setUserEmail(email);
+
+      if (email) {
+        try {
+          const response = await getNickname(email);
+          setUserProfileImage(response.profileImage);
+          setUserNickname(response.nickname);
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+        }
+      } else {
+        console.error("No user email found");
+      }
+    };
+
+    initializeUser();
+  }, []);
 
   useEffect(() => {
     // const token = Cookies.get('JWT_TOKEN');
@@ -46,7 +69,7 @@ export default function Lobby() {
   }, [rooms, searchTerm]);
 
   const goGame = (roomId) => {
-    joinRoom(roomId);
+    joinRoom(roomId, userEmail, userNickname, userProfileImage);
     router.push(`/game?roomId=${roomId}`);
   };
 

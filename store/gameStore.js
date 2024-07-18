@@ -9,11 +9,11 @@ const useGameStore = create((set, get) => ({
   winner: null,
   playerSkills: [null, null],
   opponentSkills: [null, null],
-  
+  opponentInfo: null, // 새로 추가된 상태
+
   setGameStatus: (status, socketId) => {
     const playerIds = Object.keys(status.players);
     const opponentId = playerIds.find(id => id !== socketId);
-
     set(state => ({
       gameStatus: status.gameStatus,
       playerHealth: status.players[socketId].health,
@@ -24,9 +24,14 @@ const useGameStore = create((set, get) => ({
       opponentSkills: status.players[opponentId].skill
     }));
   },
-  
+
   setMyReady: (state) => {
     set({ myReady: state })
+  },
+
+  // 새로 추가된 액션
+  setOpponentInfo: (info) => {
+    set({ opponentInfo: info })
   }
 }));
 

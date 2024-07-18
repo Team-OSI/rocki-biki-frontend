@@ -21,6 +21,7 @@ export default function GameMain() {
     const canvasRef = useRef(null);
     const videoRef = useRef(null);
     const [isCanvasReady, setIsCanvasReady] = useState(false);
+    const setOpponentInfo = useGameStore(state => state.setOpponentInfo);
 
     useEffect(() => {
         if (canvasRef.current) {
@@ -208,11 +209,16 @@ export default function GameMain() {
         const socket = useSocketStore.getState().socket;
         if (socket) {
           socket.on('ROOM_CLOSE', onRoomClosed);
+
+            socket.on('opponentInfo', (info) => {
+                setOpponentInfo(info)
+            });
         }
     
         return () => {
           if (socket) {
             socket.off('ROOM_CLOSE', onRoomClosed);
+            socket.off('opponentInfo');
           }
         };
       }, [router]);

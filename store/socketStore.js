@@ -53,10 +53,10 @@ const useSocketStore = create((set, get) => ({
         }
     },
 
-    joinRoom: (roomId) => {
+    joinRoom: (roomId, email, nickname, profileImage) => {
         const { socket } = get();
         if (socket) {
-            socket.emit('join room', roomId);
+            socket.emit('join room', roomId, email, nickname, profileImage);
         }
     },
 

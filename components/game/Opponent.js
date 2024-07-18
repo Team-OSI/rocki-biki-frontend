@@ -6,6 +6,8 @@ import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import useGaugeStore from '@/store/gaugeStore';
 import useSocketStore from '@/store/socketStore';
+import useGameStore from "@/store/gameStore";
+import {getAudioUrls} from "@/api/user/api";
 
 
 
@@ -117,6 +119,25 @@ export function Opponent({ position, landmarks, opponentData }) {
   const count_optm = useRef(0)
   const roomId = useRef('')
   const hitSoundRef = useRef(null);
+  const voiceSoundRef = useRef(null);
+  const opponentInfo = useGameStore(state => state.opponentInfo);
+  const [audioUrls, setAudioUrls] = useState([]);
+
+  useEffect(() => {
+    if (opponentInfo && opponentInfo.email) {
+      const fetchAudioUrls = async () => {
+        try {
+          const urls = await getAudioUrls(opponentInfo);
+          setAudioUrls(urls);
+        } catch (err) {
+          console.error('Error fetching audio URLs:', err);
+        }
+      };
+
+      fetchAudioUrls();
+    }
+  }, [opponentInfo]);
+
 
   // 게이지 구현
   const { 
@@ -126,6 +147,7 @@ export function Opponent({ position, landmarks, opponentData }) {
 
   useEffect(() => {
     hitSoundRef.current = new Audio('./sounds/hit.MP3');
+    voiceSoundRef.current = new Audio();
   }, []);
 
   useEffect(() => {
@@ -133,11 +155,20 @@ export function Opponent({ position, landmarks, opponentData }) {
     roomId.current = searchParams.get('roomId');
   }, [roomId]);
 
+  const playRandomVoice = useCallback(() => {
+    if (audioUrls.length > 0 && voiceSoundRef.current) {
+      const randomIndex = Math.floor(Math.random() * audioUrls.length);
+      voiceSoundRef.current.src = audioUrls[randomIndex];
+      voiceSoundRef.current.play().catch(e => console.error("Error playing audio:", e));
+    }
+  }, [audioUrls]);
+
   const playHitSound = useCallback(() => {
     if (hitSoundRef.current) {
-      hitSoundRef.current.play();
+      hitSoundRef.current.play().catch(e => console.error("Error playing hit sound:", e));
     }
-  }, []);
+    playRandomVoice(); // 히트 사운드와 함께 랜덤 보이스 재생
+  }, [playRandomVoice]);
 
   const checkHit = useCallback(() => {
     if(!headRef.current || !landmarks.leftHand || !landmarks.rightHand) return

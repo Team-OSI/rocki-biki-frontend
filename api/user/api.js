@@ -104,6 +104,16 @@ export const updateProfile = async (nickname, profileImage) => {
   }
 };
 
+export const getAudioUrls = async (info) => {
+  try {
+    const response = await api.get(`/api/users/profile/opponent/sound`, { params: { email: info.email } });
+    console.log('Fetched audio URLs:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching audio URLs:', error);
+    throw error;
+  }
+};
 
 export const fetchAudioUrls = async (setAudioUrls) => {
   try {
