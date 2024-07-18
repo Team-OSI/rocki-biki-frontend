@@ -240,7 +240,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                     dataChannel.current.send(JSON.stringify(message));
                 }
             }
-        }, 1000 / 20);
+        }, 1000 / 30);
     };
 
     const findMostSimilarWord = (input, wordsList) => {
