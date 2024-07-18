@@ -189,14 +189,14 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
 
   useEffect(() => {
     if (finalTranscript) {
-      console.log('Final Transcript:', finalTranscript);
+      console.log(finalTranscript)
       processTranscript(finalTranscript);
     }
   }, [finalTranscript]);
 
   const processTranscript = (transcript) => {
+    console.log(transcript)
     const commands = transcript.split('럭키 비키').map(command => command.trim());
-    console.log(commands);
 
     if (commands.length > 1) {
       const nextCommand = commands[1].split(' ')[0];
