@@ -383,7 +383,7 @@ export default function GameMain() {
                         </div>
                         <div className="absolute inset-0 z-40 pointer-events-none">
                             <SkillSelect
-                                localVideoRef={localVideoRef}
+                                localVideoRef={videoRef}
                                 poseLandmarks={landmarks.poseLandmarks}
                                 landmarks={landmarks.landmarks}
                                 canvasSize={canvasSize}
