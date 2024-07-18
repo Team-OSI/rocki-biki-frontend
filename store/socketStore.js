@@ -30,7 +30,7 @@ const useSocketStore = create((set, get) => ({
         newSocket.on('opponentSkillUsed', ({ skillType }) => {
             set({ opponentSkill: { skillType } });
             console.log("받은 데이터: ", skillType)
-            setTimeout(() => set({ opponentSkill: null }), 5000);
+            // setTimeout(() => set({ opponentSkill: null }), 5000);
         });
         set({ socket: newSocket});
         return newSocket;
@@ -84,10 +84,17 @@ const useSocketStore = create((set, get) => ({
         }
     },
 
-    useSkill: () => (skillType) => {
+    // useSkill: () => (skillType) => {
+    //     const { socket } = get();
+    //     if (socket) {
+    //         socket.emit('castSkill', { skillType, timeStamp: Date.now() });
+    //     }
+    // },
+    
+    useSkill: () => (skillType, roomId) => {
         const { socket } = get();
         if (socket) {
-            socket.emit('castSkill', { skillType, timeStamp: Date.now() });
+            socket.emit('castSkill', { skillType, roomId, timeStamp: Date.now() });
         }
     },
 

@@ -132,7 +132,7 @@ export default function GameMain() {
         bgmSoundRef.current.play();
     }
     }, []);
-    const { gameStatus } = useGameLogic(); //game 로직
+    const { gameStatus, handleUseSkill } = useGameLogic(); //game 로직
     const router = useRouter();
 
     useEffect(() => {
@@ -224,7 +224,10 @@ export default function GameMain() {
       }, [router]);
 
     // WebRTC 연결 설정
-    const { connectionState } = useWebRTCConnection(
+    const {
+        connectionState,
+        finalTranscript,
+    } = useWebRTCConnection(
         roomId.current,
         videoRef,
         remoteVideoRef,
@@ -371,15 +374,16 @@ export default function GameMain() {
                                 landmarks={landmarks.landmarks}
                             />
                         </div>
-                        {/* <div className="absolute inset-0 z-40 pointer-events-none">
+                        <div className="absolute inset-0 z-40 pointer-events-none">
                             <SkillSelect
                                 localVideoRef={localVideoRef}
                                 poseLandmarks={landmarks.poseLandmarks}
                                 landmarks={landmarks.landmarks}
                                 canvasSize={canvasSize}
                                 onUseSkill={handleUseSkill}
+                                finalTranscript={finalTranscript}
                             />
-                        </div> */}
+                        </div>
                     </>
                 )}
             </div>

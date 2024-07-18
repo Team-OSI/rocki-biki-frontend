@@ -1,9 +1,12 @@
 "use client"
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import {throttle} from "lodash";
+import { throttle } from "lodash";
+import stringSimilarity from 'string-similarity';
 
-const similarityThreshold = 0.70;   // 포즈 유사도 임계값
-const SKILL_DURATION = 5;           // 스킬 지속 시간
+const similarityThreshold = 0.60;
+const voiceSimilarityThreshold = 0.60;
+const SKILL_DURATION = 3;
+const CANVAS_VISIBLE_DURATION = 10; // 캔버스 가시성 지속 시간
 
 export default function SkillCanvas(
     {
@@ -12,6 +15,7 @@ export default function SkillCanvas(
         onSkillComplete,
         poseLandmarks,
         skillConfig,
+        finalTranscript,
         width = 640,
         height = 480
     }) {
@@ -19,9 +23,11 @@ export default function SkillCanvas(
     const animationFrameRef = useRef(null);
     const [similarityResult, setSimilarityResult] = useState(null);
     const [remainingTime, setRemainingTime] = useState(SKILL_DURATION);
+    const [remainingVisibleTime, setRemainingVisibleTime] = useState(CANVAS_VISIBLE_DURATION);
     const [isSkillActive, setIsSkillActive] = useState(false);
+    const [isCanvasVisible, setIsCanvasVisible] = useState(true);
     const timerRef = useRef(null);
-    // const [landmarkCoordinates, setLandmarkCoordinates] = useState({});  // 디버깅용
+    const [voiceSimilarityResult, setVoiceSimilarityResult] = useState(null);
 
     // 타이머 시작 함수
     const startTimer = useCallback(() => {
@@ -38,6 +44,22 @@ export default function SkillCanvas(
             });
         }, 1000);
     }, [onSkillComplete]);
+
+    // 컴포넌트 마운트 시 캔버스 가시성 타이머 시작
+    useEffect(() => {
+        const visibilityTimer = setInterval(() => {
+            setRemainingVisibleTime((prevTime) => {
+                if (prevTime <= 1) {
+                    clearInterval(visibilityTimer);
+                    setIsCanvasVisible(false);
+                    return 0;
+                }
+                return prevTime - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(visibilityTimer);
+    }, []);
 
     // 컴포넌트 언마운트 시 타이머 정리
     useEffect(() => {
@@ -64,7 +86,7 @@ export default function SkillCanvas(
             };
             const dx = relativeDetected.x - target.x;
             const dy = relativeDetected.y - target.y;
-            return 1 - Math.min(Math.sqrt(dx*dx + dy*dy), 1);
+            return 1 - Math.min(Math.sqrt(dx * dx + dy * dy), 1);
         };
 
         const similarities = [
@@ -77,6 +99,12 @@ export default function SkillCanvas(
         ];
 
         return similarities.reduce((sum, similarity) => sum + similarity, 0) / similarities.length;
+    };
+
+    // 음성 유사도 계산 함수
+    const calculateVoiceSimilarity = (transcript, targetReading) => {
+        if (!transcript || !targetReading) return 0;
+        return stringSimilarity.compareTwoStrings(transcript, targetReading);
     };
 
     const skillConfigRef = useRef(skillConfig);
@@ -123,16 +151,17 @@ export default function SkillCanvas(
 
                 if (Object.values(detectedPose).every(landmark => landmark)) {
                     const poseSimilarity = calculatePoseSimilarity(detectedPose, skillConfig.targetPose);
+                    const voiceSimilarity = calculateVoiceSimilarity(finalTranscript, skillConfig.skillReading);
                     return () => {
                         setSimilarityResult(poseSimilarity);
-                        setIsSkillActive(poseSimilarity >= similarityThreshold);
+                        setVoiceSimilarityResult(voiceSimilarity);
+                        setIsSkillActive(poseSimilarity >= similarityThreshold && voiceSimilarity >= voiceSimilarityThreshold);
                     };
-                    // setLandmarkCoordinates(detectedPose);
                 }
             }
             return null;
         }, 500), // 500ms마다 최대 한 번 실행
-        [skillConfig.targetPose, calculatePoseSimilarity]
+        [skillConfig.targetPose, finalTranscript, skillConfig.skillReading]
     );
 
     useEffect(() => {
@@ -150,6 +179,8 @@ export default function SkillCanvas(
         };
     }, [processFrame]);
 
+    if (!isCanvasVisible) return null;
+
     return (
         <div className='motion-capture'>
             <canvas
@@ -158,6 +189,9 @@ export default function SkillCanvas(
                 height={height}
                 style={{ transform: 'scaleX(-1)' }}
             />
+            <div id="canvas-timer">
+                <span className='timer-value'>{remainingVisibleTime}</span>초 후에 캔버스가 사라집니다
+            </div>
             <div id="skill-timer">
                 <span className='timer-value'>{remainingTime}</span>초만 더 버텨라!
             </div>
@@ -165,18 +199,13 @@ export default function SkillCanvas(
                 {similarityResult !== null && (
                     <div id="similarity" style={{ color: skillConfig.textColor }}>
                         <p>Similarity: {similarityResult.toFixed(2)}</p>
+                        <p>Voice Similarity: {voiceSimilarityResult?.toFixed(2)}</p>
                         {isSkillActive && remainingTime > 0 && (
                             <p>{skillConfig.activationMessage} ({skillConfig.name} Skill 발동!!)</p>
                         )}
                     </div>
                 )}
             </div>
-            {/* <div id="landmark-coordinates" style={{ position: 'absolute', top: '10px', left: '10px', color: 'white', backgroundColor: 'rgba(0,0,0,0.5)', padding: '10px' }}>
-                <h3>Landmark Coordinates:</h3>
-                {Object.entries(landmarkCoordinates).map(([key, value]) => (
-                    <p key={key}>{key}: x: {value?.x?.toFixed(2) || 'N/A'}, y: {value?.y?.toFixed(2) || 'N/A'}</p>
-                ))}
-            </div> */}
         </div>
     );
 }

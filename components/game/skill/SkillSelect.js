@@ -3,7 +3,7 @@ import ProgressButton from './ProgressButton';
 import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import SkillCanvas from './SkillCanvas';
 
-export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill }) {
+export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill, finalTranscript }) {
   const canvasRef = useRef(null);
   const [buttonProgress, setButtonProgress] = useState({});
 
@@ -167,6 +167,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         setShowAttackSkill(false);
       } 
       else if (activeSkill === 'Heal') {
+        console.log("힐!!!!");
         setShowShieldSkill(false);
         setShowHealSkill(true);
         setShowAttackSkill(false);
@@ -185,6 +186,35 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     setShowAttackSkill(false);
     setActiveSkill(null);
   }, []);
+
+  useEffect(() => {
+    if (finalTranscript) {
+      console.log(finalTranscript)
+      processTranscript(finalTranscript);
+    }
+  }, [finalTranscript]);
+
+  const processTranscript = (transcript) => {
+    console.log(transcript)
+    const commands = transcript.split('럭키 비키').map(command => command.trim());
+
+    if (commands.length > 1) {
+      const nextCommand = commands[1].split(' ')[0];
+      switch (nextCommand) {
+        case '힐':
+          setActiveSkill('Heal');
+          break;
+        case '공격':
+          setActiveSkill('Attack');
+          break;
+        case '방어':
+          setActiveSkill('Shield');
+          break;
+        default:
+          console.log('Unknown command:', nextCommand);
+      }
+    }
+  };
 
   return (
     <div className='skill-select-container' style={{ width: canvasSize.width, height: canvasSize.height, position: 'absolute', top: 0, left: 0 }}>
@@ -212,6 +242,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             onSkillComplete={handleSkillComplete}
             poseLandmarks={poseLandmarks}
             skillConfig={config.skillConfig}
+            finalTranscript={finalTranscript}
           />
         )
       ))}

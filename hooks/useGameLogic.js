@@ -1,13 +1,14 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
 
 const useGameLogic = () => {
-
+  const [roomId, setRoomId] = useState(null);
   const { setGameStatus, gameStatus } = useGameStore();
 
   // 소켓 연결 설정
   const socket = useSocketStore(state => state.socket);
+  const useSkill = useSocketStore(state => state.useSkill);
 
 
   // 소켓 이벤트 리스너 설정
@@ -20,6 +21,11 @@ const useGameLogic = () => {
       socket.off('gameState');
     };
   }, [socket]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    setRoomId(searchParams.get('roomId'));
+  }, []);
 
   // 게임 상태 업데이트 처리
   const handleGameUpdate = useCallback((newState) => {
@@ -78,13 +84,14 @@ const useGameLogic = () => {
   //   }
   // }
 
-  // const skillUseFunction = useSkill();
-  // const handleUseSkill = useCallback((skillType) => {
-  //   skillUseFunction(skillType, roomId);
-  // }, [skillUseFunction, roomId]);
+  const skillUseFunction = useSkill();
+  const handleUseSkill = useCallback((skillType) => {
+    skillUseFunction(skillType, roomId);
+  }, [skillUseFunction, roomId]);
 
   return {
-    gameStatus
+    gameStatus,
+    handleUseSkill,
   };
 };
 

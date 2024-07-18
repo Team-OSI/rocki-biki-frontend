@@ -14,6 +14,7 @@ export const attackSkill = {
     }),
     imageSize: { width: 45, height: 61 },
     activationMessage: "시시해서 죽고 싶어졌다..(ʘ言ʘ╬)",
+    skillReading: "시시해서 죽고 싶어졌다",
     textColor: "gray"
 };
 
@@ -33,6 +34,7 @@ export const healSkill = {
     }),
     imageSize: { width: 144, height: 81 },
     activationMessage: "우웅 나 떄릴꼬야?~(ゝω´･)b⌒☆",
+    skillReading: "설마 나 때릴꼬야",
     textColor: "plum"
 };
 
@@ -52,5 +54,6 @@ export const shieldSkill = {
     }),
     imageSize: { width: 400, height: 400 },
     activationMessage: "내 마음을 담은 하트~⎝⎛♥‿♥⎞⎠",
+    skillReading: "알러뷰 츄",
     textColor: "yellowgreen"
 };
