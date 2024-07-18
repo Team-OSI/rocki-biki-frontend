@@ -68,23 +68,30 @@ export default function GameMain() {
                     height: originalCanvas.height
                 }, [offscreenCanvas]);
 
-                const sendVideoFrame = () => {
-                    if (videoRef.current && originalCtx) {
-                        originalCtx.drawImage(videoRef.current, 0, 0, originalCanvas.width, originalCanvas.height);
-                        const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+                const FPS = 40; // 원하는 FPS 설정
+                const frameInterval = 1000 / FPS;
+                let lastFrameTime = 0;
 
-                        worker.postMessage({
-                            type: 'VIDEO_FRAME',
-                            imageData: imageData
-                        }, [imageData.data.buffer]);
+                const sendVideoFrame = (currentTime) => {
+                    if (currentTime - lastFrameTime >= frameInterval) {
+                        if (videoRef.current && originalCtx) {
+                            originalCtx.drawImage(videoRef.current, 0, 0, originalCanvas.width, originalCanvas.height);
+                            const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+                            
+                            worker.postMessage({
+                                type: 'VIDEO_FRAME',
+                                imageData: imageData
+                            }, [imageData.data.buffer]);
+                        }
+                        lastFrameTime = currentTime;
                     }
                     requestAnimationFrame(sendVideoFrame);
                 };
+                
                 requestAnimationFrame(sendVideoFrame);
-            } catch (err) {
-                console.error("Error setting up video and worker:", err);
-            }
-        };
+        }catch (err) {
+            console.log('error:', err)
+        }}
 
         setupVideoAndWorker();
 
@@ -331,7 +338,7 @@ export default function GameMain() {
             <>
                 {connectionState !== 'connected' &&(
                     <div
-                    className="bg-slate-400 mt-2 opacity-80 flex items-center justify-center text-white"
+                    className="bg-slate-400 mt-5 opacity-80 flex items-center justify-center text-white"
                     style={videoStyle}
                     >
                     연결 대기 중...

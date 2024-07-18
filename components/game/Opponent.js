@@ -66,11 +66,11 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
         
         // Spring force towards original position
         const displacement = localRef.current.position.clone().sub(originalPosition.current)
-        const springForce = displacement.clone().multiplyScalar(-10) // Increase for stiffer spring
+        const springForce = displacement.clone().multiplyScalar(-5) // Increase for stiffer spring
         currentVelocity.current.add(springForce.multiplyScalar(delta))
         
         // Damping
-        currentVelocity.current.multiplyScalar(0.95) //0.94
+        currentVelocity.current.multiplyScalar(0.85) //0.94
         
         // Reset hit impulse
         setHitImpulse(new THREE.Vector3())
@@ -206,17 +206,17 @@ export function Opponent({ position, landmarks, opponentData }) {
         const damage = gaugeDamage // + (Math.floor(velocity * 20) / 3);
 
         // 데미지 정보를 서버로 전송
-        if (damage > 5) {
+        // if (damage !== 0) {
           emitDamage(damage)
           playHitSound()
           setHit(true)
           lastHitTime.current = currentTime
           setTimeout(() => setHit(false), 500)
-        }
+        // }
 
         // 타격 위치 설정
         const hitDirection = handPosition.clone().sub(headPosition).normalize()
-        const hitImpulse = hitDirection.multiplyScalar(7) // 조절 가능한 힘
+        const hitImpulse = hitDirection.multiplyScalar(20) // 조절 가능한 힘
         headRef.current.addHitImpulse(hitImpulse)
 
         resetGauge(name)
