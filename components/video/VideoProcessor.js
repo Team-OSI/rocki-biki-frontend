@@ -5,7 +5,7 @@ import useGameStore from '@/store/gameStore';
 
 const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
     const videoRef = useRef(null);
-    const { initWorker, setWorkerMessageHandler, isInitialized, videoArray } = useWorkerStore();
+    const { initWorker, setWorkerMessageHandler, isInitialized } = useWorkerStore();
     const myReady = useGameStore(state => state.myReady);
     const [isVideoReady, setIsVideoReady] = useState(false);
     const [isWorkerReady, setIsWorkerReady] = useState(false);
@@ -32,27 +32,24 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
         const setupWorker = async () => {
             try {
                 await initWorker(videoRef.current.videoWidth, videoRef.current.videoHeight);
-                const { worker, videoArray: updatedVideoArray } = useWorkerStore.getState();
-
-                console.log('워커 & 공유 버퍼 (비디오) 준비 완료!! :', worker, updatedVideoArray);
+                const { worker, videoArray: videoArray } = useWorkerStore.getState();
+                console.log('워커 & 공유 버퍼 (비디오) 준비 완료!! :', worker, videoArray);
                 setIsWorkerReady(true);
 
                 const sendVideoFrame = () => {
-                    if (videoRef.current && updatedVideoArray) {
-                        const startTime = performance.now();
+                    if (videoRef.current && videoArray) {
                         const tempCanvas = document.createElement('canvas');
                         tempCanvas.width = videoRef.current.videoWidth;
                         tempCanvas.height = videoRef.current.videoHeight;
                         const tempCtx = tempCanvas.getContext('2d');
                         tempCtx.drawImage(videoRef.current, 0, 0, tempCanvas.width, tempCanvas.height);
                         const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-                        updatedVideoArray.set(imageData.data);
+                        videoArray.set(imageData.data);
 
-                        worker.postMessage({ type: 'frameReady' });
+                        worker.postMessage({ type: 'FRAME_READY' });
                     }
                     requestAnimationFrame(sendVideoFrame);
                 };
-
                 requestAnimationFrame(sendVideoFrame);
             } catch (err) {
                 console.error("Error setting up worker:", err);
