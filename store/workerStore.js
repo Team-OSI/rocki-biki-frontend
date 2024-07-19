@@ -9,6 +9,8 @@ const useWorkerStore = create((set, get) => {
         isInitialized: false,
         sharedBuffer: null,
         sharedArray: null,
+        videoBuffer: null,
+        videoArray: null,
 
         initWorker: (videoWidth, videoHeight) => {
             if (typeof window === 'undefined') return;
@@ -19,19 +21,33 @@ const useWorkerStore = create((set, get) => {
                     const MotionWorker = (await import('../app/workers/motionWorker.worker.js')).default;
                     const worker = new MotionWorker();
 
+                    // 랜드마크 데이터 공유 버퍼
                     const sharedBuffer = new SharedArrayBuffer(SHARED_BUFFER_SIZE);
                     const sharedArray = new Float32Array(sharedBuffer);
+
+                    // 비디오 프레임 데이터 공유 버퍼
+                    const videoBuffer = new SharedArrayBuffer(videoWidth * videoHeight * 4);
+                    const videoArray = new Uint8ClampedArray(videoBuffer);
 
                     worker.postMessage({
                         type: 'INIT',
                         sharedBuffer: sharedBuffer,
+                        videoBuffer: videoBuffer,
                         width: videoWidth,  // 비디오 너비
                         height: videoHeight // 비디오 높이
                     });
 
                     worker.onmessage = (e) => {
                         if (e.data.type === 'INIT_COMPLETE') {
-                            set({ isInitialized: true, worker: worker, sharedBuffer, sharedArray });
+                            set({
+                                isInitialized: true,
+                                worker: worker,
+                                sharedBuffer,
+                                sharedArray,
+                                videoBuffer,
+                                videoArray
+                            });
+                            console.log('Worker initialized with videoArray:', videoArray);
                             resolve();
                         }
                     };
@@ -47,7 +63,7 @@ const useWorkerStore = create((set, get) => {
             const { worker } = get();
             if (worker) {
                 worker.terminate();
-                set({ worker: null, isInitialized: false, sharedBuffer: null, sharedArray: null });
+                set({ worker: null, isInitialized: false, sharedBuffer: null, sharedArray: null, videoBuffer: null, videoArray: null });
             }
             initializationPromise = null;
         },

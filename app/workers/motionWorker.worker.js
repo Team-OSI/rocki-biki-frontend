@@ -1,13 +1,15 @@
 import { FilesetResolver, FaceLandmarker, HandLandmarker, PoseLandmarker } from "@mediapipe/tasks-vision";
 import { processLandmarks } from "./landmarkUtils";
+import {useEffect} from "react";
 
 let faceLandmarker, handLandmarker, poseLandmarker;
 let isInitialized = false;
-let offscreenCanvas, offscreenCtx, sharedArray;
+let sharedArray, videoArray;
 let videoWidth, videoHeight;
 let prevLandmarks, lastValidLandmarks = null;
+
 let lastProcessTime = 0;
-const frameInterval = 1000 / 10;
+const frameInterval = 1000 / 30;
 
 async function initializeDetectors() {
     const vision = await FilesetResolver.forVisionTasks(
@@ -56,19 +58,17 @@ async function initializeDetectors() {
 self.onmessage = async function(e) {
     if (e.data.type === 'INIT') {
         sharedArray = new Float32Array(e.data.sharedBuffer);
+        videoArray = new Uint8ClampedArray(e.data.videoBuffer);
+        videoWidth = e.data.width;
+        videoHeight = e.data.height;
         await initializeDetectors();
         isInitialized = true;
         self.postMessage({type: 'INIT_COMPLETE'});
         console.log('워커 초기화 성공!!');
-    } else if (e.data.type === 'VIDEO_INIT') {
-        offscreenCanvas = e.data.offscreenCanvas;
-        offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
-        videoWidth = e.data.width;
-        videoHeight = e.data.height;
-    } else if (e.data.type === 'VIDEO_FRAME') {
+    } else if (e.data.type === 'frameReady') {
         const currentTime = performance.now();
         if (currentTime - lastProcessTime >= frameInterval) {
-            processVideoFrame(e.data.imageData);
+            processVideoFrame(e.data.startTime);
             lastProcessTime = currentTime;
         }
     }
@@ -97,18 +97,27 @@ function flatResult(result) {
 
 let frameCount = 0;
 const LOG_INTERVAL = 60;
+let imageData, regularArray = null;
 
-function processVideoFrame(imageData) {
+function processVideoFrame(startTime) {
     if (!isInitialized) return;
 
-    offscreenCtx.putImageData(imageData, 0, 0);
+    if (!imageData || !regularArray || imageData.width !== videoWidth || imageData.height !== videoHeight) {
+        // 필요한 경우에만 새 ImageData, VideoArray 생성
+        regularArray = new Uint8ClampedArray(videoArray.length);
+        imageData = new ImageData(regularArray, videoWidth, videoHeight);
+    }
+    // SharedArrayBuffer의 데이터를 일반 ArrayBuffer로 복사
+    regularArray.set(videoArray);
+    imageData.data.set(regularArray);
+
     const timestamp = performance.now();
-    const faceResult = faceLandmarker.detectForVideo(offscreenCanvas, timestamp);
-    const handResult = handLandmarker.detectForVideo(offscreenCanvas, timestamp);
-    const poseResult = poseLandmarker.detectForVideo(offscreenCanvas, timestamp);
+    const faceResult = faceLandmarker.detectForVideo(imageData, timestamp);
+    const handResult = handLandmarker.detectForVideo(imageData, timestamp);
+    const poseResult = poseLandmarker.detectForVideo(imageData, timestamp);
 
     const result = processLandmarks(faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks);
-    // const jsonResult = JSON.stringify(result);
+    const jsonResult = JSON.stringify(result);
     const flattenResult = flatResult(result);
     sharedArray.set(flattenResult);
 
@@ -123,7 +132,7 @@ function processVideoFrame(imageData) {
     self.postMessage({
         type: 'LANDMARKS_UPDATED',
         resultOffset: 1,
-        resultLength: flattenResult.length
+        resultLength: flattenResult.length,
+        startTime: startTime
     });
 }
-
