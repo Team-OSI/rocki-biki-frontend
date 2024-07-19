@@ -1,3 +1,9 @@
+import { KalmanFilter2D } from './kalmanFilter.js'; // KalmanFilter2D 클래스가 정의된 파일
+
+const headFilter = new KalmanFilter2D();
+const leftHandFilter = new KalmanFilter2D();
+const rightHandFilter = new KalmanFilter2D();
+
 let frameCount = 0;
 const LOG_INTERVAL = 60;
 
@@ -8,19 +14,19 @@ export function processLandmarks(faceResult, handResult, poseResult, prevLandmar
     const maxHeadMovement = 0.8;
     const maxHandMovement = 2.9;
 
-    const newLandmarks = {
+    let newLandmarks = {
         head: face.length > 0 && face[1] ?
-            [[face[1]?.x || 0, face[1]?.y || 0, face[1]?.z || 0], calc_head_rotation_2d(face)] :
+            [headFilter.update({x: face[1].x, y: face[1].y}), calc_head_rotation_2d(face)] :
             lastValidLandmarks?.head || [[0, 0, 0], [0, 0, 0]],
 
         leftHand: hands[0] ? [
-            calc_hand_center(hands[0]) || lastValidLandmarks?.leftHand?.[0] || [0, 0, 0],
+            leftHandFilter.update(calc_hand_center(hands[0])) || lastValidLandmarks?.leftHand?.[0] || [0, 0, 0],
             calculateHandRotation(hands[0][0], hands[0][5], hands[0][17], hands[0][10]) || lastValidLandmarks?.leftHand?.[1] || [0, 0],
             determineHandState(hands[0]) || 0
         ] : lastValidLandmarks?.leftHand || [[0, 0, 0], [0, 0], 0],
 
         rightHand: hands[1] ? [
-            calc_hand_center(hands[1]) || lastValidLandmarks?.rightHand?.[0] || [0, 0, 0],
+            rightHandFilter.update(calc_hand_center(hands[1])) || lastValidLandmarks?.rightHand?.[0] || [0, 0, 0],
             calculateHandRotation(hands[1][0], hands[1][5], hands[1][17], hands[1][10]) || lastValidLandmarks?.rightHand?.[1] || [0, 0],
             determineHandState(hands[1]) || 0
         ] : lastValidLandmarks?.rightHand || [[0, 0, 0], [0, 0], 0],
@@ -76,19 +82,7 @@ const processPoseLandmarks = (poseLandmarks) => {
     if (!poseLandmarks || poseLandmarks.length === 0) {
         return null;
     }
-    frameCount++;
-    if (frameCount % LOG_INTERVAL === 0) {
-        // console.log('Mediapipe 결과 - nose: ', poseLandmarks[0]);
-        //     console.log('Mediapipe 결과 - rightEye: ', poseLandmarks[2]);
-        //     console.log('Mediapipe 결과 - leftShoulder: ', poseLandmarks[11]);
-        //     console.log('Mediapipe 결과 - rightShoulder: ', poseLandmarks[12]);
-        //     console.log('Mediapipe 결과 - leftElbow: ', poseLandmarks[13]);
-        //     console.log('Mediapipe 결과 - rightElbow: ', poseLandmarks[14]);
-        //     console.log('Mediapipe 결과 - leftWrist: ', poseLandmarks[15]);
-        //     console.log('Mediapipe 결과 - rightWrist: ', poseLandmarks[16]);
-        //     console.log('Mediapipe 결과 - leftIndex: ', poseLandmarks[19]);
-        //     console.log('Mediapipe 결과 - rightIndex: ', poseLandmarks[20]);
-    }
+
     return {
         nose: poseLandmarks[0],
         rightEye: poseLandmarks[2],

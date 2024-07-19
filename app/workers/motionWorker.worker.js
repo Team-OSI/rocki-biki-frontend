@@ -97,15 +97,14 @@ function flatResult(result) {
     return new Float32Array(flattened);
 }
 
-function cosineInterpolate(y1, y2, mu) {
-    const mu2 = (1 - Math.cos(mu * Math.PI)) / 2;
-    return y1 * (1 - mu2) + y2 * mu2;
+function linearInterpolate(y1, y2, mu) {
+    return y1 * (1 - mu) + y2 * mu;
 }
 
 function interpolate(lastLandmarks, factor) {
     const interpolatedResult = {
         updatedLandmarks: {},
-        updatedPoseLandmarks: lastLandmarks.updatedPoseLandmarks // 포즈 랜드마크는 그대로 유지
+        updatedPoseLandmarks: lastLandmarks.updatedPoseLandmarks
     };
 
     const keysToInterpolate = ['head', 'leftHand', 'rightHand'];
@@ -116,12 +115,11 @@ function interpolate(lastLandmarks, factor) {
             const prevLandmark = prevLandmarks.updatedLandmarks[key];
 
             interpolatedResult.updatedLandmarks[key] = [
-                lastLandmark[0].map((v, i) => cosineInterpolate(prevLandmark[0][i], v, factor)),
-                lastLandmark[1].map((v, i) => cosineInterpolate(prevLandmark[1][i], v, factor)),
-                lastLandmark[2] // 상태 값은 보간하지 않음
+                lastLandmark[0].map((v, i) => linearInterpolate(prevLandmark[0][i], v, factor)),
+                lastLandmark[1].map((v, i) => linearInterpolate(prevLandmark[1][i], v, factor)),
+                lastLandmark[2]
             ];
         } else {
-            // 이전 랜드마크가 없는 경우 현재 랜드마크를 그대로 사용
             interpolatedResult.updatedLandmarks[key] = lastLandmarks.updatedLandmarks[key];
         }
     }
