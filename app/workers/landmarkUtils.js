@@ -1,9 +1,3 @@
-// import { KalmanFilter2D } from './kalmanFilter.js';
-//
-// const headFilter = new KalmanFilter2D();
-// const leftHandFilter = new KalmanFilter2D();
-// const rightHandFilter = new KalmanFilter2D();
-
 let frameCount = 0;
 const LOG_INTERVAL = 60;
 
