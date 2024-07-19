@@ -1,12 +1,12 @@
 import { FilesetResolver, FaceLandmarker, HandLandmarker, PoseLandmarker } from "@mediapipe/tasks-vision";
 import { processLandmarks } from "./landmarkUtils";
-import {useEffect} from "react";
 
 let faceLandmarker, handLandmarker, poseLandmarker;
 let isInitialized = false;
 let sharedArray, videoArray;
 let videoWidth, videoHeight;
 let prevLandmarks, lastValidLandmarks = null;
+let imageData, regularArray = null;
 
 let lastProcessTime = 0;
 const frameInterval = 1000 / 30;
@@ -97,7 +97,6 @@ function flatResult(result) {
 
 let frameCount = 0;
 const LOG_INTERVAL = 60;
-let imageData, regularArray = null;
 
 function processVideoFrame(startTime) {
     if (!isInitialized) return;
@@ -117,7 +116,7 @@ function processVideoFrame(startTime) {
     const poseResult = poseLandmarker.detectForVideo(imageData, timestamp);
 
     const result = processLandmarks(faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks);
-    const jsonResult = JSON.stringify(result);
+    // const jsonResult = JSON.stringify(result);
     const flattenResult = flatResult(result);
     sharedArray.set(flattenResult);
 
@@ -133,6 +132,5 @@ function processVideoFrame(startTime) {
         type: 'LANDMARKS_UPDATED',
         resultOffset: 1,
         resultLength: flattenResult.length,
-        startTime: startTime
     });
 }

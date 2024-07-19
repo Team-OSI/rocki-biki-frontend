@@ -16,7 +16,6 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
 
         const setupVideo = async () => {
             try {
-                console.log("Starting video setup");
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
                 videoRef.current.srcObject = stream;
                 videoStream = stream;
@@ -24,7 +23,6 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
                     videoRef.current.onloadedmetadata = resolve;
                 });
                 await videoRef.current.play();
-                console.log("Video setup complete");
                 setIsVideoReady(true);
             } catch (err) {
                 console.error("Error setting up video:", err);
@@ -33,15 +31,10 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
 
         const setupWorker = async () => {
             try {
-                console.log("Starting worker setup");
                 await initWorker(videoRef.current.videoWidth, videoRef.current.videoHeight);
                 const { worker, videoArray: updatedVideoArray } = useWorkerStore.getState();
 
-                if (!worker || !updatedVideoArray) {
-                    throw new Error("Worker or videoArray not available after initialization");
-                }
-
-                console.log('Worker and videoArray ready:', worker, updatedVideoArray);
+                console.log('워커 & 공유 버퍼 (비디오) 준비 완료!! :', worker, updatedVideoArray);
                 setIsWorkerReady(true);
 
                 const sendVideoFrame = () => {
@@ -55,7 +48,7 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
                         const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
                         updatedVideoArray.set(imageData.data);
 
-                        worker.postMessage({ type: 'frameReady', startTime: startTime });
+                        worker.postMessage({ type: 'frameReady' });
                     }
                     requestAnimationFrame(sendVideoFrame);
                 };
@@ -82,11 +75,6 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
         if (isInitialized) {
             setWorkerMessageHandler((e) => {
                 if (e.data.type === 'LANDMARKS_UPDATED') {
-                    const endTime = performance.now();
-                    const startTime = e.data.startTime;
-                    const delay = endTime - startTime;
-                    console.log(`delay: ${delay.toFixed(2)} ms`);
-
                     onLandmarksUpdate(e.data);
                 }
             });

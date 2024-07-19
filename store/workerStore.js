@@ -47,7 +47,6 @@ const useWorkerStore = create((set, get) => {
                                 videoBuffer,
                                 videoArray
                             });
-                            console.log('Worker initialized with videoArray:', videoArray);
                             resolve();
                         }
                     };
