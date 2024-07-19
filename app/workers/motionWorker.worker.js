@@ -2,10 +2,10 @@ import { FilesetResolver, FaceLandmarker, HandLandmarker, PoseLandmarker } from 
 import { processLandmarks } from "./landmarkUtils";
 
 let faceLandmarker, handLandmarker, poseLandmarker;
+let prevLandmarks, lastValidLandmarks, lastProcessedLandmarks = null;
 let isInitialized = false;
 let sharedArray, videoArray;
 let videoWidth, videoHeight;
-let prevLandmarks, lastValidLandmarks = null;
 let imageData, regularArray = null;
 
 let lastProcessTime = 0;
@@ -65,11 +65,13 @@ self.onmessage = async function(e) {
         isInitialized = true;
         self.postMessage({type: 'INIT_COMPLETE'});
         console.log('워커 초기화 성공!!');
-    } else if (e.data.type === 'frameReady') {
+    } else if (e.data.type === 'FRAME_READY') {
         const currentTime = performance.now();
         if (currentTime - lastProcessTime >= frameInterval) {
             processVideoFrame(e.data.startTime);
             lastProcessTime = currentTime;
+        } else {
+            interpolateLandmarks(currentTime);
         }
     }
 };
@@ -95,8 +97,54 @@ function flatResult(result) {
     return new Float32Array(flattened);
 }
 
-let frameCount = 0;
-const LOG_INTERVAL = 60;
+function cosineInterpolate(y1, y2, mu) {
+    const mu2 = (1 - Math.cos(mu * Math.PI)) / 2;
+    return y1 * (1 - mu2) + y2 * mu2;
+}
+
+function interpolate(lastLandmarks, factor) {
+    const interpolatedResult = {
+        updatedLandmarks: {},
+        updatedPoseLandmarks: lastLandmarks.updatedPoseLandmarks // 포즈 랜드마크는 그대로 유지
+    };
+
+    const keysToInterpolate = ['head', 'leftHand', 'rightHand'];
+
+    for (const key of keysToInterpolate) {
+        if (lastLandmarks.updatedLandmarks[key] && prevLandmarks && prevLandmarks.updatedLandmarks[key]) {
+            const lastLandmark = lastLandmarks.updatedLandmarks[key];
+            const prevLandmark = prevLandmarks.updatedLandmarks[key];
+
+            interpolatedResult.updatedLandmarks[key] = [
+                lastLandmark[0].map((v, i) => cosineInterpolate(prevLandmark[0][i], v, factor)),
+                lastLandmark[1].map((v, i) => cosineInterpolate(prevLandmark[1][i], v, factor)),
+                lastLandmark[2] // 상태 값은 보간하지 않음
+            ];
+        } else {
+            // 이전 랜드마크가 없는 경우 현재 랜드마크를 그대로 사용
+            interpolatedResult.updatedLandmarks[key] = lastLandmarks.updatedLandmarks[key];
+        }
+    }
+
+    return interpolatedResult;
+}
+
+function interpolateLandmarks(currentTime) {
+    if (!lastProcessedLandmarks) return;
+
+    const timeSinceLastProcess = currentTime - lastProcessTime;
+    const interpolationFactor = Math.min(timeSinceLastProcess / frameInterval, 1);
+
+    const interpolatedResult = interpolate(lastProcessedLandmarks, interpolationFactor);
+    const flattenResult = flatResult(interpolatedResult);
+    sharedArray.set(flattenResult);
+
+    self.postMessage({
+        type: 'LANDMARKS_UPDATED',
+        resultOffset: 1,
+        resultLength: flattenResult.length,
+    });
+}
 
 function processVideoFrame(startTime) {
     if (!isInitialized) return;
@@ -106,7 +154,7 @@ function processVideoFrame(startTime) {
         regularArray = new Uint8ClampedArray(videoArray.length);
         imageData = new ImageData(regularArray, videoWidth, videoHeight);
     }
-    // SharedArrayBuffer의 데이터를 일반 ArrayBuffer로 복사
+    // 공유 버퍼의 데이터를 일반 버퍼로 복사 후 imageData에 세팅
     regularArray.set(videoArray);
     imageData.data.set(regularArray);
 
@@ -116,17 +164,12 @@ function processVideoFrame(startTime) {
     const poseResult = poseLandmarker.detectForVideo(imageData, timestamp);
 
     const result = processLandmarks(faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks);
-    // const jsonResult = JSON.stringify(result);
+    lastProcessedLandmarks = result;
     const flattenResult = flatResult(result);
     sharedArray.set(flattenResult);
 
     prevLandmarks = result.newPrevLandmarks;
     lastValidLandmarks = result.newLastValidLandmarks;
-
-    // frameCount++;
-    // if (frameCount % LOG_INTERVAL === 0) {
-    //     console.log("Worker 측 데이터:", jsonResult.substring(0, 500));
-    // }
 
     self.postMessage({
         type: 'LANDMARKS_UPDATED',
