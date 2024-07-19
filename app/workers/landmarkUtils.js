@@ -1,4 +1,4 @@
-import { KalmanFilter2D } from './kalmanFilter.js'; // KalmanFilter2D 클래스가 정의된 파일
+import { KalmanFilter2D } from './kalmanFilter.js';
 
 const headFilter = new KalmanFilter2D();
 const leftHandFilter = new KalmanFilter2D();

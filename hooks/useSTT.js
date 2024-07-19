@@ -80,8 +80,7 @@ const useSTT = (onResult, onError) => {
                     recognition.current.start();
                 })
                 .catch((err) => {
-                    console.error('Error accessing microphone:', err);
-                    alert('마이크 접근 권한이 필요합니다.');
+                    console.error('마이크 접근 권한이 필요합니다.');
                 });
         }
     };

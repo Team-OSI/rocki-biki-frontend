@@ -47,9 +47,6 @@ export default function Lobby() {
   }, []);
 
   useEffect(() => {
-    // const token = Cookies.get('JWT_TOKEN');
-    // const decoded = jwtDecode(token);
-    // console.log(decoded.sub);
     const socket = initSocket(process.env.NEXT_PUBLIC_NODE_SERVER || 'http://localhost:7777');
 
     socket.on('connect', () => {
@@ -64,7 +61,6 @@ export default function Lobby() {
   }, [setTitle]);
 
   useEffect(() => {
-    console.log(rooms);
     filterRooms();
   }, [rooms, searchTerm]);
 

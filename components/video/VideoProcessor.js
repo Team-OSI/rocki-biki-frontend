@@ -81,7 +81,7 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
     return (
         <>
             <video
-                className={`scale-x-[-1] opacity-80 mt-2 transition-transform ${
+                className={`scale-x-[-1] opacity-80 mt-5 transition-transform ${
                     (myReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
                 }`}
                 ref={videoRef}

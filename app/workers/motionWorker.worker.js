@@ -23,9 +23,9 @@ async function initializeDetectors() {
         },
         runningMode: "VIDEO",
         numFaces: 1,
-        minFaceDetectionConfidence: 0.5,
-        minFacePresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5,
+        minFaceDetectionConfidence: 0.3,
+        minFacePresenceConfidence: 0.3,
+        minTrackingConfidence: 0.3,
         outputFacialTransformationMatrixes: true
     });
 
@@ -36,15 +36,15 @@ async function initializeDetectors() {
         },
         runningMode: "VIDEO",
         numHands: 2,
-        minHandDetectionConfidence: 0.5,
-        minHandPresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5
+        minHandDetectionConfidence: 0.3,
+        minHandPresenceConfidence: 0.3,
+        minTrackingConfidence: 0.3
     });
 
     poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
             modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-            delegate: "GPU"
+            delegate: "CPU"
         },
         runningMode: "VIDEO",
         numPoses: 1,
@@ -52,7 +52,6 @@ async function initializeDetectors() {
         minPosePresenceConfidence: 0.5,
         minTrackingConfidence: 0.5
     });
-    console.log('mediapipe 로드 완료~~~~!!');
 }
 
 self.onmessage = async function(e) {
@@ -64,7 +63,6 @@ self.onmessage = async function(e) {
         await initializeDetectors();
         isInitialized = true;
         self.postMessage({type: 'INIT_COMPLETE'});
-        console.log('워커 초기화 성공!!');
     } else if (e.data.type === 'FRAME_READY') {
         const currentTime = performance.now();
         if (currentTime - lastProcessTime >= frameInterval) {

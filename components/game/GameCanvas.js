@@ -72,7 +72,11 @@ export function GameCanvas({ receivedPoseData, landmarks, socket }) {
   return (
     <>
       <StateBar />
-      <Canvas shadows>
+      <Canvas
+          dpr={[1, 2]}
+          performance={{ min: 0.5 }}
+          gl={{ powerPreference: "high-performance", antialias: false }}
+      >
         <ambientLight />
         <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
         <Scene receivedPoseData={receivedPoseData} landmarks={landmarks} socket={socket} />
