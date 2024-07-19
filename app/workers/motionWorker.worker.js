@@ -130,8 +130,9 @@ function interpolateLandmarks(currentTime) {
 
     const timeSinceLastProcess = currentTime - lastProcessTime;
     const interpolationFactor = Math.min(timeSinceLastProcess / frameInterval, 1);
+    const adjustedFactor = Math.pow(interpolationFactor, 2);
 
-    const interpolatedResult = interpolate(lastProcessedLandmarks, interpolationFactor);
+    const interpolatedResult = interpolate(lastProcessedLandmarks, adjustedFactor);
     const flattenResult = flatResult(interpolatedResult);
     sharedArray.set(flattenResult);
 
