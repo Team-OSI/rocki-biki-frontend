@@ -115,6 +115,17 @@ export const getAudioUrls = async (info) => {
   }
 };
 
+export const getFollowList = async () => {
+  try {
+    const response = await api.get(`/api/users/follow/getFollowList`);
+    console.log('Fetched audio URLs:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching audio URLs:', error);
+    throw error;
+  }
+};
+
 export const fetchAudioUrls = async (setAudioUrls) => {
   try {
     const response = await api.get('/api/users/profile/sound');
