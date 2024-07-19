@@ -17,8 +17,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
 
     const { isRecognizing, finalTranscript, startRecognition, stopRecognition, interimTranscript } = useSTT(
         ({ finalTranscript, interimTranscript }) => {
-            console.log('Final:', finalTranscript);
-            console.log('Interim:', interimTranscript);
+            // console.log('Final:', finalTranscript);
         },
         (error) => {
             console.error('Speech recognition error:', error);
@@ -62,7 +61,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         };
 
         const onUserLeft = (data) => {
-            console.log(`User ${data.userId} left the room`);
+            // console.log(`User ${data.userId} left the room`);
         };
 
         socket.on('offer', onOffer);
@@ -102,13 +101,13 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
 
-        pc.oniceconnectionstatechange = () => {
-            console.log('ICE connection state:', pc.iceConnectionState);
-        };
-
-        pc.onsignalingstatechange = () => {
-            console.log('Signaling state:', pc.signalingState);
-        };
+        // pc.oniceconnectionstatechange = () => {
+        //     console.log('ICE connection state:', pc.iceConnectionState);
+        // };
+        //
+        // pc.onsignalingstatechange = () => {
+        //     console.log('Signaling state:', pc.signalingState);
+        // };
 
         dataChannel.current = pc.createDataChannel('dataChannel');
         dataChannel.current.onopen = startSendingData;
@@ -120,7 +119,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         pc.ondatachannel = (event) => {
             const channel = event.channel;
             channel.onopen = () => {
-                console.log('Data channel opened:', channel);
+                // console.log('Data channel opened:', channel);
                 setConnectionState('connected');
             };
             channel.onmessage = (event) => {

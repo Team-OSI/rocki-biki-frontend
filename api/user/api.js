@@ -107,7 +107,6 @@ export const updateProfile = async (nickname, profileImage) => {
 export const getAudioUrls = async (info) => {
   try {
     const response = await api.get(`/api/users/profile/opponent/sound`, { params: { email: info.email } });
-    console.log('Fetched audio URLs:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching audio URLs:', error);
@@ -129,7 +128,6 @@ export const getFollowList = async () => {
 export const fetchAudioUrls = async (setAudioUrls) => {
   try {
     const response = await api.get('/api/users/profile/sound');
-    console.log('Fetched audio URLs:', response.data);
     setAudioUrls(response.data);
   } catch (error) {
     console.error('Error fetching audio URLs:', error);
@@ -155,7 +153,6 @@ export const updateNickname = async (nickname, image) => {
   formData.append('image', image);
 
   const jwtToken = Cookies.get('JWT_TOKEN'); 
-  console.log(formData);
   const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/update`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
