@@ -206,17 +206,17 @@ export function Opponent({ position, landmarks, opponentData }) {
         const damage = gaugeDamage // + (Math.floor(velocity * 20) / 3);
 
         // 데미지 정보를 서버로 전송
-        // if (damage !== 0) {
+        if (damage !== 0) {
           emitDamage(damage)
           playHitSound()
           setHit(true)
           lastHitTime.current = currentTime
           setTimeout(() => setHit(false), 500)
-        // }
+        }
 
         // 타격 위치 설정
         const hitDirection = handPosition.clone().sub(headPosition).normalize()
-        const hitImpulse = hitDirection.multiplyScalar(20) // 조절 가능한 힘
+        const hitImpulse = hitDirection.multiplyScalar(40+damage) // 조절 가능한 힘
         headRef.current.addHitImpulse(hitImpulse)
 
         resetGauge(name)
