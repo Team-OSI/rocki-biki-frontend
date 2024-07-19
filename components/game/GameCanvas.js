@@ -12,9 +12,9 @@ import { Ring } from './Ring';
 
 const skillBackgrounds = {
   default: '/images/default_background.jpg',
-  attack: '/images/attack_background.png',
-  heal: '/images/heal_background.jpg',
-  shield: '/images/shield_background.jpg',
+  Attack: '/images/attack_background.png',
+  Heal: '/images/heal_background.jpg',
+  SVGAnimateElementhield: '/images/shield_background.jpg',
 };
 
 function BackGround({ texturePath }) {
@@ -34,13 +34,14 @@ function BackGround({ texturePath }) {
 function Scene({ receivedPoseData, landmarks, socket }) {
   const decreasePlayerHealth = useGameStore(state => state.decreasePlayerHealth);
   const [background, setBackground] = useState(skillBackgrounds.default);
-  const opponentSkill = useSocketStore(state => state.opponentSkill);
+  // const opponentSkill = useSocketStore(state => state.opponentSkill);
+  const opponentSkills = useGameStore(state => state.opponentSkills);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (opponentSkill) {
-      console.log(opponentSkill);
-      setBackground(skillBackgrounds[opponentSkill.skillType] || skillBackgrounds.default);
+    if (opponentSkills) {
+      console.log(opponentSkills[0]);
+      setBackground(skillBackgrounds[opponentSkills[0]] || skillBackgrounds.default);
       
       // Clear any existing timer
       if (timerRef.current) {
@@ -53,7 +54,7 @@ function Scene({ receivedPoseData, landmarks, socket }) {
         timerRef.current = null;
       }, 10000);
     }
-  }, [opponentSkill]);
+  }, [opponentSkills]);
 
   return (
     <>
