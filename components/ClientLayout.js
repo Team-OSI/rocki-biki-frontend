@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { getUserEmail, getNickname } from '@/api/user/api';
 import Navbar from '@/components/Navbar'; // Navbar 경로를 실제 위치로 수정하세요.
@@ -12,6 +12,12 @@ export default function ClientLayout({ children }) {
     const [userProfileImage, setUserProfileImage] = useState('');
     const pathname = usePathname();
     const showNavbar = (pathname !== '/' && pathname !== '/game');
+    const navbarProps = useMemo(() => ({
+        userEmail,
+        userNickname,
+        userProfileImage,
+        friends: ['정승호', '박유주', '정해인', '전병준' ]
+    }), [userEmail, userNickname, userProfileImage])
 
     useEffect(() => {
         if (!showNavbar) return;
@@ -39,61 +45,7 @@ export default function ClientLayout({ children }) {
         <TitleProvider>
             {showNavbar && (
                 <div className="flex-shrink-0">
-                    <Navbar
-                        userEmail={userEmail}
-                        userNickname={userNickname}
-                        userProfileImage={userProfileImage}
-                        friends={[
-                            'Friend 1',
-                            'Friend 2',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            'Friend 3',
-                            "Friend 3"
-                        ]} // 친구 목록을 props로 전달
-                    />
+                    <Navbar {...navbarProps}/>
                 </div>
             )}
             <div className="flex-grow flex justify-center items-center">
