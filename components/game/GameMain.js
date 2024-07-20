@@ -54,14 +54,6 @@ export default function GameMain() {
         const result = sharedArray.slice(resultOffset, resultOffset + resultLength);
         const { landmarks, poseLandmarks } = parseLandmarks(result);
 
-        // frameCount++;
-        // if (frameCount % LOG_INTERVAL === 0) {
-        //     console.log('Parsed poseLandmarks - head:', landmarks['head']);
-        //     console.log('Parsed poseLandmarks - leftHand:', landmarks['leftHand']);
-        //     console.log('Parsed poseLandmarks - rightHand:', landmarks['rightHand']);
-        //     console.log('Parsed Landmarks - nose:', poseLandmarks['nose']);
-        // }
-
         setLandmarks({
             landmarks: landmarks,
             poseLandmarks: poseLandmarks
