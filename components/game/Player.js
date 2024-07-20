@@ -99,7 +99,7 @@ const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref
   
 function CameraControls({target}){
   const { camera } = useThree()
-  const cameraPosition = useRef(new THREE.Vector3(0,0,0))
+  const cameraPosition = useRef(new THREE.Vector3(0,0,-10))
   useFrame(()=> {
     if (target && target.current && target.current.position) {
     const targetPosition = target.current.position.clone()
@@ -107,7 +107,7 @@ function CameraControls({target}){
     targetPosition.y +=0.25
     
     // 부드러운 카메라 이동
-    cameraPosition.current.lerp(targetPosition,0.1)
+    cameraPosition.current.lerp(targetPosition,0.9)
     camera.position.copy(cameraPosition.current)
   
     camera.lookAt(target.current.position)
