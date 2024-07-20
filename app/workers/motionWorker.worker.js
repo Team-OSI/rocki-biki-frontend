@@ -105,7 +105,7 @@ function interpolate(lastLandmarks, factor) {
         updatedPoseLandmarks: lastLandmarks.updatedPoseLandmarks
     };
 
-    const keysToInterpolate = ['head', 'leftHand', 'rightHand'];
+    const keysToInterpolate = ['leftHand', 'rightHand'];
 
     for (const key of keysToInterpolate) {
         if (lastLandmarks.updatedLandmarks[key] && prevLandmarks && prevLandmarks.updatedLandmarks[key]) {
