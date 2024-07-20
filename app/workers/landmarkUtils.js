@@ -1,17 +1,11 @@
-const HEAD_POSITION_ALPHA = 0.2; // 머리 위치에 대한 알파값 (더 부드러운 움직임을 위해 낮춤)
-const HEAD_ROTATION_ALPHA = 0.2; // 머리 회전에 대한 알파값 (더 부드러운 움직임을 위해 낮춤)
+const HEAD_POSITION_ALPHA = 0.3; // 머리 위치에 대한 알파값
+const HEAD_ROTATION_ALPHA = 0.2; // 머리 회전에 대한 알파값
 
-// 개선된 로우패스 필터 함수
-function applyLowPassFilter(newValue, prevValue, alpha) {
+function applyEMA(newValue, prevValue, alpha) {
     if (!prevValue) {
         return newValue;
     }
-    return newValue.map((val, index) => {
-        if (typeof prevValue[index] === 'number') {
-            return alpha * val + (1 - alpha) * prevValue[index];
-        }
-        return val;
-    });
+    return newValue.map((val, index) => alpha * val + (1 - alpha) * prevValue[index]);
 }
 
 export function processLandmarks(faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks) {
@@ -23,7 +17,7 @@ export function processLandmarks(faceResult, handResult, poseResult, prevLandmar
     // 머리 위치 처리
     if (face.length > 0 && face[1]) {
         const rawHeadPosition = [face[1].x || 0, face[1].y || 0, face[1].z || 0];
-        newHeadPosition = applyLowPassFilter(rawHeadPosition, prevLandmarks?.head?.[0], HEAD_POSITION_ALPHA);
+        newHeadPosition = applyEMA(rawHeadPosition, prevLandmarks?.head?.[0], HEAD_POSITION_ALPHA);
     } else {
         newHeadPosition = lastValidLandmarks?.head?.[0] || [0, 0, 0];
     }
@@ -31,7 +25,7 @@ export function processLandmarks(faceResult, handResult, poseResult, prevLandmar
     // 머리 회전 처리
     if (face.length > 0) {
         const rawHeadRotation = calc_head_rotation_2d(face);
-        newHeadRotation = applyLowPassFilter(rawHeadRotation, prevLandmarks?.head?.[1], HEAD_ROTATION_ALPHA);
+        newHeadRotation = applyEMA(rawHeadRotation, prevLandmarks?.head?.[1], HEAD_ROTATION_ALPHA);
     } else {
         newHeadRotation = lastValidLandmarks?.head?.[1] || [0, 0, 0];
     }
