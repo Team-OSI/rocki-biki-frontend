@@ -1,4 +1,5 @@
-const HEAD_ALPHA = 0.3; // 움직임에 대한 알파값
+const HEAD_POSITION_ALPHA = 0.3; // 머리 위치에 대한 알파값
+const HEAD_ROTATION_ALPHA = 0.2; // 머리 회전에 대한 알파값
 
 function applyEMA(newValue, prevValue, alpha) {
     if (!prevValue) {
@@ -11,24 +12,29 @@ export function processLandmarks(faceResult, handResult, poseResult, prevLandmar
     const face = faceResult.faceLandmarks?.[0] || [];
     const hands = handResult.landmarks || [];
 
-    let newHeadPosition;
+    let newHeadPosition, newHeadRotation;
 
     // 머리 위치 처리
     if (face.length > 0 && face[1]) {
         const rawHeadPosition = [face[1].x || 0, face[1].y || 0, face[1].z || 0];
-        newHeadPosition = applyEMA(rawHeadPosition, prevLandmarks?.head?.[0], HEAD_ALPHA);
+        newHeadPosition = applyEMA(rawHeadPosition, prevLandmarks?.head?.[0], HEAD_POSITION_ALPHA);
     } else {
         newHeadPosition = lastValidLandmarks?.head?.[0] || [0, 0, 0];
+    }
+
+    // 머리 회전 처리
+    if (face.length > 0) {
+        const rawHeadRotation = calc_head_rotation_2d(face);
+        newHeadRotation = applyEMA(rawHeadRotation, prevLandmarks?.head?.[1], HEAD_ROTATION_ALPHA);
+    } else {
+        newHeadRotation = lastValidLandmarks?.head?.[1] || [0, 0, 0];
     }
 
     const maxHeadMovement = 0.8;
     const maxHandMovement = 2.9;
 
     const newLandmarks = {
-        head: [
-            newHeadPosition,
-            calc_head_rotation_2d(face)
-        ],
+        head: [newHeadPosition, newHeadRotation],
         leftHand: hands[0] ? [
             calc_hand_center(hands[0]) || lastValidLandmarks?.leftHand?.[0] || [0, 0, 0],
             calculateHandRotation(hands[0][0], hands[0][5], hands[0][17], hands[0][10]) || lastValidLandmarks?.leftHand?.[1] || [0, 0],
