@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import {getUserEmail, getNickname, getFollowList} from '@/api/user/api';
+import { getUserEmail, getNickname, getFollowList } from '@/api/user/api';
 import Navbar from '@/components/navbar/Navbar'; // Navbar 경로를 실제 위치로 수정하세요.
 import { TitleProvider } from "@/app/contexts/TitleContext"; // TitleContext 경로를 실제 위치로 수정하세요.
 
@@ -12,7 +12,7 @@ export default function ClientLayout({ children }) {
     const [userProfileImage, setUserProfileImage] = useState('');
     const pathname = usePathname();
     const showNavbar = pathname !== '/' && pathname !== '/game';
-    const [follow, setFollow] = useState([]);
+    const [follow, setFollow] = useState({ following: [], follower: [] });
 
     useEffect(() => {
         if (!showNavbar) return;

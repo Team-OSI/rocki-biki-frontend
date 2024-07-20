@@ -7,10 +7,10 @@ import React, { useState } from 'react';
 import NicknameModal from '../lobby/NicknameModal';
 import { useTitle } from "@/app/contexts/TitleContext";
 import FriendsList from './FriendsList'
-import {onFollowing, unFollowing} from "@/api/user/api";
+import { onFollowing, unFollowing } from "@/api/user/api";
 
 export default function Navbar({ userEmail, userNickname, userProfileImage, onNicknameUpdate, friends, setFollow }) {
-  const {title} = useTitle();
+  const { title } = useTitle();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFriendsListOpen, setIsFriendsListOpen] = useState(false);
@@ -39,12 +39,20 @@ export default function Navbar({ userEmail, userNickname, userProfileImage, onNi
 
   const onAcceptRequest = async (friend) => {
     await onFollowing(friend.email);
-  }
+    setFollow((prevFriends) => ({
+      ...prevFriends,
+      follower: prevFriends.follower.filter(f => f.email !== friend.email),
+      following: [...prevFriends.following, friend]
+    }));
+  };
 
   const onCancelFollow = async (friend) => {
-    console.log(friend);
     await unFollowing(friend.email);
-  }
+    setFollow((prevFriends) => ({
+      ...prevFriends,
+      following: prevFriends.following.filter(f => f.email !== friend.email)
+    }));
+  };
 
   return (
       <>
@@ -94,7 +102,7 @@ export default function Navbar({ userEmail, userNickname, userProfileImage, onNi
             />
         )}
         {isModalOpen && (
-            <NicknameModal onClose={handleCloseModal} onSubmit={handleNicknameSubmit}/>
+            <NicknameModal onClose={handleCloseModal} onSubmit={handleNicknameSubmit} />
         )}
       </>
   );
