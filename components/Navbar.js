@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import React, { useState } from 'react';
@@ -53,7 +54,7 @@ export default function Navbar({ userEmail, userNickname, userProfileImage, onNi
           </div>
           <div className="flex items-center space-x-4">
             {userProfileImage && (
-                <img
+                <Image
                     src={userProfileImage}
                     alt={`${userNickname}'s profile`}
                     className="w-8 h-8 rounded-full"
