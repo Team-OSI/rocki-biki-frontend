@@ -71,6 +71,38 @@ export const setNickname = async (nickname, image) => {
   return response.data;
 };
 
+export const onFollowing = async (toUser) => {
+  try {
+    const followRequestDto = {
+      toUser: toUser
+    };
+
+    const response = await api.post('/api/users/follow/add', followRequestDto, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
+export const unFollowing = async (toUser) => {
+  try {
+    const response = await api.delete('/api/users/follow/delete', {
+      data: { toUser: toUser }, // 데이터를 요청 본문에 포함
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
+
 export const getNickname = async (userEmail) => {
   try {
     const response = await api.get('/api/users/profile/get', {
