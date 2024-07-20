@@ -42,7 +42,7 @@ export default function Navbar({ userEmail, userNickname, userProfileImage, onNi
     await onFollowing(friend.email);
     setFollow((prevFriends) => ({
       following: [...prevFriends.following, friend],
-      follower: prevFriends.follower.filter(f => f.email !== friend.email)
+      follower: prevFriends.follower // Keep the friend in the follower list
     }));
   };
 
@@ -50,7 +50,7 @@ export default function Navbar({ userEmail, userNickname, userProfileImage, onNi
     await unFollowing(friend.email);
     setFollow((prevFriends) => ({
       following: prevFriends.following.filter(f => f.email !== friend.email),
-      follower: prevFriends.follower
+      follower: prevFriends.follower.filter(f => f.email !== friend.email) // Remove from both lists if mutual
     }));
   };
 
@@ -74,13 +74,14 @@ export default function Navbar({ userEmail, userNickname, userProfileImage, onNi
           </div>
           <div className="flex items-center space-x-4">
             {userProfileImage && (
-                <Image
-                    src={userProfileImage}
-                    alt={`${userNickname}'s profile`}
-                    className="rounded-full"
-                    width={40} // 이미지의 너비 (픽셀 단위)
-                    height={40} // 이미지의 높이 (픽셀 단위)
-                />
+                <div className="relative w-10 h-10">
+                  <Image
+                      src={userProfileImage}
+                      alt={`${userNickname}'s profile`}
+                      className="rounded-full object-cover"
+                      layout="fill"
+                  />
+                </div>
             )}
             <Link href={`/myPage/${encodeURIComponent(userEmail)}`}
                   className="text-gray-300 hover:text-white font-semibold">
@@ -95,13 +96,15 @@ export default function Navbar({ userEmail, userNickname, userProfileImage, onNi
           </div>
         </nav>
         {isFriendsListOpen && (
-            <FriendsList
-                following={follow.following}
-                follower={follow.follower}
-                onClose={toggleFriendsList}
-                onAcceptRequest={onAcceptRequest}
-                onCancelFollow={onCancelFollow}
-            />
+            <div className="fixed top-14 left-0 w-full z-40">
+              <FriendsList
+                  following={follow.following}
+                  follower={follow.follower}
+                  onClose={toggleFriendsList}
+                  onAcceptRequest={onAcceptRequest}
+                  onCancelFollow={onCancelFollow}
+              />
+            </div>
         )}
         {isModalOpen && (
             <NicknameModal onClose={handleCloseModal} onSubmit={handleNicknameSubmit} />

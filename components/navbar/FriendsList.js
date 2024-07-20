@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { UserPlus, UserMinus, MessageCircle, UserX } from 'lucide-react';
 
@@ -17,22 +17,34 @@ const FriendsList = ({ following, follower, onClose, onAcceptRequest, onCancelFo
 
         if (isFollowing && isFollower) return FriendStatus.MUTUAL;
         if (isFollowing) return FriendStatus.PENDING;
-        return FriendStatus.REQUEST;
+        if (isFollower) return FriendStatus.REQUEST;
+        return null;
     };
 
-    const allFriends = [...new Set([...following, ...follower])];
+    const allFriends = useMemo(() => {
+        const friendMap = new Map();
+        [...following, ...follower].forEach(friend => {
+            if (!friendMap.has(friend.email)) {
+                friendMap.set(friend.email, { ...friend, status: getFriendStatus(friend) });
+            }
+        });
+        return Array.from(friendMap.values());
+    }, [following, follower]);
 
     const filteredFriends = allFriends.filter(friend => {
-        const status = getFriendStatus(friend);
-        if (activeTab === 'all') return status === FriendStatus.MUTUAL;
-        if (activeTab === 'online') return friend.online && status === FriendStatus.MUTUAL;
-        if (activeTab === 'pending') return status === FriendStatus.PENDING;
-        if (activeTab === 'requests') return status === FriendStatus.REQUEST;
+        if (activeTab === 'all') return friend.status === FriendStatus.MUTUAL;
+        if (activeTab === 'online') return friend.online && friend.status === FriendStatus.MUTUAL;
+        if (activeTab === 'pending') return friend.status === FriendStatus.PENDING;
+        if (activeTab === 'requests') return friend.status === FriendStatus.REQUEST;
         return false;
     });
 
     const encodeEmail = (email) => {
         return email.replace('@', '%40');
+    };
+
+    const handleAcceptRequest = (friend) => {
+        onAcceptRequest(friend);
     };
 
     return (
@@ -57,45 +69,42 @@ const FriendsList = ({ following, follower, onClose, onAcceptRequest, onCancelFo
                 ))}
             </div>
             <div className="overflow-y-auto flex-grow">
-                {filteredFriends.map((friend, index) => {
-                    const status = getFriendStatus(friend);
-                    return (
-                        <div key={index} className="p-4 hover:bg-gray-800 flex items-center justify-between">
-                            <Link href={`/myPage/${encodeEmail(friend.email)}`} className="flex items-center space-x-3 flex-grow">
-                                <img src={friend.profileImage} alt={friend.nickname} className="w-10 h-10 rounded-full" />
-                                <div>
-                                    <p className="font-semibold text-gray-300 hover:text-white">{friend.nickname}</p>
-                                    <p className="text-sm text-gray-400">
-                                        {status === FriendStatus.MUTUAL ? 'Friend' :
-                                            status === FriendStatus.PENDING ? 'Pending' : 'Request'}
-                                    </p>
-                                </div>
-                            </Link>
-                            <div className="flex space-x-2">
-                                {status === FriendStatus.MUTUAL && (
-                                    <>
-                                        <button onClick={() => onMessage(friend)} className="p-1 hover:bg-gray-700 rounded">
-                                            <MessageCircle size={20} />
-                                        </button>
-                                        <button onClick={() => onCancelFollow(friend)} className="p-1 hover:bg-gray-700 rounded">
-                                            <UserX size={20} />
-                                        </button>
-                                    </>
-                                )}
-                                {status === FriendStatus.PENDING && (
-                                    <button onClick={() => onCancelFollow(friend)} className="p-1 hover:bg-gray-700 rounded">
-                                        <UserMinus size={20} />
-                                    </button>
-                                )}
-                                {status === FriendStatus.REQUEST && (
-                                    <button onClick={() => onAcceptRequest(friend)} className="p-1 hover:bg-gray-700 rounded">
-                                        <UserPlus size={20} />
-                                    </button>
-                                )}
+                {filteredFriends.map((friend, index) => (
+                    <div key={index} className="p-4 hover:bg-gray-800 flex items-center justify-between">
+                        <Link href={`/myPage/${encodeEmail(friend.email)}`} className="flex items-center space-x-3 flex-grow">
+                            <img src={friend.profileImage} alt={friend.nickname} className="w-10 h-10 rounded-full" />
+                            <div>
+                                <p className="font-semibold text-gray-300 hover:text-white">{friend.nickname}</p>
+                                <p className="text-sm text-gray-400">
+                                    {friend.status === FriendStatus.MUTUAL ? 'Friend' :
+                                        friend.status === FriendStatus.PENDING ? 'Pending' : 'Request'}
+                                </p>
                             </div>
+                        </Link>
+                        <div className="flex space-x-2">
+                            {friend.status === FriendStatus.MUTUAL && (
+                                <>
+                                    <button onClick={() => onMessage(friend)} className="p-1 hover:bg-gray-700 rounded">
+                                        <MessageCircle size={20} />
+                                    </button>
+                                    <button onClick={() => onCancelFollow(friend)} className="p-1 hover:bg-gray-700 rounded">
+                                        <UserX size={20} />
+                                    </button>
+                                </>
+                            )}
+                            {friend.status === FriendStatus.PENDING && (
+                                <button onClick={() => onCancelFollow(friend)} className="p-1 hover:bg-gray-700 rounded">
+                                    <UserMinus size={20} />
+                                </button>
+                            )}
+                            {friend.status === FriendStatus.REQUEST && (
+                                <button onClick={() => handleAcceptRequest(friend)} className="p-1 hover:bg-gray-700 rounded">
+                                    <UserPlus size={20} />
+                                </button>
+                            )}
                         </div>
-                    );
-                })}
+                    </div>
+                ))}
             </div>
         </div>
     );
