@@ -95,6 +95,7 @@ const useSocketStore = create((set, get) => ({
     // 스킬 사용 보내기
     emitUseSkill: (skillType,similarAverage) => {
         const { socket } = get();
+        console.log(skillType, similarAverage);
         if (socket) {
             socket.emit('useSkill', { skillType: skillType, similarAverage: similarAverage });
         }

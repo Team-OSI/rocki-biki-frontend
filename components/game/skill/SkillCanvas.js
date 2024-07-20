@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { throttle } from "lodash";
 import stringSimilarity from 'string-similarity';
+import useSocketStore from '@/store/socketStore';
 
 const similarityThreshold = 0.60;
 const voiceSimilarityThreshold = 0.60;
@@ -16,6 +17,7 @@ export default function SkillCanvas(
         poseLandmarks,
         skillConfig,
         finalTranscript,
+        skillType,
         width = 640,
         height = 480
     }) {
@@ -28,11 +30,12 @@ export default function SkillCanvas(
     const [isCanvasVisible, setIsCanvasVisible] = useState(true);
     const timerRef = useRef(null);
     const [voiceSimilarityResult, setVoiceSimilarityResult] = useState(null);
+    const emitUseSkill = useSocketStore(state => state.emitUseSkill);
     const [poseSimilarities, setPoseSimilarities] = useState([]);
+    const [hasComputedAverage, setHasComputedAverage] = useState(false); // 추가 상태 변수
 
     // 타이머 시작 함수
     const startTimer = useCallback(() => {
-        console.log("Starting timer"); // 로그 추가
         if (timerRef.current) return;
         timerRef.current = setInterval(() => {
             setRemainingTime((prevTime) => {
@@ -49,7 +52,6 @@ export default function SkillCanvas(
 
     // 컴포넌트 마운트 시 캔버스 가시성 타이머 시작
     useEffect(() => {
-        console.log("Component mounted"); // 로그 추가
         const visibilityTimer = setInterval(() => {
             setRemainingVisibleTime((prevTime) => {
                 if (prevTime <= 1) {
@@ -73,7 +75,6 @@ export default function SkillCanvas(
 
     // 스킬 활성화 시 타이머 시작
     useEffect(() => {
-        console.log("Skill active:", isSkillActive); // 로그 추가
         if (isSkillActive && !timerRef.current) {
             startTimer();
         }
@@ -118,29 +119,20 @@ export default function SkillCanvas(
 
     // 프레임 처리 함수
     const processFrame = useCallback(() => {
-        if (!canvasRef.current) {
-            console.log('Canvas not available'); // 로그 추가
-            return;
-        }
-        if (!poseLandmarks) {
-            console.log('Pose landmarks not available'); // 로그 추가
-            return;
-        }
+        if (!canvasRef.current || !poseLandmarks) return;
 
         const canvasCtx = canvasRef.current.getContext('2d');
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, width, height);
 
         if (videoElement) {
-            console.log('Drawing video element on canvas'); // 로그 추가
+            console.log('Drawing video element on canvas');
             canvasCtx.drawImage(videoElement, 0, 0, width, height);
-        } else {
-            console.log('Video element not available'); // 로그 추가
         }
 
         if (isSkillActive && remainingTime > 0 && image) {
             const position = skillConfigRef.current.imagePosition(poseLandmarks, width, height);
-            console.log('Drawing skill image on canvas at position:', position); // 로그 추가
+            console.log('Drawing skill image on canvas at position:', position);
             canvasCtx.drawImage(image, position.x, position.y, skillConfigRef.current.imageSize.width, skillConfigRef.current.imageSize.height);
         }
 
@@ -172,11 +164,7 @@ export default function SkillCanvas(
                     setIsSkillActive(poseSimilarity >= similarityThreshold && voiceSimilarity >= voiceSimilarityThreshold);
 
                     setPoseSimilarities(prev => [...prev, poseSimilarity]);
-                } else {
-                    console.log('Detected pose landmarks not available'); // 로그 추가
                 }
-            } else {
-                console.log('Pose landmarks not available'); // 로그 추가
             }
         }, 1000), // 1000ms마다 최대 한 번 실행
         [skillConfig.targetPose, finalTranscript, skillConfig.skillReading]
@@ -192,15 +180,23 @@ export default function SkillCanvas(
 
     // 10초 후 포즈 유사도 평균 계산
     useEffect(() => {
-        if (remainingVisibleTime === 0 && poseSimilarities.length > 0) {
+        if (remainingVisibleTime === 0 && !hasComputedAverage && poseSimilarities.length > 0) {
             const averagePoseSimilarity = poseSimilarities.reduce((sum, value) => sum + value, 0) / poseSimilarities.length;
+            const similarAverage = averagePoseSimilarity + (voiceSimilarityResult || 0);
             console.log("Average Pose Similarity:", averagePoseSimilarity.toFixed(2));
+            console.log("Total Similarity:", similarAverage.toFixed(2));
+            console.log(skillType, similarAverage);
+            emitUseSkill( skillType, similarAverage );
+            setHasComputedAverage(true); 
+
+            setTimeout(() => {
+                emitUseSkill( null, null );
+            }, 5000);
         }
-    }, [remainingVisibleTime, poseSimilarities]);
+    }, [remainingVisibleTime, poseSimilarities, voiceSimilarityResult, emitUseSkill, skillType, hasComputedAverage]);
 
     // 프레임 처리 시작 및 정리
     useEffect(() => {
-        console.log('Starting frame processing'); // 로그 추가
         processFrame();
         return () => {
             if (animationFrameRef.current) {
@@ -209,10 +205,7 @@ export default function SkillCanvas(
         };
     }, [processFrame]);
 
-    if (!isCanvasVisible) {
-        console.log('Canvas is not visible'); // 로그 추가
-        return null;
-    }
+    if (!isCanvasVisible) return null;
 
     return (
         <div className='motion-capture'>

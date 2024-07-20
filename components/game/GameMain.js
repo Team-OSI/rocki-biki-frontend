@@ -54,14 +54,6 @@ export default function GameMain() {
         const result = sharedArray.slice(resultOffset, resultOffset + resultLength);
         const { landmarks, poseLandmarks } = parseLandmarks(result);
 
-        // frameCount++;
-        // if (frameCount % LOG_INTERVAL === 0) {
-        //     console.log('Parsed poseLandmarks - head:', landmarks['head']);
-        //     console.log('Parsed poseLandmarks - leftHand:', landmarks['leftHand']);
-        //     console.log('Parsed poseLandmarks - rightHand:', landmarks['rightHand']);
-        //     console.log('Parsed Landmarks - nose:', poseLandmarks['nose']);
-        // }
-
         setLandmarks({
             landmarks: landmarks,
             poseLandmarks: poseLandmarks
@@ -98,7 +90,6 @@ export default function GameMain() {
         videoRef,
         remoteVideoRef,
         (receivedData) => {
-            // console.log('Received data:', receivedData);
             if (receivedData.type === 'pose') {
                 setReceivedPoseData(receivedData.pose);
             }
@@ -175,6 +166,7 @@ export default function GameMain() {
             {gameStatus === 'playing'  && <GaugeUi />}
             <div style={videoContainerStyle(true)}>
                 <VideoProcessor
+                    ref={videoRef}
                     onLandmarksUpdate={handleLandmarksUpdate}
                     style={videoStyle}
                     gameStatus={gameStatus}

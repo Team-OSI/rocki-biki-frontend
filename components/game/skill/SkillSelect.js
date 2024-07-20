@@ -241,12 +241,13 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         config.show && (
           <SkillCanvas
             key={skillType}
-            videoElement={localVideoRef.current}
+            videoElement={localVideoRef.current.getVideoElement()} // 올바른 videoElement 전달
             image={config.image}
             onSkillComplete={handleSkillComplete}
             poseLandmarks={poseLandmarks}
             skillConfig={config.skillConfig}
             finalTranscript={finalTranscript}
+            skillType={skillType}
           />
         )
       ))}
