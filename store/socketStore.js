@@ -4,7 +4,7 @@ import useGameStore from './gameStore';
 
 const useSocketStore = create((set, get) => ({
     socket: null,
-    lastEmittedPlayerRead: null, // 마지막으로 보낸 플레이어의 준비 상태를 저장
+    lastEmittedPlayerRead: true, // 마지막으로 보낸 플레이어의 준비 상태를 저장
     rooms: [],
     opponentSkill: null,
 
@@ -111,7 +111,7 @@ const useSocketStore = create((set, get) => ({
         const { socket, lastEmittedPlayerReady } = get();
         if (socket) {
             // 마지막으로 보낸 상태와 현재 상태가 다를 때만 emit
-            if(lastEmittedPlayerReady === null || lastEmittedPlayerReady !== state){
+            if(lastEmittedPlayerReady === false || lastEmittedPlayerReady !== state){
                 socket.emit('ready', { state: state });
                 set({ lastEmittedPlayerReady: state}) // 마지막 상태 업데이트
             }

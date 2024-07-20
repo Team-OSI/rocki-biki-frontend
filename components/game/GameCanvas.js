@@ -5,7 +5,6 @@ import { Stats, PerspectiveCamera, Environment, useTexture } from '@react-three/
 import { Player } from './Player';
 import { Opponent } from './Opponent';
 import { useEffect, useState, useRef } from 'react';
-import useGameStore from '@/store/gameStore';
 import StateBar from './StateBar';
 import useSocketStore from "@/store/socketStore";
 import { Ring } from './Ring';
@@ -32,7 +31,6 @@ function BackGround({ texturePath }) {
 }
 
 function Scene({ receivedPoseData, landmarks, socket }) {
-  const decreasePlayerHealth = useGameStore(state => state.decreasePlayerHealth);
   const [background, setBackground] = useState(skillBackgrounds.default);
   const opponentSkill = useSocketStore(state => state.opponentSkill);
   const timerRef = useRef(null);
@@ -60,7 +58,7 @@ function Scene({ receivedPoseData, landmarks, socket }) {
       <ambientLight intensity={0.7} />
       <pointLight position={[10, 10, 10]} intensity={1} />
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
-      <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} socket={socket} />
+      <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} />
       {/* <Environment preset='sunset' background /> */}
       <BackGround texturePath={background} />
       <Ring />
@@ -68,7 +66,7 @@ function Scene({ receivedPoseData, landmarks, socket }) {
   );
 }
 
-export function GameCanvas({ receivedPoseData, landmarks, socket }) {
+export default function GameCanvas({ receivedPoseData, landmarks }) {
   return (
     <>
       <StateBar />
@@ -79,7 +77,7 @@ export function GameCanvas({ receivedPoseData, landmarks, socket }) {
       >
         <ambientLight />
         <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
-        <Scene receivedPoseData={receivedPoseData} landmarks={landmarks} socket={socket} />
+        <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
         <Stats />
       </Canvas>
     </>

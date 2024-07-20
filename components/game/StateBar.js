@@ -6,8 +6,6 @@ import useGaugeStore from '@/store/gaugeStore';
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner } = useGameStore();
   const socket = useSocketStore(state => state.socket);
-  const { hitGauge, maxGauge } = useGaugeStore();
-
   const [count, setCount] = useState(3000);
 
   useEffect(()=>{
@@ -23,7 +21,7 @@ export default function StateBar() {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [gameStatus, count, hitGauge])
+  }, [gameStatus, count])
 
   useEffect(() => {
     if (gameStatus === 'playing') {

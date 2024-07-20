@@ -116,7 +116,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
       }
       setRemainingTime(5);
     }
-  },[landmarks, playerReady, startTimer, checkReadyPose ])
+  },[landmarks, playerReady, startTimer, checkReadyPose, gameStatus ])
 
 
   useEffect(() => {
@@ -127,24 +127,24 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
 
   useEffect(() => {
     checkReadyPose();
-  }, [landmarks]);
+  }, [landmarks, checkReadyPose]);
 
-  const [headerText, setHeaderText] = useState("점선에 어깨와 머리를 맞춰주세요");
+  const [headerText, setHeaderText] = useState("조금 더 뒤로 가주세요");
   const [headerColor, setHeaderColor] = useState('white');
 
   useEffect(() => {
-    setHeaderText(timerRef.current ? "거리를 유지해주세요" : "점선에 어깨와 머리를 맞춰주세요");
-  }, []); 
+    setHeaderText(playerReady ? "거리를 유지해주세요" : "점선에 어깨와 머리를 맞춰주세요");
+  }, [playerReady, setHeaderText]); 
   
   useEffect(() => {
     const checkTimer = () => {
-      setHeaderText(timerRef.current ? "거리를 유지해주세요" : "점선에 어깨와 머리를 맞춰주세요");
+      setHeaderText(playerReady ? "거리를 유지해주세요" : "점선에 어깨와 머리를 맞춰주세요");
     };
     checkTimer();
     const intervalId = setInterval(checkTimer, 100);
   
     return () => clearInterval(intervalId);
-  }, []);
+  }, [playerReady, setHeaderText]);
 
   useEffect(() => {
     if (similarityResult >= 0.7) setHeaderColor('green');
