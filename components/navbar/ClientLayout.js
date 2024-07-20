@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { getUserEmail, getNickname } from '@/api/user/api';
-import Navbar from '@/components/Navbar'; // Navbar 경로를 실제 위치로 수정하세요.
+import {getUserEmail, getNickname, getFollowList} from '@/api/user/api';
+import Navbar from '@/components/navbar/Navbar'; // Navbar 경로를 실제 위치로 수정하세요.
 import { TitleProvider } from "@/app/contexts/TitleContext"; // TitleContext 경로를 실제 위치로 수정하세요.
 
 export default function ClientLayout({ children }) {
@@ -12,12 +12,15 @@ export default function ClientLayout({ children }) {
     const [userProfileImage, setUserProfileImage] = useState('');
     const pathname = usePathname();
     const showNavbar = pathname !== '/' && pathname !== '/game';
+    const [follow, setFollow] = useState([]);
 
     useEffect(() => {
         if (!showNavbar) return;
         const initializeUser = async () => {
             const email = await getUserEmail();
+            const follow = await getFollowList();
             setUserEmail(email);
+            setFollow(follow);
 
             if (email) {
                 try {
@@ -43,7 +46,8 @@ export default function ClientLayout({ children }) {
                         userEmail={userEmail}
                         userNickname={userNickname}
                         userProfileImage={userProfileImage}
-                        friends={['Friend 1', 'Friend 2', 'Friend 3']} // 친구 목록을 props로 전달
+                        friends={follow} // 친구 목록을 props로 전달
+                        setFollow={setFollow} // 친구 목록을 업데이트하는 함수를 props로 전달
                     />
                 </div>
             )}
