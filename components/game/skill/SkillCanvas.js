@@ -6,8 +6,7 @@ import useSocketStore from '@/store/socketStore';
 
 const similarityThreshold = 0.60;
 const voiceSimilarityThreshold = 0.60;
-const SKILL_DURATION = 3;
-const CANVAS_VISIBLE_DURATION = 10; 
+const CANVAS_VISIBLE_DURATION = 5;
 
 export default function SkillCanvas(
     {
@@ -24,31 +23,13 @@ export default function SkillCanvas(
     const canvasRef = useRef(null);
     const animationFrameRef = useRef(null);
     const [similarityResult, setSimilarityResult] = useState(null);
-    const [remainingTime, setRemainingTime] = useState(SKILL_DURATION);
     const [remainingVisibleTime, setRemainingVisibleTime] = useState(CANVAS_VISIBLE_DURATION);
     const [isSkillActive, setIsSkillActive] = useState(false);
     const [isCanvasVisible, setIsCanvasVisible] = useState(true);
-    const timerRef = useRef(null);
     const [voiceSimilarityResult, setVoiceSimilarityResult] = useState(null);
     const emitUseSkill = useSocketStore(state => state.emitUseSkill);
     const [poseSimilarities, setPoseSimilarities] = useState([]);
-    const [hasComputedAverage, setHasComputedAverage] = useState(false); // 추가 상태 변수
-
-    // 타이머 시작 함수
-    const startTimer = useCallback(() => {
-        if (timerRef.current) return;
-        timerRef.current = setInterval(() => {
-            setRemainingTime((prevTime) => {
-                if (prevTime <= 0) {
-                    clearInterval(timerRef.current);
-                    timerRef.current = null;
-                    onSkillComplete();
-                    return 0;
-                }
-                return prevTime - 1;
-            });
-        }, 1000);
-    }, [onSkillComplete]);
+    const [hasComputedAverage, setHasComputedAverage] = useState(false); 
 
     // 컴포넌트 마운트 시 캔버스 가시성 타이머 시작
     useEffect(() => {
@@ -69,16 +50,9 @@ export default function SkillCanvas(
     // 컴포넌트 언마운트 시 타이머 정리
     useEffect(() => {
         return () => {
-            if (timerRef.current) clearInterval(timerRef.current);
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
     }, []);
-
-    // 스킬 활성화 시 타이머 시작
-    useEffect(() => {
-        if (isSkillActive && !timerRef.current) {
-            startTimer();
-        }
-    }, [isSkillActive, startTimer]);
 
     // 포즈 유사도 계산 함수
     const calculatePoseSimilarity = (detectedPose, targetPose) => {
@@ -130,7 +104,7 @@ export default function SkillCanvas(
             canvasCtx.drawImage(videoElement, 0, 0, width, height);
         }
 
-        if (isSkillActive && remainingTime > 0 && image) {
+        if (isSkillActive && image) {
             const position = skillConfigRef.current.imagePosition(poseLandmarks, width, height);
             console.log('Drawing skill image on canvas at position:', position);
             canvasCtx.drawImage(image, position.x, position.y, skillConfigRef.current.imageSize.width, skillConfigRef.current.imageSize.height);
@@ -139,7 +113,7 @@ export default function SkillCanvas(
         canvasCtx.restore();
 
         animationFrameRef.current = requestAnimationFrame(processFrame);
-    }, [videoElement, isSkillActive, remainingTime, image, poseLandmarks, width, height]);
+    }, [videoElement, isSkillActive, image, poseLandmarks, width, height]);
 
     // 포즈 랜드마크 처리 및 유사도 계산
     const processPose = useCallback(
@@ -178,7 +152,7 @@ export default function SkillCanvas(
         return () => clearInterval(interval);
     }, [poseLandmarks, processPose]);
 
-    // 10초 후 포즈 유사도 평균 계산
+    // 5초 후 포즈 유사도 평균 계산
     useEffect(() => {
         if (remainingVisibleTime === 0 && !hasComputedAverage && poseSimilarities.length > 0) {
             const averagePoseSimilarity = poseSimilarities.reduce((sum, value) => sum + value, 0) / poseSimilarities.length;
@@ -186,11 +160,12 @@ export default function SkillCanvas(
             console.log("Average Pose Similarity:", averagePoseSimilarity.toFixed(2));
             console.log("Total Similarity:", similarAverage.toFixed(2));
             console.log(skillType, similarAverage);
-            emitUseSkill( skillType, similarAverage );
+            emitUseSkill(skillType, similarAverage);
             setHasComputedAverage(true); 
 
+            // 5초 후 NULL 값을 보내는 타이머 설정
             setTimeout(() => {
-                emitUseSkill( null, null );
+                emitUseSkill(null, null);
             }, 5000);
         }
     }, [remainingVisibleTime, poseSimilarities, voiceSimilarityResult, emitUseSkill, skillType, hasComputedAverage]);
@@ -218,15 +193,12 @@ export default function SkillCanvas(
             <div id="canvas-timer">
                 <span className='timer-value'>{remainingVisibleTime}</span>초 후에 캔버스가 사라집니다
             </div>
-            <div id="skill-timer">
-                <span className='timer-value'>{remainingTime}</span>초만 더 버텨라!
-            </div>
             <div>
                 {similarityResult !== null && (
                     <div id="similarity" style={{ color: skillConfig.textColor }}>
                         <p>Similarity: {similarityResult.toFixed(2)}</p>
                         <p>Voice Similarity: {voiceSimilarityResult?.toFixed(2)}</p>
-                        {isSkillActive && remainingTime > 0 && (
+                        {isSkillActive && (
                             <p>{skillConfig.activationMessage} ({skillConfig.name} Skill 발동!!)</p>
                         )}
                     </div>
@@ -235,3 +207,4 @@ export default function SkillCanvas(
         </div>
     );
 }
+
