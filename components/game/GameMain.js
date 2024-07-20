@@ -118,10 +118,10 @@ export default function GameMain() {
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
-        width: (['playing', 'finished'].includes(gameStatus)) ? '200px' : 'calc(40vw - 10px)',
-        height: ['playing', 'finished'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
+        width: (['playing', 'finished', 'skillTime'].includes(gameStatus)) ? '200px' : 'calc(40vw - 10px)',
+        height: ['playing', 'finished', 'skillTime'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
         zIndex: 30,
-        ...(['playing', 'finished'].includes(gameStatus)
+        ...(['playing', 'finished', 'skillTime'].includes(gameStatus)
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : { 
                 top: '50%',
@@ -172,7 +172,7 @@ export default function GameMain() {
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
-            {gameStatus === 'playing' && <GaugeUi />}
+            {gameStatus === 'playing'  && <GaugeUi />}
             <div style={videoContainerStyle(true)}>
                 <VideoProcessor
                     onLandmarksUpdate={handleLandmarksUpdate}

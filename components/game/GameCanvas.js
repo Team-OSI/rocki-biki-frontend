@@ -36,25 +36,36 @@ function Scene({ receivedPoseData, landmarks, socket }) {
   const [background, setBackground] = useState(skillBackgrounds.default);
   // const opponentSkill = useSocketStore(state => state.opponentSkill);
   const opponentSkills = useGameStore(state => state.opponentSkills);
+  const playerSkills = useGameStore(state => state.playerSkills);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (opponentSkills) {
-      console.log(opponentSkills[0]);
-      setBackground(skillBackgrounds[opponentSkills[0]] || skillBackgrounds.default);
-      
-      // Clear any existing timer
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
+    if (opponentSkills || playerSkills) {
+        let skill = null;
 
-      // Set a new timer to reset the background after 10 seconds
-      timerRef.current = setTimeout(() => {
-        setBackground(skillBackgrounds.default);
-        timerRef.current = null;
-      }, 10000);
+        // 우선 순위에 따라 널이 아닌 스킬을 선택
+        if (opponentSkills && opponentSkills[0]) {
+            skill = opponentSkills[0];
+        } else if (playerSkills && playerSkills[0]) {
+            skill = playerSkills[0];
+        }
+
+        if (skill) {
+            console.log(skill);
+            setBackground(skillBackgrounds[skill] || skillBackgrounds.default);
+
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+            }
+
+            timerRef.current = setTimeout(() => {
+                setBackground(skillBackgrounds.default);
+                timerRef.current = null;
+            }, 10000);
+        }
     }
-  }, [opponentSkills]);
+}, [opponentSkills, playerSkills]);
+
 
   return (
     <>

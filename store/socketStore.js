@@ -84,11 +84,19 @@ const useSocketStore = create((set, get) => ({
         }
     },
 
-    // 스킬 보내기
+    // 스킬 시전 보내기
     emitCastSkill: (skillType) => {
         const { socket } = get();
         if (socket) {
             socket.emit('castSkill', { skillType: skillType});
+        }
+    },
+
+    // 스킬 사용 보내기
+    emitUseSkill: (skillType,similarAverage) => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('useSkill', { skillType: skillType, similarAverage: similarAverage });
         }
     },
 
