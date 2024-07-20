@@ -1,13 +1,17 @@
 'use client'
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Room from '@/components/lobby/Room';
-import RoomButton from '@/components/lobby/RoomButton';
-import RoomModal from '@/components/lobby/RoomModal';
-import NicknameModal from '@/components/lobby/NicknameModal';
+import dynamic from 'next/dynamic';
+
+const Room = dynamic(() => import('@/components/lobby/Room'));
+const RoomButton = dynamic(() => import('@/components/lobby/RoomButton'));
+const RoomModal = dynamic(() => import('@/components/lobby/RoomModal'));
+const NicknameModal = dynamic(() => import('@/components/lobby/NicknameModal'));
+// import Room from '@/components/lobby/Room';
+// import RoomButton from '@/components/lobby/RoomButton';
+// import RoomModal from '@/components/lobby/RoomModal';
+// import NicknameModal from '@/components/lobby/NicknameModal';
 import useSocketStore from '@/store/socketStore';
-import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 import useUserStore from '@/store/userStore';
 import { useTitle } from "@/app/contexts/TitleContext";
 import {getNickname, getUserEmail} from "@/api/user/api";
@@ -22,7 +26,7 @@ export default function Lobby() {
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userNickname, setUserNickname] = useState('');
-  const [userProfileImage, setUserProfileImage] = useState('')
+  const [userProfileImage, setUserProfileImage] = useState('');
   const { setTitle } = useTitle();
 
   useEffect(() => {
@@ -54,37 +58,38 @@ export default function Lobby() {
       setUserNickname('123');
     });
     return () => closeSocket;
-  },[initSocket, closeSocket]);
+  },[initSocket, closeSocket, setSocketId]);
 
   useEffect(() => {
     setTitle("Lobby")
   }, [setTitle]);
 
-  useEffect(() => {
-    filterRooms();
-  }, [rooms, searchTerm]);
-
+  
   const goGame = (roomId) => {
     joinRoom(roomId, userEmail, userNickname, userProfileImage);
     router.push(`/game?roomId=${roomId}`);
   };
-
+  
   const handleCreateRoom = (roomData) => {
     addRoom(roomData, (newRoom) => {
       goGame(newRoom);
     });
   };
-
+  
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
-
-  const filterRooms = () => {
+  
+  const filterRooms = useCallback(() => {
     const filtered = Object.entries(rooms).filter(([roomId, room]) =>
-        room.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredRooms(filtered);
-  };
+      room.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  setFilteredRooms(filtered);
+}, [rooms, searchTerm]);
+
+useEffect(() => {
+  filterRooms();
+}, [filterRooms]);
 
   const handleNicknameSubmit = async (nickname) => {
     try {
