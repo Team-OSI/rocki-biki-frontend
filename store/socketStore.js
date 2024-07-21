@@ -27,11 +27,11 @@ const useSocketStore = create((set, get) => ({
             set({ rooms });
         })
 
-        newSocket.on('opponentSkillUsed', ({ skillType }) => {
-            set({ opponentSkill: { skillType } });
-            console.log("받은 데이터: ", skillType)
-            // setTimeout(() => set({ opponentSkill: null }), 5000);
-        });
+        // newSocket.on('opponentSkillUsed', ({ skillType }) => {
+        //     set({ opponentSkill: { skillType } });
+        //     console.log("받은 데이터: ", skillType)
+        //     // setTimeout(() => set({ opponentSkill: null }), 5000);
+        // });
         set({ socket: newSocket});
         return newSocket;
     },
@@ -84,19 +84,30 @@ const useSocketStore = create((set, get) => ({
         }
     },
 
-    // useSkill: () => (skillType) => {
-    //     const { socket } = get();
-    //     if (socket) {
-    //         socket.emit('castSkill', { skillType, timeStamp: Date.now() });
-    //     }
-    // },
-    
+    // 스킬 시전 보내기
+    emitCastSkill: (skillType) => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('castSkill', { skillType: skillType});
+        }
+    },
+
+    // 스킬 사용 보내기
+    emitUseSkill: (skillType,similarAverage) => {
+        const { socket } = get();
+        console.log(skillType, similarAverage);
+        if (socket) {
+            socket.emit('useSkill', { skillType: skillType, similarAverage: similarAverage });
+        }
+    },
+
     useSkill: () => (skillType, roomId) => {
         const { socket } = get();
         if (socket) {
-            socket.emit('castSkill', { skillType, roomId, timeStamp: Date.now() });
+            socket.emit('kill', { skillType, roomId, timeStamp: Date.now() });
         }
     },
+    
 
     // 데미지 보내기
     emitDamage: (damage) => {

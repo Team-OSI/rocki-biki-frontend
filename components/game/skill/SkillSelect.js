@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import ProgressButton from './ProgressButton';
 import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import SkillCanvas from './SkillCanvas';
+import useSocketStore from '@/store/socketStore';
 
 export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill, finalTranscript }) {
   const canvasRef = useRef(null);
@@ -15,6 +16,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const [shieldImage, setShieldImage] = useState(null);
   const [healImage, setHealImage] = useState(null);
   const [attackImage, setAttackImage] = useState(null);
+
+  const emitCastSkill = useSocketStore(state=>state.emitCastSkill);
 
   const buttonWidth = 120;
   const buttonHeight = 80;
@@ -161,13 +164,14 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   // 스킬에 따른 캔버스 호출
   useEffect(() => {
     if (activeSkill) {
+      emitCastSkill(activeSkill);
+      console.log(activeSkill);
       if (activeSkill === 'Shield') {
         setShowShieldSkill(true);
         setShowHealSkill(false);
         setShowAttackSkill(false);
       } 
       else if (activeSkill === 'Heal') {
-        console.log("힐!!!!");
         setShowShieldSkill(false);
         setShowHealSkill(true);
         setShowAttackSkill(false);
@@ -237,12 +241,13 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         config.show && (
           <SkillCanvas
             key={skillType}
-            videoElement={localVideoRef.current}
+            videoElement={localVideoRef.current.getVideoElement()} // 올바른 videoElement 전달
             image={config.image}
             onSkillComplete={handleSkillComplete}
             poseLandmarks={poseLandmarks}
             skillConfig={config.skillConfig}
             finalTranscript={finalTranscript}
+            skillType={skillType}
           />
         )
       ))}
