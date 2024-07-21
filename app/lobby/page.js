@@ -101,7 +101,7 @@ useEffect(() => {
   };
 
   return (
-      <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/background.webp')" }}>
+      <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/background.png')" }}>
         <div className="mt-32 flex flex-col items-center w-full max-w-screen-md">
           <div className="w-full p-6 bg-blue-100 rounded-lg shadow-lg">
             <div className="flex justify-center items-center mb-6">

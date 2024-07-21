@@ -32,7 +32,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative pt-5 flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/background.webp')" }}>
+    <div className="relative pt-5 flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/background.png')" }}>
       <div className="w-full animate-bounce mb-1 mt-5 flex flex-col items-center font-bold">
         <Image
             src="/images/rockibiki_logo.webp"
