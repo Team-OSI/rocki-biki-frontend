@@ -66,15 +66,116 @@ const Timer = ({ count }) => {
     </TimerContainer>
   );
 };
+
 const decreaseAnimation = keyframes`
-  from { width: 100%; }
-  to { width: 0%; }
-`
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+`;
+
+const HealthBarContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  border-radius: 400px;
+`;
+
+const BaseHealthBar = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 400px;
+  transform-origin: left;
+`;
+
+
+const AnimatedHealthBar = styled(BaseHealthBar)`
+  background-color: ${props => props.isPlayer 
+    ? 'rgba(252, 165, 165, 0.8)' // 연한 빨강 (player)
+    : 'rgba(147, 197, 253, 0.8)' // 연한 파랑 (opponent)
+  };
+`;
+
+const CurrentHealthBar = styled(BaseHealthBar)`
+  background-color: ${props => props.isPlayer 
+    ? 'rgba(220, 38, 38, 0.8)' // 진한 빨강 (player)
+    : 'rgba(37, 99, 235, 0.8)' // 진한 파랑 (opponent)
+  };
+  transition: transform 0.5s ease-out;
+  z-index: 1;
+`;
+const fadeInOut = keyframes`
+  0% { opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { opacity: 0; }
+`;
+
+const DamageOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  pointer-events: none;
+  z-index: 9999;
+  animation: ${fadeInOut} 0.5s ease-in-out;
+`;
+
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner } = useGameStore();
   const socket = useSocketStore(state => state.socket);
   const [count, setCount] = useState(60);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [currentPlayerHealth, setCurrentPlayerHealth] = useState(playerHealth);
+  const [previousPlayerHealth, setPreviousPlayerHealth] = useState(playerHealth);
+  const [currentOpponentHealth, setCurrentOpponentHealth] = useState(opponentHealth);
+  const [previousOpponentHealth, setPreviousOpponentHealth] = useState(opponentHealth);
+
+  const [isPlayerDecreasing, setIsPlayerDecreasing] = useState(false);
+  const [isOpponentDecreasing, setIsOpponentDecreasing] = useState(false);
+
+  const [showDamageOverlay, setShowDamageOverlay] = useState(false);
+
+
+  useEffect(() => {
+    if (playerHealth < currentPlayerHealth) {
+      setPreviousPlayerHealth(currentPlayerHealth);
+      setCurrentPlayerHealth(playerHealth);
+      setIsPlayerDecreasing(true);
+      setShowDamageOverlay(true);
+      setTimeout(() => setShowDamageOverlay(false), 500);
+    } else {
+      setCurrentPlayerHealth(playerHealth);
+    }
+  }, [playerHealth]);
+
+  useEffect(() => {
+    if (opponentHealth < currentOpponentHealth) {
+      setPreviousOpponentHealth(currentOpponentHealth);
+      setCurrentOpponentHealth(opponentHealth);
+      setIsOpponentDecreasing(true);
+    } else {
+      setCurrentOpponentHealth(opponentHealth);
+    }
+  }, [opponentHealth]);
+
+  useEffect(() => {
+    if (isPlayerDecreasing) {
+      const timer = setTimeout(() => setIsPlayerDecreasing(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isPlayerDecreasing]);
+
+  useEffect(() => {
+    if (isOpponentDecreasing) {
+      const timer = setTimeout(() => setIsOpponentDecreasing(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpponentDecreasing]);
 
   useEffect(() => {
     preloadImages()
@@ -113,22 +214,44 @@ export default function StateBar() {
   }
 
   return (
+    <>
     <div className='absolute z-50 top-1 w-full h-full'>
       <div className='absolute flex flex-row justify-between w-full h-full px-4'>
         <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
-          <div 
-            className="bg-blue-600 h-4 rounded-full dark:bg-blue-500" 
-            style={{width: `${opponentHealth}%`}}
-          ></div>
+        <HealthBarContainer>
+          <CurrentHealthBar 
+            style={{transform: `scaleX(${currentOpponentHealth / 100})`}} 
+            isPlayer={false} 
+          />
+          {isOpponentDecreasing && (
+              <AnimatedHealthBar 
+                style={{
+                  transform: `scaleX(${previousOpponentHealth / 100})`,
+                }} 
+                isPlayer={false}
+              />
+            )}
+        </HealthBarContainer>
         </div>
         <div className='font-custom text-lg'>
           <Timer count={count} />
         </div>
         <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
-          <div 
-            className="bg-red-600 h-4 rounded-full dark:bg-red-500" 
-            style={{width: `${playerHealth}%`}}
-          ></div>
+        <HealthBarContainer>
+            <CurrentHealthBar 
+              style={{transform: `scaleX(${currentPlayerHealth / 100})`}} 
+              isPlayer={true} 
+            />
+            {isPlayerDecreasing && (
+              <AnimatedHealthBar 
+                style={{
+                  transform: `scaleX(${previousPlayerHealth / 100})`,
+                }} 
+                isPlayer={true}
+              />
+            )}
+          </HealthBarContainer>
+
         </div>
       </div>
       {gameStatus === 'finished' && (
@@ -147,5 +270,7 @@ export default function StateBar() {
         </div>
       )}
     </div>
+    {showDamageOverlay && <DamageOverlay />}
+  </>
   )
 }
