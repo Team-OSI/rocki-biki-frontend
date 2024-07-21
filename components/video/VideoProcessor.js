@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } f
 import useWorkerStore from '@/store/workerStore';
 import useGameStore from '@/store/gameStore';
 
-const VideoProcessor = forwardRef(({ onLandmarksUpdate, style, gameStatus }, ref) => {
+const VideoProcessor = forwardRef(function VideoProcessor({ onLandmarksUpdate, style, gameStatus }, ref) {
     const videoRef = useRef(null);
     const { initWorker, setWorkerMessageHandler, isInitialized } = useWorkerStore();
     const myReady = useGameStore(state => state.myReady);

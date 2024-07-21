@@ -1,13 +1,13 @@
 'use client';
 
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Stats, PerspectiveCamera, Environment, useTexture } from '@react-three/drei';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Stats, PerspectiveCamera, useTexture } from '@react-three/drei';
 import { Player } from './Player';
 import { Opponent } from './Opponent';
 import { useEffect, useState, useRef } from 'react';
 import StateBar from './StateBar';
-import useSocketStore from "@/store/socketStore";
 import { Ring } from './Ring';
+import useGameStore from "@/store/gameStore";
 
 const skillBackgrounds = {
   default: '/images/default_background.jpg',
