@@ -79,8 +79,8 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
     }, 1000);
   }, [onReady]);
 
-  const checkReadyPose = useCallback(
-      throttle(() => {
+  const checkReadyPose = useMemo(
+      () => throttle(() => {
     if (landmarks && canvasRef.current) {
       const requiredLandmarks = extractRequiredLandmarks(landmarks);
       const similarity = calculatePoseSimilarity(requiredLandmarks, targetPose.current);
@@ -101,7 +101,17 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
       }
     }
   }, 500),
-      [landmarks, calculatePoseSimilarity, similarityThreshold, extractRequiredLandmarks, emitPlayerReady, playerReady]);
+      [landmarks,
+        calculatePoseSimilarity,
+        similarityThreshold,
+        extractRequiredLandmarks,
+        emitPlayerReady,
+        playerReady,
+        canvasRef,
+        targetPose,
+        setSimilarityResult,
+        setPlayerReady,
+        setMyReady]);
 
   useEffect(()=>{
     // console.log('readyState: ',gameStatus)
