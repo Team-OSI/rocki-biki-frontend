@@ -20,6 +20,12 @@
       text-white text-center py-2.5
   }
 } 
+@font-face {
+  font-family: 'countFont';
+  src: url('/fonts/EF_jejudoldam(TTF).ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 @keyframes bounce {
   0%, 100% {
     transform: translateY(-25%);
