@@ -1,79 +1,27 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import ProgressButton from './ProgressButton';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
-import SkillCanvas from './SkillCanvas';
 import useSocketStore from '@/store/socketStore';
+import useSTT from '@/hooks/useSTT';
 
 export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill, finalTranscript }) {
   const canvasRef = useRef(null);
-  const [buttonProgress, setButtonProgress] = useState({});
   const [activeSkill, setActiveSkill] = useState(null);
-  const [showShieldSkill, setShowShieldSkill] = useState(false);
-  const [showHealSkill, setShowHealSkill] = useState(false);
-  const [showAttackSkill, setShowAttackSkill] = useState(false);
-  const [shieldImage, setShieldImage] = useState(null);
-  const [healImage, setHealImage] = useState(null);
-  const [attackImage, setAttackImage] = useState(null);
-  const emitCastSkill = useSocketStore(state=>state.emitCastSkill);
+  const [skillText, setSkillText] = useState('');
+  const [skillTextColor, setSkillTextColor] = useState('');
+  const [showSkillText, setShowSkillText] = useState(false);
+  const emitCastSkill = useSocketStore(state => state.emitCastSkill);
+  const similarityThreshold = 0.70;
+  const recognitionActive = useRef(false);
 
-  const buttonWidth = 120;
-  const buttonHeight = 80;
-  const similarityThreshold = 0.50;
-
-  // const buttons = useMemo(() => [
-  //   { 
-  //     id: 'Shield', 
-  //     getX: (canvasWidth) => canvasWidth * 0.8 - buttonWidth / 2,
-  //     getY: (canvasHeight) => canvasHeight * 0.2 - buttonHeight / 2,
-  //     width: buttonWidth, 
-  //     height: buttonHeight, 
-  //     backgroundColor: 'rgba(21, 20, 21, 0.65)', 
-  //     progressColor: 'rgba(245, 234, 39, 0.8)' 
-  //   },
-  //   { 
-  //     id: 'Heal', 
-  //     getX: (canvasWidth) => canvasWidth * 0.8 - buttonWidth / 2,
-  //     getY: (canvasHeight) => canvasHeight * 0.5 - buttonHeight / 2,
-  //     width: buttonWidth, 
-  //     height: buttonHeight, 
-  //     backgroundColor: 'rgba(21, 20, 21, 0.65)', 
-  //     progressColor: 'rgba(246, 36, 145, 0.65)' 
-  //   },
-  //   { 
-  //     id: 'Attack', 
-  //     getX: (canvasWidth) => canvasWidth * 0.8 - buttonWidth / 2,
-  //     getY: (canvasHeight) => canvasHeight * 0.8 - buttonHeight / 2,
-  //     width: buttonWidth, 
-  //     height: buttonHeight, 
-  //     backgroundColor: 'rgba(21, 20, 21, 0.65)', 
-  //     progressColor: 'rgba(0, 0, 255, 0.8)' 
-  //   },
-  // ], []);
-
-  const skillConfigs = {
-    shield: {
-      show: showShieldSkill,
-      image: shieldImage,
-      skillConfig: shieldSkill
-    },
-    heal: {
-      show: showHealSkill,
-      image: healImage,
-      skillConfig: healSkill
-    },
-    attack: {
-      show: showAttackSkill,
-      image: attackImage,
-      skillConfig: attackSkill
-    }
+  const onSTTResult = ({ finalTranscript }) => {
+    console.log('Final STT Result:', finalTranscript);
   };
 
-  const mapHandCoordinates = (hand) => {
-    return [
-      1 - hand[0], // x 좌표 반전
-      hand[1]
-    ];
+  const onSTTError = (event) => {
+    console.error('STT Error:', event);
   };
+
+  const { startRecognition, stopRecognition } = useSTT(onSTTResult, onSTTError);
 
   useEffect(() => {
     // 필요한 이미지 프리 로드
@@ -81,144 +29,60 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     shield_img.src = '/images/love.png';
     shield_img.onload = () => {
       console.log('Heart image loaded successfully');
-      setShieldImage(shield_img);
     };
 
     const heal_img = new Image();
     heal_img.src = '/images/crown.png';
     heal_img.onload = () => {
       console.log('Crown image loaded successfully');
-      setHealImage(heal_img);
     };
 
     const attack_img = new Image();
     attack_img.src = '/images/tattoo.png';
     attack_img.onload = () => {
       console.log('Tattoo image loaded successfully');
-      setAttackImage(attack_img);
     };
   }, []);
 
-  // useEffect(() => {
-  //   if (canvasRef.current) {
-  //     const ctx = canvasRef.current.getContext('2d');
-  //     ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
-      
-  //     if (landmarks?.leftHand && landmarks?.rightHand) {
-  //       const leftHand = mapHandCoordinates(landmarks.leftHand[0]);
-  //       const rightHand = mapHandCoordinates(landmarks.rightHand[0]);
-  
-  //       // 손 위치 시각화 (디버깅용)
-  //       // [leftHand, rightHand].forEach(hand => {
-  //       //   ctx.beginPath();
-  //       //   ctx.arc(hand[0] * canvasSize.width, hand[1] * canvasSize.height, 10, 0, 2 * Math.PI);
-  //       //   ctx.fillStyle = 'red';
-  //       //   ctx.fill();
-  //       // });
-  
-  //       buttons.forEach(button => {
-  //         if (isHandOverButton(leftHand, button, canvasSize) || isHandOverButton(rightHand, button, canvasSize)) {
-  //           updateButtonProgress(button.id);
-  //         } else {
-  //           resetButtonProgress(button.id);
-  //         }
-
-  //       });
-  //     }
-  //   }
-  // }, [landmarks, canvasSize, buttons]);
-
-  const isHandOverButton = (hand, button, canvasSize) => {
-    if (!hand) return false;
-    const [x, y] = hand;
-    const buttonX = button.getX(canvasSize.width) / canvasSize.width;
-    const buttonY = button.getY(canvasSize.height) / canvasSize.height;
-    const buttonWidth = button.width / canvasSize.width;
-    const buttonHeight = button.height / canvasSize.height;
-
-    const isOver = x > buttonX && x < buttonX + buttonWidth &&
-                  y > buttonY && y < buttonY + buttonHeight;
-    
-    return isOver;
-  };
-
-  const updateButtonProgress = (buttonId) => {
-    setButtonProgress(prev => {
-      const newProgress = Math.min((prev[buttonId] || 0) + 0.05, 1);
-      if (newProgress >= 1) {
-        setActiveSkill(buttonId);
-        console.log("Calling onUseSkill with:", buttonId.toLowerCase());
-        onUseSkill(buttonId.toLowerCase());
-        return { ...prev, [buttonId]: 0 };
-      }
-      return { ...prev, [buttonId]: newProgress };
-    });
-  };
-
-  const resetButtonProgress = (buttonId) => {
-      setButtonProgress(prev => ({ ...prev, [buttonId]: 0 }));
-  };
-
-  // 스킬에 따른 캔버스 호출
   useEffect(() => {
     if (activeSkill) {
       emitCastSkill(activeSkill);
       console.log(activeSkill);
       if (activeSkill === 'Shield') {
-        setShowShieldSkill(true);
-        setShowHealSkill(false);
-        setShowAttackSkill(false);
-      } 
-      else if (activeSkill === 'Heal') {
-        setShowShieldSkill(false);
-        setShowHealSkill(true);
-        setShowAttackSkill(false);
-      } 
-      else if (activeSkill === 'Attack') {
-        setShowShieldSkill(false);
-        setShowHealSkill(false);
-        setShowAttackSkill(true);
+        setSkillText(shieldSkill.skillReading);
+        setSkillTextColor(shieldSkill.textColor);
+      } else if (activeSkill === 'Heal') {
+        setSkillText(healSkill.skillReading);
+        setSkillTextColor(healSkill.textColor);
+      } else if (activeSkill === 'Attack') {
+        setSkillText(attackSkill.skillReading);
+        setSkillTextColor(attackSkill.textColor);
+      }
+
+      if (!recognitionActive.current) {
+        setShowSkillText(true);
+        startRecognition();
+        console.log(1); // 포즈가 인식되면 STT 시작
+        recognitionActive.current = true;
+        const timeoutId = setTimeout(() => {
+          console.log(2) // 5초 후 STT 종료
+          recognitionActive.current = false;
+          setShowSkillText(false); // 5초 후 텍스트와 배경 숨김
+          handleSkillComplete();
+          stopRecognition();
+        }, 5000);
+        return () => clearTimeout(timeoutId); // 컴포넌트 언마운트 시 타임아웃 정리
       }
     }
-  }, [activeSkill]);
+  }, [activeSkill, emitCastSkill, startRecognition, stopRecognition]);
 
   const handleSkillComplete = useCallback(() => {
-    setShowShieldSkill(false);
-    setShowHealSkill(false);
-    setShowAttackSkill(false);
     setActiveSkill(null);
+    setSkillText('');
+    setSkillTextColor('');
+    clearCanvas();
   }, []);
 
-  useEffect(() => {
-    if (finalTranscript) {
-      console.log(finalTranscript)
-      processTranscript(finalTranscript);
-    }
-  }, [finalTranscript]);
-
-  const processTranscript = (transcript) => {
-    console.log(transcript)
-    const commands = transcript.split('럭키 비키').map(command => command.trim());
-
-    if (commands.length > 1) {
-      const nextCommand = commands[1].split(' ')[0];
-      switch (nextCommand) {
-        case '힐':
-          setActiveSkill('Heal');
-          break;
-        case '공격':
-          setActiveSkill('Attack');
-          break;
-        case '방어':
-          setActiveSkill('Shield');
-          break;
-        default:
-          console.log('Unknown command:', nextCommand);
-      }
-    }
-  };
-
-  // 포즈 유사도 계산 함수 추가
   const calculatePoseSimilarity = (detectedPose, targetPose) => {
     const shoulderWidth = Math.abs(detectedPose.leftShoulder.x - detectedPose.rightShoulder.x);
 
@@ -269,37 +133,30 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     }
   }, [poseLandmarks]);
 
+  const clearCanvas = () => {
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
+    }
+  };
+
   return (
-    <div className='skill-select-container' style={{ width: canvasSize.width, height: canvasSize.height, position: 'absolute', top: 0, left: 0 }}>
+    <div className='skill-select-container relative' style={{ width: canvasSize.width, height: canvasSize.height }}>
       <canvas
         ref={canvasRef}
         width={canvasSize.width}
         height={canvasSize.height}
         style={{ position: 'absolute', top: 0, left: 0 }}
       />
-      {/* {buttons.map(button => (
-        <ProgressButton
-          key={button.id}
-          {...button}
-          x={button.getX(canvasSize.width)}
-          y={button.getY(canvasSize.height)}
-          progress={buttonProgress[button.id] || 0}
-        />
-      ))} */}
-      {Object.entries(skillConfigs).map(([skillType, config]) => (
-        config.show && (
-          <SkillCanvas
-            key={skillType}
-            videoElement={localVideoRef.current.getVideoElement()}
-            image={config.image}
-            onSkillComplete={handleSkillComplete}
-            poseLandmarks={poseLandmarks}
-            skillConfig={config.skillConfig}
-            finalTranscript={finalTranscript}
-            skillType={skillType}
-          />
-        )
-      ))}
+      {showSkillText && (
+        <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+          <div className="p-4 rounded-lg shadow-lg" style={{ backgroundImage: 'url(/images/parchment.png)', backgroundSize: 'cover', color: skillTextColor }}>
+            <span className="text-3xl">
+              {skillText}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
