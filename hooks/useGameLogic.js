@@ -25,7 +25,6 @@ const useGameLogic = () => {
 
   // 게임 상태 업데이트 처리
   const handleGameUpdate = useCallback((newState) => {
-    console.log(1);
     console.log('게임 상태 업데이트 처리: ', newState)
     setGameStatus(newState, socket.id);
   }, [setGameStatus, socket]);

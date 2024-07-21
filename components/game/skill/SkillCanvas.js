@@ -4,8 +4,7 @@ import { throttle } from "lodash";
 import stringSimilarity from 'string-similarity';
 import useSocketStore from '@/store/socketStore';
 
-const similarityThreshold = 0.60;
-const voiceSimilarityThreshold = 0.60;
+const similarityThreshold = 0.20;
 const CANVAS_VISIBLE_DURATION = 5;
 
 export default function SkillCanvas(
@@ -26,11 +25,11 @@ export default function SkillCanvas(
     const [remainingVisibleTime, setRemainingVisibleTime] = useState(CANVAS_VISIBLE_DURATION);
     const [isSkillActive, setIsSkillActive] = useState(false);
     const [isCanvasVisible, setIsCanvasVisible] = useState(true);
-    const [voiceSimilarityResult, setVoiceSimilarityResult] = useState(null);
     const emitUseSkill = useSocketStore(state => state.emitUseSkill);
     const [poseSimilarities, setPoseSimilarities] = useState([]);
     const [hasComputedAverage, setHasComputedAverage] = useState(false); 
-
+    const [voiceSimilarities, setVoiceSimilarities] = useState([]);
+    const [voiceSimilarityResult,setVoiceSimilarityResult] = useState(null);
     // 컴포넌트 마운트 시 캔버스 가시성 타이머 시작
     useEffect(() => {
         const visibilityTimer = setInterval(() => {
@@ -105,6 +104,7 @@ export default function SkillCanvas(
         }
 
         if (isSkillActive && image) {
+            console.log(1);
             const position = skillConfigRef.current.imagePosition(poseLandmarks, width, height);
             console.log('Drawing skill image on canvas at position:', position);
             canvasCtx.drawImage(image, position.x, position.y, skillConfigRef.current.imageSize.width, skillConfigRef.current.imageSize.height);
@@ -135,9 +135,10 @@ export default function SkillCanvas(
                     const voiceSimilarity = calculateVoiceSimilarity(finalTranscript, skillConfig.skillReading);
                     setSimilarityResult(poseSimilarity);
                     setVoiceSimilarityResult(voiceSimilarity);
-                    setIsSkillActive(poseSimilarity >= similarityThreshold && voiceSimilarity >= voiceSimilarityThreshold);
+                    setIsSkillActive(poseSimilarity >= similarityThreshold);
 
                     setPoseSimilarities(prev => [...prev, poseSimilarity]);
+                    setVoiceSimilarities(prev => [...prev, voiceSimilarity]);
                 }
             }
         }, 1000), // 1000ms마다 최대 한 번 실행
@@ -156,10 +157,10 @@ export default function SkillCanvas(
     useEffect(() => {
         if (remainingVisibleTime === 0 && !hasComputedAverage && poseSimilarities.length > 0) {
             const averagePoseSimilarity = poseSimilarities.reduce((sum, value) => sum + value, 0) / poseSimilarities.length;
-            const similarAverage = averagePoseSimilarity + (voiceSimilarityResult || 0);
+            const maxVoiceSimilarity = Math.max(...voiceSimilarities);
+            const similarAverage = averagePoseSimilarity + maxVoiceSimilarity;
             console.log("Average Pose Similarity:", averagePoseSimilarity.toFixed(2));
             console.log("Total Similarity:", similarAverage.toFixed(2));
-            console.log(skillType, similarAverage);
             emitUseSkill(skillType, similarAverage);
             setHasComputedAverage(true); 
 
@@ -168,7 +169,7 @@ export default function SkillCanvas(
                 emitUseSkill(null, null);
             }, 5000);
         }
-    }, [remainingVisibleTime, poseSimilarities, voiceSimilarityResult, emitUseSkill, skillType, hasComputedAverage]);
+    }, [remainingVisibleTime, poseSimilarities, voiceSimilarities, emitUseSkill, skillType, hasComputedAverage]);
 
     // 프레임 처리 시작 및 정리
     useEffect(() => {
@@ -207,4 +208,3 @@ export default function SkillCanvas(
         </div>
     );
 }
-
