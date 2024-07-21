@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoginDiv from '@/components/login/LoginDiv';
 import Cookies from 'js-cookie';
+import Image from "next/image";
             
 export default function App() {
   const [login, setLogin] = useState(false);
@@ -31,10 +32,14 @@ export default function App() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
-      <div className="absolute top-16 w-full flex flex-col items-center gap-4 font-bold">
-        <h1 className="text-8xl">ROCKY</h1>
-        <h1 className="text-8xl">BIKI</h1>
+    <div className="relative pt-5 flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/background.webp')" }}>
+      <div className="w-full animate-bounce mb-1 mt-5 flex flex-col items-center font-bold">
+        <Image
+            src="/images/rockibiki_logo.webp"
+            alt="ROCKI BIKI Logo"
+            width={400}
+            height={400}
+        />
       </div>
       {showLoginDiv ? (
         <div className="flex flex-col items-center gap-3 w-full max-w-screen-md mt-80 mb-30">
