@@ -106,7 +106,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       const ctx = canvasRef.current.getContext('2d');
       ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
       
-      if (landmarks.leftHand && landmarks.rightHand) {
+      if (landmarks?.leftHand && landmarks?.rightHand) {
         const leftHand = mapHandCoordinates(landmarks.leftHand[0]);
         const rightHand = mapHandCoordinates(landmarks.rightHand[0]);
   
