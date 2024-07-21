@@ -1,19 +1,19 @@
 'use client';
 
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Stats, PerspectiveCamera, Environment, useTexture } from '@react-three/drei';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Stats, PerspectiveCamera, useTexture } from '@react-three/drei';
 import { Player } from './Player';
 import { Opponent } from './Opponent';
 import { useEffect, useState, useRef } from 'react';
 import StateBar from './StateBar';
-import useSocketStore from "@/store/socketStore";
 import { Ring } from './Ring';
+import useGameStore from "@/store/gameStore";
 
 const skillBackgrounds = {
   default: '/images/default_background.jpg',
-  attack: '/images/attack_background.png',
-  heal: '/images/heal_background.jpg',
-  shield: '/images/shield_background.jpg',
+  Attack: '/images/attack_background.png',
+  Heal: '/images/heal_background.jpg',
+  SVGAnimateElementhield: '/images/shield_background.jpg',
 };
 
 function BackGround({ texturePath }) {
@@ -32,26 +32,38 @@ function BackGround({ texturePath }) {
 
 function Scene({ receivedPoseData, landmarks, socket }) {
   const [background, setBackground] = useState(skillBackgrounds.default);
-  const opponentSkill = useSocketStore(state => state.opponentSkill);
+  // const opponentSkill = useSocketStore(state => state.opponentSkill);
+  const opponentSkills = useGameStore(state => state.opponentSkills);
+  const playerSkills = useGameStore(state => state.playerSkills);
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (opponentSkill) {
-      console.log(opponentSkill);
-      setBackground(skillBackgrounds[opponentSkill.skillType] || skillBackgrounds.default);
-      
-      // Clear any existing timer
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
+    if (opponentSkills || playerSkills) {
+        let skill = null;
 
-      // Set a new timer to reset the background after 10 seconds
-      timerRef.current = setTimeout(() => {
-        setBackground(skillBackgrounds.default);
-        timerRef.current = null;
-      }, 10000);
+        // 우선 순위에 따라 널이 아닌 스킬을 선택
+        if (opponentSkills && opponentSkills[0]) {
+            skill = opponentSkills[0];
+        } else if (playerSkills && playerSkills[0]) {
+            skill = playerSkills[0];
+        }
+
+        if (skill) {
+            console.log(skill);
+            setBackground(skillBackgrounds[skill] || skillBackgrounds.default);
+
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+            }
+
+            timerRef.current = setTimeout(() => {
+                setBackground(skillBackgrounds.default);
+                timerRef.current = null;
+            }, 10000);
+        }
     }
-  }, [opponentSkill]);
+}, [opponentSkills, playerSkills]);
+
 
   return (
     <>

@@ -1,14 +1,18 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import useWorkerStore from '@/store/workerStore';
 import useGameStore from '@/store/gameStore';
 
-const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
+const VideoProcessor = forwardRef(function VideoProcessor({ onLandmarksUpdate, style, gameStatus }, ref) {
     const videoRef = useRef(null);
     const { initWorker, setWorkerMessageHandler, isInitialized } = useWorkerStore();
     const myReady = useGameStore(state => state.myReady);
     const [isVideoReady, setIsVideoReady] = useState(false);
     const [isWorkerReady, setIsWorkerReady] = useState(false);
+
+    useImperativeHandle(ref, () => ({
+        getVideoElement: () => videoRef.current,
+    }));
 
     useEffect(() => {
         if (typeof window === 'undefined' || !videoRef.current) return;
@@ -32,7 +36,7 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
         const setupWorker = async () => {
             try {
                 await initWorker(videoRef.current.videoWidth, videoRef.current.videoHeight);
-                const { worker, videoArray: videoArray } = useWorkerStore.getState();
+                const { worker, videoArray } = useWorkerStore.getState();
                 console.log('워커 & 공유 버퍼 (비디오) 준비 완료!! :', worker, videoArray);
                 setIsWorkerReady(true);
 
@@ -82,7 +86,7 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
         <>
             <video
                 className={`scale-x-[-1] opacity-80 mt-5 transition-transform ${
-                    (myReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
+                    (myReady &&!['playing', 'finished', 'skillTime'].includes(gameStatus)) ? 'ring-green-400 ring-8' : ''
                 }`}
                 ref={videoRef}
                 style={{...style, display: isVideoReady ? 'block' : 'none'}}
@@ -93,6 +97,6 @@ const VideoProcessor = ({ onLandmarksUpdate, style, gameStatus }) => {
             {isVideoReady && !isWorkerReady && <div>Initializing worker...</div>}
         </>
     );
-};
+});
 
 export default VideoProcessor;
