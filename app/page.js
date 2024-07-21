@@ -54,7 +54,7 @@ export default function App() {
             onClick={handleButtonClick}
             className="bg-secondary text-white font-bold text-3xl py-5 px-20 rounded-lg hover:bg-secondary-dark transition duration-300"
           >
-            {login ? "Game Start" : "Login"}
+            {login ? "GO ROCKI BIKINI CITY!" : "Login"}
           </button>
         </div>
       )}

@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { throttle } from "lodash";
 import stringSimilarity from 'string-similarity';
@@ -30,6 +30,7 @@ export default function SkillCanvas(
     const [hasComputedAverage, setHasComputedAverage] = useState(false); 
     const [voiceSimilarities, setVoiceSimilarities] = useState([]);
     const [voiceSimilarityResult,setVoiceSimilarityResult] = useState(null);
+
     // 컴포넌트 마운트 시 캔버스 가시성 타이머 시작
     useEffect(() => {
         const visibilityTimer = setInterval(() => {
