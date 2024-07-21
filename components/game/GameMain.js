@@ -109,7 +109,7 @@ export default function GameMain() {
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
-        width: (['playing', 'finished', 'skillTime'].includes(gameStatus)) ? '200px' : 'calc(40vw - 10px)',
+        width: ['playing', 'finished', 'skillTime'].includes(gameStatus) ? '200px' : 'calc(40vw - 10px)',
         height: ['playing', 'finished', 'skillTime'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
         zIndex: 30,
         ...(['playing', 'finished', 'skillTime'].includes(gameStatus)
@@ -193,7 +193,7 @@ export default function GameMain() {
                 )}
                     <video
                         className={`scale-x-[-1] opacity-80 mt-5 transition-transform  ${
-                            (opponentReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
+                            (opponentReady && !['playing', 'finished', 'skillTime'].includes(gameStatus)) ? 'ring-green-400 ring-8' : ''
                           }`}
                         ref={remoteVideoRef}
                         style={videoStyle}

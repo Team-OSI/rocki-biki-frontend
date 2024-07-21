@@ -86,7 +86,7 @@ const VideoProcessor = forwardRef(function VideoProcessor({ onLandmarksUpdate, s
         <>
             <video
                 className={`scale-x-[-1] opacity-80 mt-5 transition-transform ${
-                    (myReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
+                    (myReady &&!['playing', 'finished', 'skillTime'].includes(gameStatus)) ? 'ring-green-400 ring-8' : ''
                 }`}
                 ref={videoRef}
                 style={{...style, display: isVideoReady ? 'block' : 'none'}}
