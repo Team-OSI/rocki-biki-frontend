@@ -77,7 +77,7 @@ const HealthBarContainer = styled.div`
   height: 100%;
   overflow: hidden;
   position: relative;
-  border-radius: 9999px;
+  border-radius: 400px;
 `;
 
 const BaseHealthBar = styled.div`
@@ -86,7 +86,7 @@ const BaseHealthBar = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: 9999px;
+  border-radius: 400px;
   transform-origin: left;
 `;
 
@@ -106,6 +106,23 @@ const CurrentHealthBar = styled(BaseHealthBar)`
   transition: transform 0.5s ease-out;
   z-index: 1;
 `;
+const fadeInOut = keyframes`
+  0% { opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { opacity: 0; }
+`;
+
+const DamageOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: red;
+  pointer-events: none;
+  z-index: 9999;
+  animation: ${fadeInOut} 0.5s ease-in-out;
+`;
 
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner } = useGameStore();
@@ -121,11 +138,16 @@ export default function StateBar() {
   const [isPlayerDecreasing, setIsPlayerDecreasing] = useState(false);
   const [isOpponentDecreasing, setIsOpponentDecreasing] = useState(false);
 
+  const [showDamageOverlay, setShowDamageOverlay] = useState(false);
+
+
   useEffect(() => {
     if (playerHealth < currentPlayerHealth) {
       setPreviousPlayerHealth(currentPlayerHealth);
       setCurrentPlayerHealth(playerHealth);
       setIsPlayerDecreasing(true);
+      setShowDamageOverlay(true);
+      setTimeout(() => setShowDamageOverlay(false), 500);
     } else {
       setCurrentPlayerHealth(playerHealth);
     }
@@ -192,6 +214,7 @@ export default function StateBar() {
   }
 
   return (
+    <>
     <div className='absolute z-50 top-1 w-full h-full'>
       <div className='absolute flex flex-row justify-between w-full h-full px-4'>
         <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
@@ -247,5 +270,7 @@ export default function StateBar() {
         </div>
       )}
     </div>
+    {showDamageOverlay && <DamageOverlay />}
+  </>
   )
 }
