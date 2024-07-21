@@ -15,9 +15,6 @@ import GaugeUi from './GaugeUi';
 import VideoProcessor from "@/components/video/VideoProcessor";
 import {parseLandmarks} from "@/lib/utils/landmarkParser";
 
-let frameCount = 0;
-const LOG_INTERVAL = 60;
-
 export default function GameMain() {
     const { sharedArray } = useWorkerStore();
     const videoRef = useRef(null);
