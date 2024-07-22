@@ -185,7 +185,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       />
       {showSkillText && (
         <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-          <div className="p-4 rounded-lg shadow-lg" style={{ backgroundImage: 'url(/images/skill.png)', backgroundSize: 'cover', backgroundSize: '200% 200%', color: skillTextColor }}>
+          <div className="p-4 rounded-lg shadow-lg" style={{color: skillTextColor }}>
             <span className="text-3xl">
               {skillText}
             </span>
