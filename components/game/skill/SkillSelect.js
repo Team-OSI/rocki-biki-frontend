@@ -44,19 +44,19 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   useEffect(() => {
     // Load images
     const shield_img = new Image();
-    shield_img.src = '/images/love.png';
+    shield_img.src = '/images/skill/love.png';
     shield_img.onload = () => {
       console.log('Heart image loaded successfully');
     };
 
     const heal_img = new Image();
-    heal_img.src = '/images/crown.png';
+    heal_img.src = '/images/skill/crown.png';
     heal_img.onload = () => {
       console.log('Crown image loaded successfully');
     };
 
     const attack_img = new Image();
-    attack_img.src = '/images/tattoo.png';
+    attack_img.src = '/images/skill/tattoo.png';
     attack_img.onload = () => {
       console.log('Tattoo image loaded successfully');
     };
