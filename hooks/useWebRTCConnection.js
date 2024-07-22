@@ -200,7 +200,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                 const offer = await peerConnection.current.createOffer();
                 await peerConnection.current.setLocalDescription(offer);
                 emitOffer(offer, roomId);
-                startRecognition();
+                // startRecognition();
             } catch (error) {
                 console.error('Error starting call:', error);
             }

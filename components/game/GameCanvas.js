@@ -13,7 +13,7 @@ const skillBackgrounds = {
   default: '/images/default_background.jpg',
   Attack: '/images/attack_background.png',
   Heal: '/images/heal_background.jpg',
-  SVGAnimateElementhield: '/images/shield_background.jpg',
+  Shield: '/images/shield_background.jpg',
 };
 
 function BackGround({ texturePath }) {
@@ -32,10 +32,19 @@ function BackGround({ texturePath }) {
 
 function Scene({ receivedPoseData, landmarks, socket }) {
   const [background, setBackground] = useState(skillBackgrounds.default);
-  // const opponentSkill = useSocketStore(state => state.opponentSkill);
+  const [showBackground, setShowBackground] = useState(true);
+  const gameStatus = useGameStore(state => state.gameStatus);
   const opponentSkills = useGameStore(state => state.opponentSkills);
   const playerSkills = useGameStore(state => state.playerSkills);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (gameStatus === 'skillTime') {
+      setShowBackground(true);
+    } else {
+      setShowBackground(false);
+    }
+  }, [gameStatus]);
 
   useEffect(() => {
     if (opponentSkills || playerSkills) {
@@ -59,11 +68,10 @@ function Scene({ receivedPoseData, landmarks, socket }) {
             timerRef.current = setTimeout(() => {
                 setBackground(skillBackgrounds.default);
                 timerRef.current = null;
-            }, 10000);
+            }, 5000);
         }
     }
 }, [opponentSkills, playerSkills]);
-
 
   return (
     <>
@@ -71,9 +79,13 @@ function Scene({ receivedPoseData, landmarks, socket }) {
       <pointLight position={[10, 10, 10]} intensity={1} />
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
       <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} />
-      <Ring scale={2}/>
-      <BackGround texturePath={background} />
-      {/* <Environment preset='sunset' background /> */}
+      {showBackground ? (
+        <BackGround texturePath={background} />
+      ) : (
+        <Environment preset='sunset' background />
+      )}
+      <Ring />
+
     </>
   );
 }
