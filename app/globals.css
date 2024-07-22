@@ -1,8 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import 'bulma/css/bulma.min.css';
-@import '@fortawesome/fontawesome-free/css/all.min.css';
 
 @layer base {
   a{
