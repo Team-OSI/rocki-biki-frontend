@@ -14,7 +14,7 @@ export const attackSkill = {
     }),
     imageSize: { width: 45, height: 61 },
     activationMessage: "시시해서 죽고 싶어졌다..(ʘ言ʘ╬)",
-    skillReading: "시시해서 죽고 싶어졌다",
+    skillReading: ["시시해서 죽고 싶어졌다", "꿇어라 이것이 너와 나의 눈높이다", "여의 존명을 부르는 것을 이번만 특별히 허하마 여의 이름은 머전드래곤이다"],
     textColor: "gray"
 };
 
@@ -34,7 +34,7 @@ export const healSkill = {
     }),
     imageSize: { width: 144, height: 81 },
     activationMessage: "우웅 나 떄릴꼬야?~(ゝω´･)b⌒☆",
-    skillReading: "설마 나 때릴꼬야",
+    skillReading: ["설마 나 때릴꼬야", "너무 아픈뎅 아픈거 너무 싫엉", "나 너무 아팡 호 해줭"],
     textColor: "plum"
 };
 
@@ -54,6 +54,7 @@ export const shieldSkill = {
     }),
     imageSize: { width: 400, height: 400 },
     activationMessage: "내 마음을 담은 하트~⎝⎛♥‿♥⎞⎠",
-    skillReading: "알러뷰 츄",
+    skillReading: ["시켜줘 전병준 명예소방관", "오늘부터 김광윤은 전병준의 여자친구임을 공식 발표하는 바이다", " 병준씨는 몇살때부터 그렇게 예뻤나"],
     textColor: "yellowgreen"
 };
+ 
