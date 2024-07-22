@@ -1,6 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import 'bulma/css/bulma.min.css';
+@import '@fortawesome/fontawesome-free/css/all.min.css';
 
 @layer base {
   a{
@@ -192,4 +194,19 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #718096; /* Tailwind의 bg-gray-600 색상 */
+}
+
+@keyframes small-bounce {
+  0%, 100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-small-bounce {
+  animation: small-bounce 1s infinite;
 }
