@@ -202,7 +202,7 @@ export function Player({ position, landmarks }) {
             rotation={[(landmarks.rightHand[1][0]-Math.PI), Math.PI , -(landmarks.rightHand[1][1]-Math.PI/2)]}
             scale={0.33}
             name='rightHand'
-            color = 'blue'
+            color = 'red'
           />
         )}
         {landmarks?.leftHand && (
@@ -211,7 +211,7 @@ export function Player({ position, landmarks }) {
             rotation={[-(landmarks.leftHand[1][0]-Math.PI), 0 ,-(landmarks.leftHand[1][1]+Math.PI/2)]}
             scale={0.33}
             name='leftHand'
-            color = 'blue'
+            color = 'red'
           />
         )}
       </group>
