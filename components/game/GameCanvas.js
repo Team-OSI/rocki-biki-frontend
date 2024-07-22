@@ -8,6 +8,7 @@ import { useEffect, useState, useRef } from 'react';
 import StateBar from './StateBar';
 import { Ring } from './Ring';
 import useGameStore from "@/store/gameStore";
+import * as THREE from 'three'
 
 const skillBackgrounds = {
   default: '/images/background.png',
@@ -76,14 +77,20 @@ function Scene({ receivedPoseData, landmarks, socket }) {
 
   return (
     <>
-      <ambientLight intensity={0.4} />
-      <pointLight position={[10, 10, 10]} intensity={1} />
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
       <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} />
+      <pointLight position={[0, 15, 0]} intensity={1} />
+      <ambientLight intensity={1} />
       {showBackground ? (
+        <>
+          <ambientLight intensity={1} />
+          <pointLight position={[0, 15, 0]} intensity={1} />
           <BackGround texturePath={background} />
+        </>
       ) : (
-          <Environment intensity={0.1} files="/images/kloppenheim_06_puresky_1k.hdr" background />
+        <>
+          <Environment intensity={1} files="/images/kloppenheim_06_puresky_1k.hdr" background />
+        </>
       )}
       <Ring scale={1.8}/>
     </>
@@ -97,7 +104,12 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
       <Canvas
           dpr={[1, 2]}
           performance={{ min: 0.5 }}
-          gl={{ powerPreference: "high-performance", antialias: false }}
+          gl={{ 
+            powerPreference: "high-performance", 
+            antialias: false,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 0.5 
+          }}
       >
         <PerspectiveCamera makeDefault fov={30} position={[0, 0, 0]} />
         <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
