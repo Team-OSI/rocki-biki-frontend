@@ -65,13 +65,13 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   useEffect(() => {
     if (activeSkill) {
       if (activeSkill === 'Shield') {
-        setSkillText(shieldSkill.skillReading);
+        setSkillText(shieldSkill.skillReading[Math.floor(Math.random() * shieldSkill.skillReading.length)]);
         setSkillTextColor(shieldSkill.textColor);
       } else if (activeSkill === 'Heal') {
-        setSkillText(healSkill.skillReading);
+        setSkillText(healSkill.skillReading[Math.floor(Math.random() * healSkill.skillReading.length)]);
         setSkillTextColor(healSkill.textColor);
       } else if (activeSkill === 'Attack') {
-        setSkillText(attackSkill.skillReading);
+        setSkillText(attackSkill.skillReading[Math.floor(Math.random() * attackSkill.skillReading.length)]);
         setSkillTextColor(attackSkill.textColor);
       }
 
@@ -80,7 +80,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       maxSimilarityRef.current = 0;
       setMaxSimilarity(0);
       transcriptRef.current = '';
-      console.log(12);
       const timeoutId = setTimeout(() => {
         console.log(`Final transcript: ${transcriptRef.current}`);
         console.log(`Skill text: ${skillText}`);
@@ -93,11 +92,9 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
 
       if (!recognitionActive.current) {
         startRecognition();
-        // console.log(1); // Start STT when pose is detected
         recognitionActive.current = true;
         
         const recognitionTimeoutId = setTimeout(() => {
-          // console.log(2); // Stop STT after 5 seconds
           recognitionActive.current = false;
           stopRecognition();
         }, 5000);
@@ -188,25 +185,13 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       />
       {showSkillText && (
         <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-          <div className="p-4 rounded-lg shadow-lg" style={{ backgroundImage: 'url(/images/parchment.png)', backgroundSize: 'cover', color: skillTextColor }}>
+          <div className="p-4 rounded-lg shadow-lg" style={{ backgroundImage: 'url(/images/skill.png)', backgroundSize: 'cover', backgroundSize: '200% 200%', color: skillTextColor }}>
             <span className="text-3xl">
               {skillText}
             </span>
           </div>
         </div>
       )}
-      {/* {showClock && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-24 h-24">
-            <div className="absolute top-0 left-0 w-full h-full bg-gray-300 rounded-full flex items-center justify-center">
-              <div className="w-12 h-12 bg-white rounded-full border-4 border-gray-400"></div>
-            </div>
-            <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-              <div className="w-1 h-8 bg-red-500 origin-bottom animate-clock"></div>
-            </div>
-          </div>
-        </div>
-      )} */}
     </div>
   );
 }
