@@ -12,7 +12,7 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/head.glb')
     const opacity = 0.19
-    const playerHealth = useGameStore(state => state.opponentHealth);
+    const playerHealth = useGameStore(state => state.playerHealth);
     const [hit, setHit] = useState(false)
     const prevHealthRef = useRef(playerHealth)
 
@@ -23,6 +23,14 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
       hpUnder60: 'images/textures/face_HpUnder_60.png',
       hpUnder30: 'images/textures/face_HpUnder_30.png',
     })
+    // 현재 텍스처 계산
+    const currentTexture = useMemo(() => {
+      if (hit) return textures.hit;
+      if (playerHealth <= 30) return textures.hpUnder30;
+      if (playerHealth <= 60) return textures.hpUnder60;
+      return textures.default;
+    }, [hit, playerHealth, textures]);
+
     useImperativeHandle(
       ref,
       () => ({
@@ -54,20 +62,10 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
         material.depthWrite = false;
         material.roughness = 0.5;
         material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
-        // 상태에 따라 텍스처 변경
-        if (hit) {
-          material.map = textures.hit
-        } else if (playerHealth <= 30) {
-            material.map = textures.hpUnder30
-        } else if (playerHealth <= 60) {
-            material.map = textures.hpUnder60
-        } else {
-            material.map = textures.default
-      }
-
-      material.needsUpdate = true
+        material.map = currentTexture
+        material.needsUpdate = true
       })
-    }, [materials, hit, textures, playerHealth])
+    }, [materials, hit, currentTexture])
   
      useEffect(() => {
       if (localRef.current && position) {

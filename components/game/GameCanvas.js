@@ -76,14 +76,14 @@ function Scene({ receivedPoseData, landmarks, socket }) {
 
   return (
     <>
-      <ambientLight intensity={0.7} />
+      <ambientLight intensity={0.4} />
       <pointLight position={[10, 10, 10]} intensity={1} />
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
       <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} />
       {showBackground ? (
           <BackGround texturePath={background} />
       ) : (
-          <Environment intensity={0.2} files="/images/kloppenheim_06_puresky_1k.hdr" background />
+          <Environment intensity={0.1} files="/images/kloppenheim_06_puresky_1k.hdr" background />
       )}
       <Ring scale={1.8}/>
     </>
