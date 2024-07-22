@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { throttle } from "lodash";
 import stringSimilarity from 'string-similarity';
