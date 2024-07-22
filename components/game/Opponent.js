@@ -67,6 +67,7 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
 
     useEffect(() => {
       Object.values(materials).forEach((material) => {
+        material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
         material.map = currentTexture;
         material.needsUpdate = true;
       });
@@ -107,7 +108,7 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
       scene.traverse((child) => {
         if (child.isMesh) {
           child.material = child.material.clone();
-          child.material.color.set('red');
+          child.material.color.set('blue');
         }
       });
     }, [scene]);
