@@ -68,10 +68,11 @@ function Scene({ receivedPoseData, landmarks, socket }) {
             timerRef.current = setTimeout(() => {
                 setBackground(skillBackgrounds.default);
                 timerRef.current = null;
-            }, 5000);
+            }, 10000);
         }
     }
 }, [opponentSkills, playerSkills]);
+
 
   return (
     <>
@@ -80,12 +81,11 @@ function Scene({ receivedPoseData, landmarks, socket }) {
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
       <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} />
       {showBackground ? (
-        <BackGround texturePath={background} />
+          <BackGround texturePath={background} />
       ) : (
-        <Environment preset='sunset' background />
+          <Environment intensity={0.2} files="/images/kloppenheim_06_puresky_1k.hdr" background />
       )}
-      <Ring />
-
+      <Ring scale={1.8}/>
     </>
   );
 }
@@ -99,10 +99,9 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
           performance={{ min: 0.5 }}
           gl={{ powerPreference: "high-performance", antialias: false }}
       >
-        <ambientLight />
-        <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
+        <PerspectiveCamera makeDefault fov={30} position={[0, 0, 0]} />
         <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
-        {/* <Stats /> */}
+        <Stats />
       </Canvas>
     </>
   );

@@ -2,7 +2,7 @@
 
 import { forwardRef, useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react'
 import { useFrame} from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { useGLTF, useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import useGaugeStore from '@/store/gaugeStore';
 import useSocketStore from '@/store/socketStore';
@@ -16,11 +16,21 @@ import {getAudioUrls} from "@/api/user/api";
 const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) => {
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/opponent-head.glb')
-    const opacity = 0.9
+    const opacity = 1
     const [hitImpulse, setHitImpulse] = useState(new THREE.Vector3())
     const originalPosition = useRef(new THREE.Vector3());
     const currentVelocity = useRef(new THREE.Vector3())
 
+    const opponentHealth = useGameStore(state => state.opponentHealth);
+
+    // 텍스처 로드
+    const textures = useTexture({
+      default: 'images/textures/face_default.png',
+      hit: 'images/textures/face_hit.png',
+      hpUnder60: 'images/textures/face_HpUnder_60.png',
+      hpUnder30: 'images/textures/face_HpUnder_30.png',
+    })
+  
     useImperativeHandle(
       ref,
       () => ({
@@ -50,11 +60,24 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
 
     useEffect(() => {
       Object.values(materials).forEach((material) => {
-        material.transparent = true
-        material.opacity = opacity
-        material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
+        // material.transparent = true
+        // material.opacity = opacity
+        // material.roughness = 0.5;
+        // material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
+        // 상태에 따라 텍스처 변경
+        if (hit) {
+          material.map = textures.hit
+        } else if (opponentHealth <= 30) {
+            material.map = textures.hpUnder30
+        } else if (opponentHealth <= 60) {
+            material.map = textures.hpUnder60
+        } else {
+            material.map = textures.default
+      }
+
+      material.needsUpdate = true
       })
-    }, [materials, hit])
+    }, [materials, hit, textures, opponentHealth])
 
     useFrame((state, delta) => {
       if (localRef.current) {
@@ -265,6 +288,6 @@ export function Opponent({ position, landmarks, opponentData }) {
 }
 
 // 모델 미리 로드
-useGLTF.preload('/models/head.glb');
+useGLTF.preload('/models/opponent-head.glb');
 useGLTF.preload('/models/left-hand.glb');
 useGLTF.preload('/models/right-hand.glb');
