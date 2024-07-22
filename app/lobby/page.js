@@ -143,7 +143,11 @@ export default function Lobby() {
             <div className="p-6 bg-gray-100 bg-opacity-85 rounded-lg shadow-lg h-1/2">
               <h2 className="text-gray-800 text-3xl text-center font-bold mt-2 mb-3">New to the game?</h2>
               <button
-                  className="py-3 w-full text-xl bg-secondary text-white font-bold rounded-full shadow-md hover:scale-105 transition duration-300 mt-7"
+                  className={`py-3 w-full text-xl text-white font-bold rounded-full shadow-md hover:scale-105 transition duration-300 mt-7 ${
+                      showTutorial
+                          ? "bg-[#bd1439]"
+                          : "bg-[#1ba5e0]"
+                  }`}
                   onClick={handleTutorialClick}
               >
                 {showTutorial ? "Close Tutorial" : "Watch Tutorial"}
