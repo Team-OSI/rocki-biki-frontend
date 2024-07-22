@@ -16,18 +16,21 @@ const VideoProcessor = forwardRef(function VideoProcessor({ onLandmarksUpdate, s
 
     useEffect(() => {
         if (typeof window === 'undefined' || !videoRef.current) return;
+        let videoElement = videoRef.current;
         let videoStream = null;
 
         const setupVideo = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
-                videoRef.current.srcObject = stream;
-                videoStream = stream;
-                await new Promise((resolve) => {
-                    videoRef.current.onloadedmetadata = resolve;
-                });
-                await videoRef.current.play();
-                setIsVideoReady(true);
+                if (videoElement) {
+                    videoElement.srcObject = stream;
+                    videoStream = stream;
+                    await new Promise((resolve) => {
+                        videoElement.onloadedmetadata = resolve;
+                    });
+                    await videoElement.play();
+                    setIsVideoReady(true);
+                }
             } catch (err) {
                 console.error("Error setting up video:", err);
             }
@@ -37,7 +40,6 @@ const VideoProcessor = forwardRef(function VideoProcessor({ onLandmarksUpdate, s
             try {
                 await initWorker(videoRef.current.videoWidth, videoRef.current.videoHeight);
                 const { worker, videoArray } = useWorkerStore.getState();
-                console.log('워커 & 공유 버퍼 (비디오) 준비 완료!! :', worker, videoArray);
                 setIsWorkerReady(true);
 
                 const sendVideoFrame = () => {
@@ -66,8 +68,8 @@ const VideoProcessor = forwardRef(function VideoProcessor({ onLandmarksUpdate, s
             if (videoStream) {
                 videoStream.getTracks().forEach(track => track.stop());
             }
-            if (videoRef.current) {
-                videoRef.current.srcObject = null;
+            if (videoElement) {
+                videoElement.srcObject = null;
             }
         };
     }, [initWorker]);

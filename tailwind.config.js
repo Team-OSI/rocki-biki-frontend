@@ -7,9 +7,6 @@ module.exports = {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        'custom' : ['countFont', 'sans-serif']
-      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":

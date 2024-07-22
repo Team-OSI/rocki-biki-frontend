@@ -85,6 +85,7 @@ function Scene({ receivedPoseData, landmarks, socket }) {
         <Environment preset='sunset' background />
       )}
       <Ring />
+
     </>
   );
 }
@@ -101,7 +102,7 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
         <ambientLight />
         <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
         <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
-        <Stats />
+        {/* <Stats /> */}
       </Canvas>
     </>
   );
