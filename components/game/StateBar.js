@@ -1,8 +1,7 @@
 import styled, { keyframes, css } from 'styled-components';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import useGameStore from '../../store/gameStore'
 import useSocketStore from '@/store/socketStore';
-
 
 const scaleAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -126,6 +125,19 @@ export default function StateBar() {
   const socket = useSocketStore(state => state.socket);
   const [count, setCount] = useState(60);
   const [isLoading, setIsLoading] = useState(true);
+  const damageAudio = useRef(null);
+
+  const playDamageSound = useCallback(() => {
+    if (damageAudio.current) {
+      damageAudio.current.currentTime = 0;
+      damageAudio.current.play().catch(error => console.log('오디오 재생 실패:', error));
+    }
+  }, []);
+
+  useEffect(() => {
+    damageAudio.current = new Audio('/sounds/hit_player.mp3');
+  }, []);
+
 
   const [currentPlayerHealth, setCurrentPlayerHealth] = useState(playerHealth);
   const [previousPlayerHealth, setPreviousPlayerHealth] = useState(playerHealth);
@@ -144,6 +156,7 @@ export default function StateBar() {
       setCurrentPlayerHealth(playerHealth);
       setIsPlayerDecreasing(true);
       setShowDamageOverlay(true);
+      playDamageSound();
       setTimeout(() => setShowDamageOverlay(false), 500);
     } else {
       setCurrentPlayerHealth(playerHealth);
