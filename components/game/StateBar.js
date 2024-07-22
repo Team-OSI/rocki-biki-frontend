@@ -21,13 +21,14 @@ const TimerContainer = styled.div`
 const DigitImage = styled.img`
   height: 100%;
   width: auto;
-  ${props => props.isRed && css`
+  ${props => props.$isRed && css`
     filter: brightness(0) saturate(100%) invert(22%) sepia(95%) saturate(5333%) hue-rotate(356deg) brightness(97%) contrast(122%);
   `}
-  ${props => props.isOrange && css`
+  ${props => props.$isOrange && css`
     filter: brightness(0) saturate(100%) invert(65%) sepia(91%) saturate(1766%) hue-rotate(360deg) brightness(103%) contrast(104%);
   `}
 `;
+
 
 const preloadImages = () => {
   return new Promise((resolve, reject) => {
@@ -61,16 +62,12 @@ const Timer = ({ count }) => {
 
   return (
     <TimerContainer>
-      <DigitImage src={`/images/count/${tens}.png`}  isRed={isRed} isOrange={isOrange}/>
-      <DigitImage src={`/images/count/${ones}.png`} isRed={isRed} isOrange={isOrange}/>
+      <DigitImage src={`/images/count/${tens}.png`}  $isRed={isRed} $isOrange={isOrange}/>
+      <DigitImage src={`/images/count/${ones}.png`} $isRed={isRed} $isOrange={isOrange}/>
     </TimerContainer>
   );
 };
 
-const decreaseAnimation = keyframes`
-  from { transform: scaleX(1); }
-  to { transform: scaleX(0); }
-`;
 
 const HealthBarContainer = styled.div`
   width: 100%;
@@ -92,14 +89,14 @@ const BaseHealthBar = styled.div`
 
 
 const AnimatedHealthBar = styled(BaseHealthBar)`
-  background-color: ${props => props.isPlayer 
+  background-color: ${props => props.$isplayer 
     ? 'rgba(252, 165, 165, 0.8)' // 연한 빨강 (player)
     : 'rgba(147, 197, 253, 0.8)' // 연한 파랑 (opponent)
   };
 `;
 
 const CurrentHealthBar = styled(BaseHealthBar)`
-  background-color: ${props => props.isPlayer 
+  background-color: ${props => props.$isplayer 
     ? 'rgba(220, 38, 38, 0.8)' // 진한 빨강 (player)
     : 'rgba(37, 99, 235, 0.8)' // 진한 파랑 (opponent)
   };
@@ -221,14 +218,14 @@ export default function StateBar() {
         <HealthBarContainer>
           <CurrentHealthBar 
             style={{transform: `scaleX(${currentOpponentHealth / 100})`}} 
-            isPlayer={false} 
+            $isplayer={false} 
           />
           {isOpponentDecreasing && (
               <AnimatedHealthBar 
                 style={{
                   transform: `scaleX(${previousOpponentHealth / 100})`,
                 }} 
-                isPlayer={false}
+                $isplayer={false}
               />
             )}
         </HealthBarContainer>
@@ -240,14 +237,14 @@ export default function StateBar() {
         <HealthBarContainer>
             <CurrentHealthBar 
               style={{transform: `scaleX(${currentPlayerHealth / 100})`}} 
-              isPlayer={true} 
+              $isplayer={true} 
             />
             {isPlayerDecreasing && (
               <AnimatedHealthBar 
                 style={{
                   transform: `scaleX(${previousPlayerHealth / 100})`,
                 }} 
-                isPlayer={true}
+                $isplayer={true}
               />
             )}
           </HealthBarContainer>

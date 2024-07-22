@@ -7,7 +7,7 @@ import { FaCog } from 'react-icons/fa';
 import RecordingModal from "@/components/myPage/RecordingModal";
 import ProfileEditModal from "@/components/myPage/ProfileEditModal";
 import GameResultModal from "@/components/myPage/GameResultModal";
-import { getNickname, updateProfile } from '@/api/user/api';
+import {getNickname, onFollowing, updateProfile} from '@/api/user/api';
 import Cookies from 'js-cookie';
 import { jwtDecode } from "jwt-decode";
 import { useTitle } from "@/app/contexts/TitleContext";
@@ -62,8 +62,9 @@ export default function MyPage() {
         }
     };
 
-    const goToLobby = () => {
-        router.push('/lobby');
+    const following = async () => {
+        await onFollowing(userEmail);
+        alert("Following!");
     };
 
     const openRecordingModal = () => setIsRecordingModalOpen(true);
@@ -109,12 +110,14 @@ export default function MyPage() {
                     </div>
                 </div>
                 <div className="flex flex-col items-center space-y-4 mt-6">
-                    <button
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg text-lg w-40"
-                        onClick={goToLobby}
-                    >
-                        Go Lobby!
-                    </button>
+                    {!isCurrentUser && (
+                        <button
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg text-lg w-40"
+                            onClick={following}
+                        >
+                            Following!
+                        </button>
+                    )}
                     {isCurrentUser && (
                         <button
                             className="bg-green-500 text-white px-4 py-2 rounded-lg text-lg w-40"

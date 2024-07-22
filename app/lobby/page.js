@@ -32,15 +32,16 @@ export default function Lobby() {
   useEffect(() => {
     const initializeUser = async () => {
       const email = await getUserEmail();
-      setUserEmail(email);
 
       if (email) {
+        setUserEmail(email);
         try {
           const response = await getNickname(email);
           setUserProfileImage(response.profileImage);
           setUserNickname(response.nickname);
         } catch (err) {
           console.error("Error fetching user data:", err);
+          setShowNicknameModal(true);
         }
       } else {
         console.error("No user email found");
