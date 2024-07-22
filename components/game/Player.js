@@ -12,7 +12,7 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/head.glb')
     const opacity = 0.19
-    const playerHealth = useGameStore(state => state.opponentHealth);
+    const playerHealth = useGameStore(state => state.plyerHealth);
     const [hit, setHit] = useState(false)
     const prevHealthRef = useRef(playerHealth)
 
