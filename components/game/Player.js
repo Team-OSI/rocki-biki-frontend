@@ -51,6 +51,7 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
       Object.values(materials).forEach((material) => {
         material.transparent = true
         material.opacity = opacity
+        material.depthWrite = false;
         material.roughness = 0.5;
         material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
         // 상태에 따라 텍스처 변경
