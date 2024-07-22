@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import useSocketStore from '@/store/socketStore';
 import useSTT from '@/hooks/useSTT';
+import stringSimilarity from 'string-similarity';
 
 export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill, finalTranscript }) {
   const canvasRef = useRef(null);
@@ -9,12 +10,29 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const [skillText, setSkillText] = useState('');
   const [skillTextColor, setSkillTextColor] = useState('');
   const [showSkillText, setShowSkillText] = useState(false);
+  const [showClock, setShowClock] = useState(false);
   const emitCastSkill = useSocketStore(state => state.emitCastSkill);
-  const similarityThreshold = 0.70;
+  const emitUseSkill = useSocketStore(state => state.emitUseSkill);
+  const similarityThreshold = 0.80;
   const recognitionActive = useRef(false);
+  
+  const [maxSimilarity, setMaxSimilarity] = useState(0);
+  const maxSimilarityRef = useRef(0);
+  const transcriptRef = useRef('');
 
   const onSTTResult = ({ finalTranscript }) => {
-    console.log('Final STT Result:', finalTranscript);
+    console.log('STT Result:', finalTranscript);
+    transcriptRef.current = finalTranscript;
+    if (skillText) {
+      const similarity = stringSimilarity.compareTwoStrings(
+        finalTranscript.toLowerCase(),
+        skillText.toLowerCase()
+      );
+      if (similarity > maxSimilarityRef.current) {
+        maxSimilarityRef.current = similarity;
+        setMaxSimilarity(similarity);
+      }
+    }
   };
 
   const onSTTError = (event) => {
@@ -24,7 +42,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const { startRecognition, stopRecognition } = useSTT(onSTTResult, onSTTError);
 
   useEffect(() => {
-    // 필요한 이미지 프리 로드
+    // Load images
     const shield_img = new Image();
     shield_img.src = '/images/love.png';
     shield_img.onload = () => {
@@ -46,8 +64,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
 
   useEffect(() => {
     if (activeSkill) {
-      emitCastSkill(activeSkill);
-      console.log(activeSkill);
       if (activeSkill === 'Shield') {
         setSkillText(shieldSkill.skillReading);
         setSkillTextColor(shieldSkill.textColor);
@@ -59,22 +75,40 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         setSkillTextColor(attackSkill.textColor);
       }
 
+      setShowSkillText(true);
+      setShowClock(true);
+      maxSimilarityRef.current = 0;
+      setMaxSimilarity(0);
+      transcriptRef.current = '';
+      console.log(12);
+      const timeoutId = setTimeout(() => {
+        console.log(`Final transcript: ${transcriptRef.current}`);
+        console.log(`Skill text: ${skillText}`);
+        console.log(`Max similarity: ${maxSimilarityRef.current}`);
+        emitUseSkill(activeSkill, maxSimilarityRef.current);
+        setShowSkillText(false);
+        setShowClock(false);
+        handleSkillComplete();
+      }, 5000);
+
       if (!recognitionActive.current) {
-        setShowSkillText(true);
         startRecognition();
-        console.log(1); // 포즈가 인식되면 STT 시작
+        // console.log(1); // Start STT when pose is detected
         recognitionActive.current = true;
-        const timeoutId = setTimeout(() => {
-          console.log(2) // 5초 후 STT 종료
+        
+        const recognitionTimeoutId = setTimeout(() => {
+          // console.log(2); // Stop STT after 5 seconds
           recognitionActive.current = false;
-          setShowSkillText(false); // 5초 후 텍스트와 배경 숨김
-          handleSkillComplete();
           stopRecognition();
         }, 5000);
-        return () => clearTimeout(timeoutId); // 컴포넌트 언마운트 시 타임아웃 정리
+
+        return () => {
+          clearTimeout(timeoutId);
+          clearTimeout(recognitionTimeoutId);
+        };
       }
     }
-  }, [activeSkill, emitCastSkill, startRecognition, stopRecognition]);
+  }, [activeSkill]);
 
   const handleSkillComplete = useCallback(() => {
     setActiveSkill(null);
@@ -120,13 +154,17 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         leftIndex: poseLandmarks.leftIndex,
         rightIndex: poseLandmarks.rightIndex
       };
-
+  
       if (Object.values(detectedPose).every(landmark => landmark)) {
         const skills = [shieldSkill, healSkill, attackSkill];
         skills.forEach(skill => {
           const poseSimilarity = calculatePoseSimilarity(detectedPose, skill.targetPose);
           if (poseSimilarity >= similarityThreshold) {
-            setActiveSkill(skill.name);
+            if (activeSkill !== skill.name) {
+              console.log("here");
+              emitCastSkill(skill.name);
+              setActiveSkill(skill.name);
+            }
           }
         });
       }
@@ -157,6 +195,18 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           </div>
         </div>
       )}
+      {/* {showClock && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative w-24 h-24">
+            <div className="absolute top-0 left-0 w-full h-full bg-gray-300 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-white rounded-full border-4 border-gray-400"></div>
+            </div>
+            <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+              <div className="w-1 h-8 bg-red-500 origin-bottom animate-clock"></div>
+            </div>
+          </div>
+        </div>
+      )} */}
     </div>
   );
 }

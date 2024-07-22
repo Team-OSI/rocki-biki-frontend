@@ -29,6 +29,15 @@ module.exports = {
         accent: '#4981F2', // Light Blue
         dark: '#262626', // Dark
       },
+      keyframes: {
+        clock: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+      },
+      animation: {
+        clock: 'clock 5s linear infinite',
+      },
     },
   },
   plugins: [],

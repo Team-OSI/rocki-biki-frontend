@@ -42,7 +42,7 @@ export default function App() {
         />
       </div>
       {showLoginDiv ? (
-        <div className="flex flex-col items-center gap-3 w-full max-w-screen-md mt-80 mb-30">
+        <div className="flex flex-col items-center gap-2 w-full max-w-screen-md mt-30 mb-30">
           <LoginDiv
             onClose={() => setShowLoginDiv(false)}
             onLogin={handleLogin}
