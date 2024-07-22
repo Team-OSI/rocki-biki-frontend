@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas, useThree } from '@react-three/fiber';
-import { Stats, PerspectiveCamera, useTexture } from '@react-three/drei';
+import { Stats, PerspectiveCamera, useTexture, Environment } from '@react-three/drei';
 import { Player } from './Player';
 import { Opponent } from './Opponent';
 import { useEffect, useState, useRef } from 'react';
@@ -71,9 +71,9 @@ function Scene({ receivedPoseData, landmarks, socket }) {
       <pointLight position={[10, 10, 10]} intensity={1} />
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
       <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} />
-      {/* <Environment preset='sunset' background /> */}
+      <Ring scale={2}/>
       <BackGround texturePath={background} />
-      <Ring />
+      {/* <Environment preset='sunset' background /> */}
     </>
   );
 }
@@ -90,7 +90,7 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
         <ambientLight />
         <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
         <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
-        <Stats />
+        {/* <Stats /> */}
       </Canvas>
     </>
   );
