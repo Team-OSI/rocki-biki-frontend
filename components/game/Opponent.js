@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react'
+import { forwardRef, useRef, useEffect, useMemo, useState, useCallback, useImperativeHandle } from 'react'
 import { useFrame} from '@react-three/fiber'
 import { useGLTF, useTexture } from '@react-three/drei'
 import * as THREE from 'three'
@@ -30,6 +30,13 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
       hpUnder60: 'images/textures/face_HpUnder_60.png',
       hpUnder30: 'images/textures/face_HpUnder_30.png',
     })
+
+    const currentTexture = useMemo(() => {
+      if (hit) return textures.hit;
+      if (opponentHealth <= 30) return textures.hpUnder30;
+      if (opponentHealth <= 60) return textures.hpUnder60;
+      return textures.default;
+    }, [hit, opponentHealth]);
   
     useImperativeHandle(
       ref,
@@ -60,24 +67,10 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
 
     useEffect(() => {
       Object.values(materials).forEach((material) => {
-        // material.transparent = true
-        // material.opacity = opacity
-        // material.roughness = 0.5;
-        // material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
-        // 상태에 따라 텍스처 변경
-        if (hit) {
-          material.map = textures.hit
-        } else if (opponentHealth <= 30) {
-            material.map = textures.hpUnder30
-        } else if (opponentHealth <= 60) {
-            material.map = textures.hpUnder60
-        } else {
-            material.map = textures.default
-      }
-
-      material.needsUpdate = true
-      })
-    }, [materials, hit, textures, opponentHealth])
+        material.map = currentTexture;
+        material.needsUpdate = true;
+      });
+    }, [materials, currentTexture]);
 
     useFrame((state, delta) => {
       if (localRef.current) {
@@ -248,11 +241,10 @@ export function Opponent({ position, landmarks, opponentData }) {
   }, [landmarks, playHitSound, emitDamage, getGaugeDamage, resetGauge])
 
   useFrame(() => {
-  if(count_optm.current % 2 === 0) {
+  if(count_optm.current % 4 === 0) {
     checkHit();
   }
-  if (count_optm.current > 1000000) count_optm.current = 0;
-  count_optm.current++;
+  count_optm.current = (count_optm.current + 1) % 1000000;
   })
 
 
