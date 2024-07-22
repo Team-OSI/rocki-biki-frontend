@@ -10,7 +10,7 @@ import { Ring } from './Ring';
 import useGameStore from "@/store/gameStore";
 
 const skillBackgrounds = {
-  // default: '/images/default_background.jpg',
+  default: '/images/background.png',
   Attack: '/images/skill/attack_background.png',
   Heal: '/images/skill/heal_background.jpg',
   Shield: '/images/skill/shield_background.jpg',
