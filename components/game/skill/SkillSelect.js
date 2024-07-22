@@ -3,7 +3,8 @@ import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import useSocketStore from '@/store/socketStore';
 import useSTT from '@/hooks/useSTT';
 import stringSimilarity from 'string-similarity';
-import SkillProgressBar from '@/components/game/skill/SkillProgressBar'; // 여기서 SkillProgressBar를 import
+import SkillProgressBar from '@/components/game/skill/SkillProgressBar';
+import useGameStore from '@/store/gameStore';
 
 export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill, finalTranscript }) {
   const canvasRef = useRef(null);
@@ -16,6 +17,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const [showResult, setShowResult] = useState(false);
   const emitCastSkill = useSocketStore(state => state.emitCastSkill);
   const emitUseSkill = useSocketStore(state => state.emitUseSkill);
+  const gameStatus = useGameStore(state => state.gameStatus);
   const similarityThreshold = 0.70;
   const recognitionActive = useRef(false);
 
@@ -34,6 +36,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const [maxSimilarity, setMaxSimilarity] = useState(0);
   const maxSimilarityRef = useRef(0);
   const transcriptRef = useRef('');
+  const intervalIds = useRef({}); // Interval ID를 저장하는 객체
 
   const onSTTResult = ({ finalTranscript }) => {
     console.log('STT Result:', finalTranscript);
@@ -79,6 +82,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
 
   useEffect(() => {
     if (activeSkill) {
+      const textAudio = new Audio('./sounds/text.mp3');
+      textAudio.play();
       if (activeSkill === 'Shield') {
         setSkillText(shieldSkill.skillReading[Math.floor(Math.random() * shieldSkill.skillReading.length)]);
         setSkillTextColor(shieldSkill.textColor);
@@ -101,13 +106,18 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         emitUseSkill(activeSkill, maxSimilarityRef.current);
         setShowSkillText(false);
         handleSkillComplete();
+        if (activeSkill === "Heal") {
+          const healAudio = new Audio('./sounds/heal_sound.mp3');
+          console.log(1)
+          healAudio.play();
+        }
         useSkill(activeSkill);
       }, 5000);
 
       if (!recognitionActive.current) {
         startRecognition();
         recognitionActive.current = true;
-        
+
         const recognitionTimeoutId = setTimeout(() => {
           recognitionActive.current = false;
           stopRecognition();
@@ -133,13 +143,44 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           if (prev[skillName] > 0) {
             return { ...prev, [skillName]: prev[skillName] - 1 };
           } else {
-            clearInterval(intervalId);
+            clearInterval(intervalIds.current[skillName]);
+            delete intervalIds.current[skillName];
             return { ...prev, [skillName]: 0 };
           }
         });
       }, 1000);
+
+      intervalIds.current[skillName] = intervalId;
     }
   };
+
+  useEffect(() => {
+    if (gameStatus === "skilltime") {
+      // 게임 상태가 "skilltime"일 때 모든 interval을 멈춤
+      console.log(gameStatus)
+      Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
+    } else if (gameStatus === "playing") {
+      // 게임 상태가 "playing"일 때 다시 시작
+      console.log(gameStatus)
+      Object.keys(skillCooldowns).forEach(skillName => {
+        if (skillCooldowns[skillName] > 0 && !intervalIds.current[skillName]) {
+          const intervalId = setInterval(() => {
+            setSkillCooldowns(prev => {
+              if (prev[skillName] > 0) {
+                return { ...prev, [skillName]: prev[skillName] - 1 };
+              } else {
+                clearInterval(intervalIds.current[skillName]);
+                delete intervalIds.current[skillName];
+                return { ...prev, [skillName]: 0 };
+              }
+            });
+          }, 1000);
+
+          intervalIds.current[skillName] = intervalId;
+        }
+      });
+    }
+  }, [gameStatus, skillCooldowns]);
 
   const handleSkillComplete = useCallback(() => {
     setActiveSkill(null);
@@ -221,7 +262,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         });
       }
     }
-  }, [poseLandmarks, skillCooldowns]);
+  }, [poseLandmarks, skillCooldowns, gameStatus]);
 
   const clearCanvas = () => {
     if (canvasRef.current) {
