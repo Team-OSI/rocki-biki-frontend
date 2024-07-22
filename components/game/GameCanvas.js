@@ -30,7 +30,7 @@ function BackGround({ texturePath }) {
   return null;
 }
 
-function Scene({ receivedPoseData, landmarks, socket }) {
+function Scene({ receivedPoseData, landmarks }) {
   const [background, setBackground] = useState(skillBackgrounds.default);
   // const opponentSkill = useSocketStore(state => state.opponentSkill);
   const opponentSkills = useGameStore(state => state.opponentSkills);
@@ -67,13 +67,13 @@ function Scene({ receivedPoseData, landmarks, socket }) {
 
   return (
     <>
-      <ambientLight intensity={0.7} />
-      <pointLight position={[10, 10, 10]} intensity={1} />
+      <ambientLight intensity={0.1} />
+      {/* <pointLight position={[10, 10, 10]} intensity={1} /> */}
       <Player position={[0, 0, -2.5]} landmarks={landmarks} />
       <Opponent position={[0, 0, 2.5]} landmarks={landmarks} opponentData={receivedPoseData} />
-      <Ring scale={2}/>
-      <BackGround texturePath={background} />
-      {/* <Environment preset='sunset' background /> */}
+      <Ring scale={1.8}/>
+      {/* <BackGround texturePath={background} /> */}
+      <Environment intensity={0.2} files="/images/kloppenheim_06_puresky_1k.hdr" background />
     </>
   );
 }
@@ -87,10 +87,9 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
           performance={{ min: 0.5 }}
           gl={{ powerPreference: "high-performance", antialias: false }}
       >
-        <ambientLight />
-        <PerspectiveCamera makeDefault fov={70} position={[0, 0, 0]} />
+        <PerspectiveCamera makeDefault fov={30} position={[0, 0, 0]} />
         <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
-        {/* <Stats /> */}
+        <Stats />
       </Canvas>
     </>
   );

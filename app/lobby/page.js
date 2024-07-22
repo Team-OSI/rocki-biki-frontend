@@ -107,7 +107,7 @@ useEffect(() => {
           <div className="w-full p-6 bg-blue-100 rounded-lg shadow-lg">
             <div className="flex justify-center items-center mb-6">
               <input
-                  className="border border-gray-300 py-2 px-2 rounded-lg max-w-xs w-1/2 h-12"
+                  className="border w-sc  border-gray-300 py-2 px-2 rounded-lg max-w-xs w-1/2 h-12"
                   placeholder="방 제목"
                   value={searchTerm}
                   onChange={handleSearchChange}

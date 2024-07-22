@@ -1,16 +1,28 @@
 'use client';
 
-import { forwardRef, useRef, useEffect, useImperativeHandle, useMemo, useCallback } from 'react'
+import { forwardRef, useRef,useState, useEffect, useImperativeHandle, useMemo, useCallback } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { useGLTF, useTexture } from '@react-three/drei'
 import * as THREE from 'three';
 import useGaugeStore from '@/store/gaugeStore';
+import useGameStore from '@/store/gameStore';
 
 // player 머리 불러오기
 const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/head.glb')
-    const opacity = 0.15
+    const opacity = 0.19
+    const playerHealth = useGameStore(state => state.opponentHealth);
+    const [hit, setHit] = useState(false)
+    const prevHealthRef = useRef(playerHealth)
+
+    // 텍스처 로드
+    const textures = useTexture({
+      default: 'images/textures/face_default.png',
+      hit: 'images/textures/face_hit.png',
+      hpUnder60: 'images/textures/face_HpUnder_60.png',
+      hpUnder30: 'images/textures/face_HpUnder_30.png',
+    })
     useImperativeHandle(
       ref,
       () => ({
@@ -25,16 +37,36 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
       }),
       [localRef],
     )
+
+    useEffect(() => {
+      if (playerHealth < prevHealthRef.current) {
+        setHit(true)
+        setTimeout(() => setHit(false), 500) // 0.5초 후 hit 상태 해제
+      }
+      prevHealthRef.current = playerHealth
+    }, [playerHealth])
+
     
-     useEffect(() => {
-       Object.values(materials).forEach((material) => {
-        material.transparent = true;
-        material.opacity = opacity;
-        material.depthWrite = false;
-        // material.side = THREE.DoubleSide;
-        // material.blending = THREE.AdditiveBlending;  
-       })
-     }, [materials, opacity])
+    useEffect(() => {
+      Object.values(materials).forEach((material) => {
+        material.transparent = true
+        material.opacity = opacity
+        material.roughness = 0.5;
+        material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
+        // 상태에 따라 텍스처 변경
+        if (hit) {
+          material.map = textures.hit
+        } else if (playerHealth <= 30) {
+            material.map = textures.hpUnder30
+        } else if (playerHealth <= 60) {
+            material.map = textures.hpUnder60
+        } else {
+            material.map = textures.default
+      }
+
+      material.needsUpdate = true
+      })
+    }, [materials, hit, textures, playerHealth])
   
      useEffect(() => {
       if (localRef.current && position) {
@@ -103,11 +135,11 @@ function CameraControls({target}){
   useFrame(()=> {
     if (target && target.current && target.current.position) {
     const targetPosition = target.current.position.clone()
-    targetPosition.z -= 3.8
+    targetPosition.z -= 6.8
     targetPosition.y +=0.25
     
     // 부드러운 카메라 이동
-    cameraPosition.current.lerp(targetPosition,0.9)
+    cameraPosition.current.lerp(targetPosition,0.01)
     camera.position.copy(cameraPosition.current)
   
     camera.lookAt(target.current.position)

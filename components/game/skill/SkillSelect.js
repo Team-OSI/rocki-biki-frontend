@@ -18,7 +18,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
 
   const buttonWidth = 120;
   const buttonHeight = 80;
-  const similarityThreshold = 0.50;
+  const similarityThreshold = 0.90;
 
   // const buttons = useMemo(() => [
   //   { 
