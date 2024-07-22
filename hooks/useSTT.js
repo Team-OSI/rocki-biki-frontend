@@ -4,6 +4,7 @@ const useSTT = (onResult, onError) => {
     const recognition = useRef(null);
     const [isRecognizing, setIsRecognizing] = useState(false);
     const [finalTranscript, setFinalTranscript] = useState('');
+    const reconnectTimeoutRef = useRef(null);
 
     useEffect(() => {
         if (typeof window.webkitSpeechRecognition !== 'function') {
@@ -22,6 +23,8 @@ const useSTT = (onResult, onError) => {
 
         recognition.current.onend = () => {
             setIsRecognizing(false);
+            // 인식이 종료되면 재연결 시도
+            reconnectTimeoutRef.current = setTimeout(startRecognition, 1000);
         };
 
         recognition.current.onresult = (event) => {
@@ -41,12 +44,19 @@ const useSTT = (onResult, onError) => {
 
         recognition.current.onerror = (event) => {
             console.error('Speech recognition error:', event);
-            if (event.error === 'no-speech' || event.error === 'aborted') {
-                startRecognition(); 
-            }
-            if (onError) {
+            if (event.error === 'aborted') {
+                console.log('Recognition aborted. Restarting...');
+                // 짧은 지연 후 재시작
+                setTimeout(() => {
+                    if (!isRecognizing) {
+                        startRecognition();
+                    }
+                }, 1000);
+            } else if (onError) {
                 onError(event);
             }
+            // 다른 에러에 대해서도 재연결 시도
+            reconnectTimeoutRef.current = setTimeout(startRecognition, 1000);
         };
 
         return () => {
@@ -54,28 +64,38 @@ const useSTT = (onResult, onError) => {
                 recognition.current.stop();
                 setIsRecognizing(false);
             }
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+            }
         };
     }, [onResult, onError]);
 
     const startRecognition = () => {
         if (recognition.current && !isRecognizing) {
-            setFinalTranscript('');
-            setIsRecognizing(true);
-            recognition.current.start();
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(() => {
+                    setFinalTranscript('');
+                    setIsRecognizing(true);
+                    console.log("Recording Start!!!!!");
+                    recognition.current.start();
+                })
+                .catch((err) => {
+                    console.error('Error accessing microphone:', err);
+                    // alert('마이크 접근 권한이 필요합니다.');
+                });
         }
     };
 
     const stopRecognition = () => {
-        recognition.current.stop();
-        setIsRecognizing(false);
+        if (recognition.current) {
+            recognition.current.stop();
+            setIsRecognizing(false);
+            // 재연결 타이머 취소
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+            }
+        }
     };
-
-    // const stopRecognition = () => {
-    //     if (recognition.current && isRecognizing) {
-    //         recognition.current.stop();
-    //         setIsRecognizing(false);
-    //     }
-    // };
 
     return {
         isRecognizing,

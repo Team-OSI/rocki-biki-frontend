@@ -1,15 +1,20 @@
 'use client'
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Room from '@/components/lobby/Room';
-import RoomButton from '@/components/lobby/RoomButton';
-import RoomModal from '@/components/lobby/RoomModal';
-import NicknameModal from '@/components/lobby/NicknameModal';
+import dynamic from 'next/dynamic';
+
+const Room = dynamic(() => import('@/components/lobby/Room'));
+const RoomButton = dynamic(() => import('@/components/lobby/RoomButton'));
+const RoomModal = dynamic(() => import('@/components/lobby/RoomModal'));
+const NicknameModal = dynamic(() => import('@/components/lobby/NicknameModal'));
+// import Room from '@/components/lobby/Room';
+// import RoomButton from '@/components/lobby/RoomButton';
+// import RoomModal from '@/components/lobby/RoomModal';
+// import NicknameModal from '@/components/lobby/NicknameModal';
 import useSocketStore from '@/store/socketStore';
-import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 import useUserStore from '@/store/userStore';
 import { useTitle } from "@/app/contexts/TitleContext";
+import {getNickname, getUserEmail} from "@/api/user/api";
 
 export default function Lobby() {
   const router = useRouter();
@@ -19,14 +24,34 @@ export default function Lobby() {
   const [filteredRooms, setFilteredRooms] = useState([]);
   const { setSocketId, setMyNickname } = useUserStore();
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const [userNickname, setUserNickname] = useState('');
-  const [userProfileImage, setUserProfileImage] = useState('')
+  const [userProfileImage, setUserProfileImage] = useState('');
   const { setTitle } = useTitle();
 
   useEffect(() => {
-    // const token = Cookies.get('JWT_TOKEN');
-    // const decoded = jwtDecode(token);
-    // console.log(decoded.sub);
+    const initializeUser = async () => {
+      const email = await getUserEmail();
+
+      if (email) {
+        setUserEmail(email);
+        try {
+          const response = await getNickname(email);
+          setUserProfileImage(response.profileImage);
+          setUserNickname(response.nickname);
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+          setShowNicknameModal(true);
+        }
+      } else {
+        console.error("No user email found");
+      }
+    };
+
+    initializeUser();
+  }, []);
+
+  useEffect(() => {
     const socket = initSocket(process.env.NEXT_PUBLIC_NODE_SERVER || 'http://localhost:7777');
 
     socket.on('connect', () => {
@@ -34,38 +59,38 @@ export default function Lobby() {
       setUserNickname('123');
     });
     return () => closeSocket;
-  },[initSocket, closeSocket]);
+  },[initSocket, closeSocket, setSocketId]);
 
   useEffect(() => {
     setTitle("Lobby")
   }, [setTitle]);
 
-  useEffect(() => {
-    console.log(rooms);
-    filterRooms();
-  }, [rooms, searchTerm]);
-
+  
   const goGame = (roomId) => {
-    joinRoom(roomId);
+    joinRoom(roomId, userEmail, userNickname, userProfileImage);
     router.push(`/game?roomId=${roomId}`);
   };
-
+  
   const handleCreateRoom = (roomData) => {
     addRoom(roomData, (newRoom) => {
       goGame(newRoom);
     });
   };
-
+  
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
-
-  const filterRooms = () => {
+  
+  const filterRooms = useCallback(() => {
     const filtered = Object.entries(rooms).filter(([roomId, room]) =>
-        room.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredRooms(filtered);
-  };
+      room.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  setFilteredRooms(filtered);
+}, [rooms, searchTerm]);
+
+useEffect(() => {
+  filterRooms();
+}, [filterRooms]);
 
   const handleNicknameSubmit = async (nickname) => {
     try {
@@ -77,12 +102,12 @@ export default function Lobby() {
   };
 
   return (
-      <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
+      <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/background.png')" }}>
         <div className="mt-32 flex flex-col items-center w-full max-w-screen-md">
           <div className="w-full p-6 bg-blue-100 rounded-lg shadow-lg">
             <div className="flex justify-center items-center mb-6">
               <input
-                  className="border border-gray-300 py-2 px-2 rounded-lg max-w-xs w-1/2 h-12"
+                  className="border w-sc  border-gray-300 py-2 px-2 rounded-lg max-w-xs w-1/2 h-12"
                   placeholder="방 제목"
                   value={searchTerm}
                   onChange={handleSearchChange}

@@ -71,6 +71,38 @@ export const setNickname = async (nickname, image) => {
   return response.data;
 };
 
+export const onFollowing = async (toUser) => {
+  try {
+    const followRequestDto = {
+      toUser: toUser
+    };
+
+    const response = await api.post('/api/users/follow/add', followRequestDto, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
+export const unFollowing = async (toUser) => {
+  try {
+    const response = await api.delete('/api/users/follow/delete', {
+      data: { toUser: toUser }, // 데이터를 요청 본문에 포함
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
+
+
 export const getNickname = async (userEmail) => {
   try {
     const response = await api.get('/api/users/profile/get', {
@@ -104,11 +136,30 @@ export const updateProfile = async (nickname, profileImage) => {
   }
 };
 
+export const getAudioUrls = async (info) => {
+  try {
+    const response = await api.get(`/api/users/profile/opponent/sound`, { params: { email: info.email } });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching audio URLs:', error);
+    throw error;
+  }
+};
+
+export const getFollowList = async () => {
+  try {
+    const response = await api.get(`/api/users/follow/getFollowList`);
+    console.log('Fetched audio URLs:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching audio URLs:', error);
+    throw error;
+  }
+};
 
 export const fetchAudioUrls = async (setAudioUrls) => {
   try {
     const response = await api.get('/api/users/profile/sound');
-    console.log('Fetched audio URLs:', response.data);
     setAudioUrls(response.data);
   } catch (error) {
     console.error('Error fetching audio URLs:', error);
@@ -134,7 +185,6 @@ export const updateNickname = async (nickname, image) => {
   formData.append('image', image);
 
   const jwtToken = Cookies.get('JWT_TOKEN'); 
-  console.log(formData);
   const response = await axios.post(`${process.env.NEXT_PUBLIC_SPRING_SERVER}/api/users/profile/update`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',

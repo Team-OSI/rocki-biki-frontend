@@ -3,11 +3,11 @@ import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
 
 const useGameLogic = () => {
-
-  const { setGameStatus, gameStatus } = useGameStore();
-
+  const { setGameStatus, gameStatus, setOpponentInfo } = useGameStore();
+  const useSkill = useSocketStore(state => state.useSkill);
   // 소켓 연결 설정
   const socket = useSocketStore(state => state.socket);
+  // const castSkill = useSocketStore(state => state.useSkill);
 
 
   // 소켓 이벤트 리스너 설정
@@ -15,9 +15,12 @@ const useGameLogic = () => {
     if (!socket) return;
 
     socket.on('gameState', handleGameUpdate);
+    // socket.on('skillState',handleCastSkill);
+    socket.on('opponentInfo', handleOpponentInfo);
 
     return () => {
       socket.off('gameState');
+      // socket.off('skillState')
     };
   }, [socket]);
 
@@ -26,6 +29,18 @@ const useGameLogic = () => {
     console.log('게임 상태 업데이트 처리: ', newState)
     setGameStatus(newState, socket.id);
   }, [setGameStatus, socket]);
+
+  const handleOpponentInfo = (info) => {
+    setOpponentInfo(info);
+  }
+  // const handleCastSkill = useCallback((newState) => {
+  //   console.log("skill:",newState);
+  //   setGameStatus(newState, socket.id);
+  // }, [socket]);
+
+  // const handleUseSkill = useCallback((skillType) => {
+  //   skillUseFunction(skillType);
+  // }, [skillUseFunction]);
 
   // // 플레이어 입장 처리
   // const handlePlayerJoined = useCallback((player) => {
@@ -78,13 +93,14 @@ const useGameLogic = () => {
   //   }
   // }
 
-  // const skillUseFunction = useSkill();
-  // const handleUseSkill = useCallback((skillType) => {
-  //   skillUseFunction(skillType, roomId);
-  // }, [skillUseFunction, roomId]);
+  const skillUseFunction = useSkill();
+  const handleUseSkill = useCallback((skillType) => {
+    skillUseFunction(skillType);
+  }, [skillUseFunction]);
 
   return {
-    gameStatus
+    gameStatus,
+    handleUseSkill,
   };
 };
 

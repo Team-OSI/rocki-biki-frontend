@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoginDiv from '@/components/login/LoginDiv';
 import Cookies from 'js-cookie';
+import Image from "next/image";
             
 export default function App() {
   const [login, setLogin] = useState(false);
@@ -22,38 +23,36 @@ export default function App() {
     setShowLoginDiv(false);
   };
 
-  const handleButtonClick = () => {
+  useEffect(() => {
     if (login) {
       router.push('/lobby');
-    } else {
-      setShowLoginDiv(true);
     }
-  };
+  }, [login, router]);
 
   return (
-    <div className="relative flex flex-col items-center justify-between min-h-screen p-6 bg-cover bg-center" style={{ backgroundImage: "url('/images/ring.jpg')" }}>
-      <div className="absolute top-16 w-full flex flex-col items-center gap-4 font-bold">
-        <h1 className="text-8xl">ROCKY</h1>
-        <h1 className="text-8xl">BIKI</h1>
+      <div className="relative flex flex-col items-center justify-center min-h-screen p-6 bg-cover bg-center"
+           style={{backgroundImage: "url('/images/background.png')"}}>
+        <div className="w-full max-w-screen-md flex flex-col items-center justify-center -mt-16">
+          {!showLoginDiv && (
+              <div
+                  className="w-full animate-small-bounce mb-1 flex flex-col items-center font-bold cursor-pointer"
+                  onClick={() => setShowLoginDiv(true)}
+              >
+                <Image
+                    src="/images/login.webp"
+                    alt="ROCKI BIKI Logo"
+                    width={300}
+                    height={300}
+                />
+              </div>
+          )}
+          {showLoginDiv && (
+                <LoginDiv
+                    onClose={() => setShowLoginDiv(false)}
+                    onLogin={handleLogin}
+                />
+            )}
+        </div>
       </div>
-      {showLoginDiv ? (
-        <div className="flex flex-col items-center gap-3 w-full max-w-screen-md mt-80 mb-30">
-          <LoginDiv
-            onClose={() => setShowLoginDiv(false)}
-            onLogin={handleLogin}
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col items-center gap-3 w-full max-w-screen-md mt-auto mb-40">
-          <button
-            onClick={handleButtonClick}
-            className="bg-secondary text-white font-bold text-3xl py-5 px-20 rounded-lg hover:bg-secondary-dark transition duration-300"
-          >
-            {login ? "Game Start" : "Login"}
-          </button>
-        </div>
-      )}
-      {/* <button onClick={testLogin} className="mt-4">test</button> */}
-    </div>
   );
 }

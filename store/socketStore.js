@@ -4,7 +4,7 @@ import useGameStore from './gameStore';
 
 const useSocketStore = create((set, get) => ({
     socket: null,
-    lastEmittedPlayerRead: null, // 마지막으로 보낸 플레이어의 준비 상태를 저장
+    lastEmittedPlayerRead: true, // 마지막으로 보낸 플레이어의 준비 상태를 저장
     rooms: [],
     opponentSkill: null,
 
@@ -27,11 +27,11 @@ const useSocketStore = create((set, get) => ({
             set({ rooms });
         })
 
-        newSocket.on('opponentSkillUsed', ({ skillType }) => {
-            set({ opponentSkill: { skillType } });
-            console.log("받은 데이터: ", skillType)
-            setTimeout(() => set({ opponentSkill: null }), 5000);
-        });
+        // newSocket.on('opponentSkillUsed', ({ skillType }) => {
+        //     set({ opponentSkill: { skillType } });
+        //     console.log("받은 데이터: ", skillType)
+        //     // setTimeout(() => set({ opponentSkill: null }), 5000);
+        // });
         set({ socket: newSocket});
         return newSocket;
     },
@@ -53,10 +53,10 @@ const useSocketStore = create((set, get) => ({
         }
     },
 
-    joinRoom: (roomId) => {
+    joinRoom: (roomId, email, nickname, profileImage) => {
         const { socket } = get();
         if (socket) {
-            socket.emit('join room', roomId);
+            socket.emit('join room', roomId, email, nickname, profileImage);
         }
     },
 
@@ -84,12 +84,29 @@ const useSocketStore = create((set, get) => ({
         }
     },
 
-    useSkill: () => (skillType) => {
+    // 스킬 시전 보내기
+    emitCastSkill: (skillType) => {
         const { socket } = get();
         if (socket) {
-            socket.emit('castSkill', { skillType, timeStamp: Date.now() });
+            socket.emit('castSkill', { skillType: skillType});
         }
     },
+
+    // 스킬 사용 보내기
+    emitUseSkill: (skillType,similarAverage) => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('useSkill', { skillType: skillType, similarAverage: similarAverage });
+        }
+    },
+
+    useSkill: () => (skillType, roomId) => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('kill', { skillType, roomId, timeStamp: Date.now() });
+        }
+    },
+    
 
     // 데미지 보내기
     emitDamage: (damage) => {
@@ -104,7 +121,7 @@ const useSocketStore = create((set, get) => ({
         const { socket, lastEmittedPlayerReady } = get();
         if (socket) {
             // 마지막으로 보낸 상태와 현재 상태가 다를 때만 emit
-            if(lastEmittedPlayerReady === null || lastEmittedPlayerReady !== state){
+            if(lastEmittedPlayerReady === false || lastEmittedPlayerReady !== state){
                 socket.emit('ready', { state: state });
                 set({ lastEmittedPlayerReady: state}) // 마지막 상태 업데이트
             }

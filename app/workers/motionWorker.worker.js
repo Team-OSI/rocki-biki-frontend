@@ -2,12 +2,14 @@ import { FilesetResolver, FaceLandmarker, HandLandmarker, PoseLandmarker } from 
 import { processLandmarks } from "./landmarkUtils";
 
 let faceLandmarker, handLandmarker, poseLandmarker;
+let prevLandmarks, lastValidLandmarks, lastProcessedLandmarks = null;
 let isInitialized = false;
-let offscreenCanvas, offscreenCtx, sharedArray;
+let sharedArray, videoArray;
 let videoWidth, videoHeight;
-let prevLandmarks, lastValidLandmarks = null;
+let imageData, regularArray = null;
+
 let lastProcessTime = 0;
-const frameInterval = 1000 / 10;
+const frameInterval = 1000 / 30;
 
 async function initializeDetectors() {
     const vision = await FilesetResolver.forVisionTasks(
@@ -21,9 +23,9 @@ async function initializeDetectors() {
         },
         runningMode: "VIDEO",
         numFaces: 1,
-        minFaceDetectionConfidence: 0.5,
-        minFacePresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5,
+        minFaceDetectionConfidence: 0.3,
+        minFacePresenceConfidence: 0.3,
+        minTrackingConfidence: 0.3,
         outputFacialTransformationMatrixes: true
     });
 
@@ -34,15 +36,15 @@ async function initializeDetectors() {
         },
         runningMode: "VIDEO",
         numHands: 2,
-        minHandDetectionConfidence: 0.5,
-        minHandPresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5
+        minHandDetectionConfidence: 0.3,
+        minHandPresenceConfidence: 0.3,
+        minTrackingConfidence: 0.3
     });
 
     poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
             modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-            delegate: "GPU"
+            delegate: "CPU"
         },
         runningMode: "VIDEO",
         numPoses: 1,
@@ -50,26 +52,24 @@ async function initializeDetectors() {
         minPosePresenceConfidence: 0.5,
         minTrackingConfidence: 0.5
     });
-    console.log('mediapipe 로드 완료~~~~!!');
 }
 
 self.onmessage = async function(e) {
     if (e.data.type === 'INIT') {
         sharedArray = new Float32Array(e.data.sharedBuffer);
+        videoArray = new Uint8ClampedArray(e.data.videoBuffer);
+        videoWidth = e.data.width;
+        videoHeight = e.data.height;
         await initializeDetectors();
         isInitialized = true;
         self.postMessage({type: 'INIT_COMPLETE'});
-        console.log('워커 초기화 성공!!');
-    } else if (e.data.type === 'VIDEO_INIT') {
-        offscreenCanvas = e.data.offscreenCanvas;
-        offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
-        videoWidth = e.data.width;
-        videoHeight = e.data.height;
-    } else if (e.data.type === 'VIDEO_FRAME') {
+    } else if (e.data.type === 'FRAME_READY') {
         const currentTime = performance.now();
         if (currentTime - lastProcessTime >= frameInterval) {
-            processVideoFrame(e.data.imageData);
+            processVideoFrame(e.data.startTime);
             lastProcessTime = currentTime;
+        } else {
+            interpolateLandmarks(currentTime);
         }
     }
 };
@@ -95,35 +95,82 @@ function flatResult(result) {
     return new Float32Array(flattened);
 }
 
-let frameCount = 0;
-const LOG_INTERVAL = 60;
+function linearInterpolate(y1, y2, mu) {
+    return y1 * (1 - mu) + y2 * mu;
+}
 
-function processVideoFrame(imageData) {
+function interpolate(lastLandmarks, factor) {
+    const interpolatedResult = {
+        updatedLandmarks: {},
+        updatedPoseLandmarks: lastLandmarks.updatedPoseLandmarks
+    };
+
+    const keysToInterpolate = ['leftHand', 'rightHand'];
+
+    for (const key of keysToInterpolate) {
+        if (lastLandmarks.updatedLandmarks[key] && prevLandmarks && prevLandmarks.updatedLandmarks[key]) {
+            const lastLandmark = lastLandmarks.updatedLandmarks[key];
+            const prevLandmark = prevLandmarks.updatedLandmarks[key];
+
+            interpolatedResult.updatedLandmarks[key] = [
+                lastLandmark[0].map((v, i) => linearInterpolate(prevLandmark[0][i], v, factor)),
+                lastLandmark[1].map((v, i) => linearInterpolate(prevLandmark[1][i], v, factor)),
+                lastLandmark[2]
+            ];
+        } else {
+            interpolatedResult.updatedLandmarks[key] = lastLandmarks.updatedLandmarks[key];
+        }
+    }
+
+    return interpolatedResult;
+}
+
+function interpolateLandmarks(currentTime) {
+    if (!lastProcessedLandmarks) return;
+
+    const timeSinceLastProcess = currentTime - lastProcessTime;
+    const interpolationFactor = Math.min(timeSinceLastProcess / frameInterval, 1);
+    const adjustedFactor = Math.pow(interpolationFactor, 2);
+
+    const interpolatedResult = interpolate(lastProcessedLandmarks, adjustedFactor);
+    const flattenResult = flatResult(interpolatedResult);
+    sharedArray.set(flattenResult);
+
+    self.postMessage({
+        type: 'LANDMARKS_UPDATED',
+        resultOffset: 1,
+        resultLength: flattenResult.length,
+    });
+}
+
+function processVideoFrame(startTime) {
     if (!isInitialized) return;
 
-    offscreenCtx.putImageData(imageData, 0, 0);
+    if (!imageData || !regularArray || imageData.width !== videoWidth || imageData.height !== videoHeight) {
+        // 필요한 경우에만 새 ImageData, VideoArray 생성
+        regularArray = new Uint8ClampedArray(videoArray.length);
+        imageData = new ImageData(regularArray, videoWidth, videoHeight);
+    }
+    // 공유 버퍼의 데이터를 일반 버퍼로 복사 후 imageData에 세팅
+    regularArray.set(videoArray);
+    imageData.data.set(regularArray);
+
     const timestamp = performance.now();
-    const faceResult = faceLandmarker.detectForVideo(offscreenCanvas, timestamp);
-    const handResult = handLandmarker.detectForVideo(offscreenCanvas, timestamp);
-    const poseResult = poseLandmarker.detectForVideo(offscreenCanvas, timestamp);
+    const faceResult = faceLandmarker.detectForVideo(imageData, timestamp);
+    const handResult = handLandmarker.detectForVideo(imageData, timestamp);
+    const poseResult = poseLandmarker.detectForVideo(imageData, timestamp);
 
     const result = processLandmarks(faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks);
-    // const jsonResult = JSON.stringify(result);
+    lastProcessedLandmarks = result;
     const flattenResult = flatResult(result);
     sharedArray.set(flattenResult);
 
     prevLandmarks = result.newPrevLandmarks;
     lastValidLandmarks = result.newLastValidLandmarks;
 
-    // frameCount++;
-    // if (frameCount % LOG_INTERVAL === 0) {
-    //     console.log("Worker 측 데이터:", jsonResult.substring(0, 500));
-    // }
-
     self.postMessage({
         type: 'LANDMARKS_UPDATED',
         resultOffset: 1,
-        resultLength: flattenResult.length
+        resultLength: flattenResult.length,
     });
 }
-

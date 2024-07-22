@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
 import useSTT from '@/hooks/useSTT';
 import { useRouter } from 'next/navigation';
-import stringSimilarity from 'string-similarity';
 
 const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceived, getLandmarks) => {
     const socket = useSocketStore(state => state.socket);
@@ -11,38 +10,19 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     const emitCandidate = useSocketStore(state => state.emitCandidate);
 
     const [connectionState, setConnectionState] = useState('disconnected');
-    const [awaitingInterim, setAwaitingInterim] = useState(false);
     const peerConnection = useRef();
     const localStream = useRef();
     const dataChannel = useRef();
     const intervalId = useRef();
 
-    const router = useRouter();
-    const words = ["넌 이미 죽어있다", "너무 아파", "오조사마"];
-
-    const { isRecognizing, finalTranscript, startRecognition, stopRecognition } = useSTT(
+    const { isRecognizing, finalTranscript, startRecognition, stopRecognition, interimTranscript } = useSTT(
         ({ finalTranscript, interimTranscript }) => {
-            console.log('Final:', finalTranscript);
-            console.log('Interim:', interimTranscript);
-
-            if (finalTranscript.includes("럭키비키")) {
-                setAwaitingInterim(true);
-            }
-
-            if (awaitingInterim && interimTranscript) {
-                processTranscript(interimTranscript);
-                setAwaitingInterim(false);
-            }
+            // console.log('Final:', finalTranscript);
         },
         (error) => {
             console.error('Speech recognition error:', error);
         }
     );
-
-    const processTranscript = (transcript) => {
-        const mostSimilarWord = findMostSimilarWord(transcript, words);
-        console.log('Most Similar Word:', mostSimilarWord);
-    };
 
     useEffect(() => {
         if (!socket || !roomId) return;
@@ -81,7 +61,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         };
 
         const onUserLeft = (data) => {
-            console.log(`User ${data.userId} left the room`);
+            // console.log(`User ${data.userId} left the room`);
         };
 
         socket.on('offer', onOffer);
@@ -92,7 +72,6 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         const handleUnload = (event) => {
             leaveRoom();
             window.location.href = '/lobby';
-            // router.push('/lobby');
             event.returnValue = '';
         };
         window.addEventListener('beforeunload', handleUnload);
@@ -122,13 +101,13 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
 
-        pc.oniceconnectionstatechange = () => {
-            console.log('ICE connection state:', pc.iceConnectionState);
-        };
-
-        pc.onsignalingstatechange = () => {
-            console.log('Signaling state:', pc.signalingState);
-        };
+        // pc.oniceconnectionstatechange = () => {
+        //     console.log('ICE connection state:', pc.iceConnectionState);
+        // };
+        //
+        // pc.onsignalingstatechange = () => {
+        //     console.log('Signaling state:', pc.signalingState);
+        // };
 
         dataChannel.current = pc.createDataChannel('dataChannel');
         dataChannel.current.onopen = startSendingData;
@@ -140,7 +119,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         pc.ondatachannel = (event) => {
             const channel = event.channel;
             channel.onopen = () => {
-                console.log('Data channel opened:', channel);
+                // console.log('Data channel opened:', channel);
                 setConnectionState('connected');
             };
             channel.onmessage = (event) => {
@@ -221,7 +200,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                 const offer = await peerConnection.current.createOffer();
                 await peerConnection.current.setLocalDescription(offer);
                 emitOffer(offer, roomId);
-                startRecognition();
+                // startRecognition();
             } catch (error) {
                 console.error('Error starting call:', error);
             }
@@ -240,23 +219,10 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                     dataChannel.current.send(JSON.stringify(message));
                 }
             }
-        }, 1000 / 20);
+        }, 1000 / 30);
     };
 
-    const findMostSimilarWord = (input, wordsList) => {
-        let highestSimilarity = 0;
-        let mostSimilarWord = '';
-        wordsList.forEach(word => {
-            const similarity = stringSimilarity.compareTwoStrings(input, word);
-            if (similarity > highestSimilarity) {
-                highestSimilarity = similarity;
-                mostSimilarWord = word;
-            }
-        });
-        return mostSimilarWord;
-    };
-
-    return { socket, connectionState, isRecognizing, finalTranscript, startRecognition, stopRecognition };
+    return { connectionState, finalTranscript};
 };
 
 export default useWebRTCConnection;

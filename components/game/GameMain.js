@@ -1,7 +1,7 @@
 'use client';
 
 import {useCallback, useEffect, useRef, useState} from 'react';
-import { GameCanvas } from "@/components/game/GameCanvas";
+import GameCanvas from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
 import Image from 'next/image';
@@ -11,114 +11,13 @@ import { useRouter } from 'next/navigation';
 import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
 import useWorkerStore from '@/store/workerStore';
-
-let frameCount = 0;
-const LOG_INTERVAL = 60;
 import GaugeUi from './GaugeUi';
+import VideoProcessor from "@/components/video/VideoProcessor";
+import {parseLandmarks} from "@/lib/utils/landmarkParser";
 
 export default function GameMain() {
-    const { initWorker, terminateWorker, setWorkerMessageHandler, sharedArray, isInitialized } = useWorkerStore();
-    const canvasRef = useRef(null);
+    const { sharedArray } = useWorkerStore();
     const videoRef = useRef(null);
-    const [isCanvasReady, setIsCanvasReady] = useState(false);
-
-    useEffect(() => {
-        if (canvasRef.current) {
-            setIsCanvasReady(true);
-        }
-    }, [canvasRef]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined' || !videoRef.current) return;
-        let videoStream = null;
-        let originalCanvas = null;
-        let originalCtx = null;
-
-        const setupVideoAndWorker = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
-                videoRef.current.srcObject = stream;
-                videoStream = stream;
-                await new Promise((resolve) => {
-                    videoRef.current.onloadedmetadata = resolve;
-                });
-
-                try {
-                    await videoRef.current.play();
-                } catch (playError) {
-                    console.warn("Video play was interrupted:", playError);
-                }
-
-                // 새로운 캔버스 생성 및 컨텍스트 가져오기
-                originalCanvas = document.createElement('canvas');
-                originalCanvas.width = videoRef.current.videoWidth / 3;
-                originalCanvas.height = videoRef.current.videoHeight / 3;
-                originalCtx = originalCanvas.getContext('2d', { willReadFrequently: true });
-
-                // OffscreenCanvas 생성
-                const offscreenCanvas = new OffscreenCanvas(originalCanvas.width, originalCanvas.height);
-                await initWorker(originalCanvas.width, originalCanvas.height);
-
-                const worker = useWorkerStore.getState().worker;
-                worker.postMessage({
-                    type: 'VIDEO_INIT',
-                    offscreenCanvas: offscreenCanvas,
-                    width: originalCanvas.width,
-                    height: originalCanvas.height
-                }, [offscreenCanvas]);
-
-                const sendVideoFrame = () => {
-                    if (videoRef.current && originalCtx) {
-                        originalCtx.drawImage(videoRef.current, 0, 0, originalCanvas.width, originalCanvas.height);
-                        const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
-
-                        worker.postMessage({
-                            type: 'VIDEO_FRAME',
-                            imageData: imageData
-                        }, [imageData.data.buffer]);
-                    }
-                    requestAnimationFrame(sendVideoFrame);
-                };
-                requestAnimationFrame(sendVideoFrame);
-            } catch (err) {
-                console.error("Error setting up video and worker:", err);
-            }
-        };
-
-        setupVideoAndWorker();
-
-        return () => {
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-            }
-            if (videoRef.current) {
-                videoRef.current.srcObject = null;
-            }
-        };
-    }, [initWorker]);
-
-    // 캔버스 초기화를 위한 별도의 useEffect
-    useEffect(() => {
-        if (canvasRef.current) {
-            canvasRef.current.width = 640;
-            canvasRef.current.height = 480;
-            console.log('Canvas dimensions:', canvasRef.current.width, 'x', canvasRef.current.height);
-        } else {
-            console.error('Canvas reference is null after mount');
-        }
-    }, []);
-
-    useEffect(() => {
-        if (isInitialized) {
-            setWorkerMessageHandler((e) => {
-                if (e.data.type === 'LANDMARKS_UPDATED') {
-                    // 랜드마크 업데이트 처리
-                    handleLandmarksUpdate(e.data);
-                }
-            });
-        }
-    }, [isInitialized, setWorkerMessageHandler]);
-
     const roomId = useRef(null);
     const bgmSoundRef = useRef(null);
 
@@ -131,7 +30,7 @@ export default function GameMain() {
         bgmSoundRef.current.play();
     }
     }, []);
-    const { gameStatus } = useGameLogic(); //game 로직
+    const { gameStatus, handleUseSkill } = useGameLogic(); //game 로직
     const router = useRouter();
 
     useEffect(() => {
@@ -150,45 +49,7 @@ export default function GameMain() {
 
         const { resultOffset, resultLength } = data;
         const result = sharedArray.slice(resultOffset, resultOffset + resultLength);
-        let index = 0;
-
-        // landmarks 파싱
-        const landmarks = {};
-        if (result[0]) { // landmarks 존재 여부
-            const keys = ['head', 'leftHand', 'rightHand'];
-            keys.forEach(key => {
-                const position = [result[index++], result[index++], result[index++]]; // position
-                let rotation;
-                if (key === 'head') {
-                    rotation = [result[index++], result[index++], result[index++]]; // head rotation (3 values)
-                } else {
-                    rotation = [result[index++], result[index++]]; // hand rotation (2 values)
-                }
-                const state = result[index++]; // state
-                landmarks[key] = [position, rotation, state];
-            });
-        }
-
-        // poseLandmarks 파싱
-        const poseLandmarks = {};
-        if (result[index++]) { // poseLandmarks 존재 여부
-            const keys = ['nose', 'rightEye', 'leftShoulder', 'rightShoulder', 'leftElbow', 'rightElbow', 'leftWrist', 'rightWrist', 'leftIndex', 'rightIndex'];
-            keys.forEach(key => {
-                poseLandmarks[key] = {
-                    x: result[index++],
-                    y: result[index++],
-                    z: result[index++]
-                };
-            });
-        }
-
-        // frameCount++;
-        // if (frameCount % LOG_INTERVAL === 0) {
-        //     console.log('Parsed poseLandmarks - head:', landmarks['head']);
-        //     console.log('Parsed poseLandmarks - leftHand:', landmarks['leftHand']);
-        //     console.log('Parsed poseLandmarks - rightHand:', landmarks['rightHand']);
-        //     console.log('Parsed Landmarks - nose:', poseLandmarks['nose']);
-        // }
+        const { landmarks, poseLandmarks } = parseLandmarks(result);
 
         setLandmarks({
             landmarks: landmarks,
@@ -218,12 +79,14 @@ export default function GameMain() {
       }, [router]);
 
     // WebRTC 연결 설정
-    const { connectionState } = useWebRTCConnection(
+    const {
+        connectionState,
+        finalTranscript,
+    } = useWebRTCConnection(
         roomId.current,
         videoRef,
         remoteVideoRef,
         (receivedData) => {
-            // console.log('Received data:', receivedData);
             if (receivedData.type === 'pose') {
                 setReceivedPoseData(receivedData.pose);
             }
@@ -243,10 +106,10 @@ export default function GameMain() {
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
-        width: (['playing', 'finished'].includes(gameStatus)) ? '200px' : 'calc(40vw - 10px)',
-        height: ['playing', 'finished'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
+        width: ['playing', 'finished', 'skillTime'].includes(gameStatus) ? '200px' : 'calc(40vw - 10px)',
+        height: ['playing', 'finished', 'skillTime'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
         zIndex: 30,
-        ...(['playing', 'finished'].includes(gameStatus)
+        ...(['playing', 'finished', 'skillTime'].includes(gameStatus)
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : { 
                 top: '50%',
@@ -297,16 +160,13 @@ export default function GameMain() {
 
     return (
         <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
-            {gameStatus === 'playing' && <GaugeUi />}
+            {gameStatus === 'playing'  && <GaugeUi />}
             <div style={videoContainerStyle(true)}>
-                <video
-                    className={`scale-x-[-1] opacity-80 mt-5 transition-transform  ${
-                        (myReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
-                      }`}
+                <VideoProcessor
                     ref={videoRef}
+                    onLandmarksUpdate={handleLandmarksUpdate}
                     style={videoStyle}
-                    autoPlay
-                    playsInline
+                    gameStatus={gameStatus}
                 />
                 {!myReady && (
                     <Image
@@ -322,7 +182,7 @@ export default function GameMain() {
             <>
                 {connectionState !== 'connected' &&(
                     <div
-                    className="bg-slate-400 mt-2 opacity-80 flex items-center justify-center text-white"
+                    className="bg-slate-400 mt-5 opacity-80 flex items-center justify-center text-white"
                     style={videoStyle}
                     >
                     연결 대기 중...
@@ -330,7 +190,7 @@ export default function GameMain() {
                 )}
                     <video
                         className={`scale-x-[-1] opacity-80 mt-5 transition-transform  ${
-                            (opponentReady && gameStatus !== 'playing') ? 'ring-green-400 ring-8' : ''
+                            (opponentReady && !['playing', 'finished', 'skillTime'].includes(gameStatus)) ? 'ring-green-400 ring-8' : ''
                           }`}
                         ref={remoteVideoRef}
                         style={videoStyle}
@@ -365,15 +225,16 @@ export default function GameMain() {
                                 landmarks={landmarks.landmarks}
                             />
                         </div>
-                        {/* <div className="absolute inset-0 z-40 pointer-events-none">
+                        <div className="absolute inset-0 z-40 pointer-events-none">
                             <SkillSelect
-                                localVideoRef={localVideoRef}
+                                localVideoRef={videoRef}
                                 poseLandmarks={landmarks.poseLandmarks}
                                 landmarks={landmarks.landmarks}
                                 canvasSize={canvasSize}
                                 onUseSkill={handleUseSkill}
+                                finalTranscript={finalTranscript}
                             />
-                        </div> */}
+                        </div>
                     </>
                 )}
             </div>

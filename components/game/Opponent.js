@@ -2,10 +2,12 @@
 
 import { forwardRef, useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react'
 import { useFrame} from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { useGLTF, useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import useGaugeStore from '@/store/gaugeStore';
 import useSocketStore from '@/store/socketStore';
+import useGameStore from "@/store/gameStore";
+import {getAudioUrls} from "@/api/user/api";
 
 
 
@@ -14,11 +16,21 @@ import useSocketStore from '@/store/socketStore';
 const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) => {
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/opponent-head.glb')
-    const opacity = 0.9
+    const opacity = 1
     const [hitImpulse, setHitImpulse] = useState(new THREE.Vector3())
     const originalPosition = useRef(new THREE.Vector3());
     const currentVelocity = useRef(new THREE.Vector3())
 
+    const opponentHealth = useGameStore(state => state.opponentHealth);
+
+    // 텍스처 로드
+    const textures = useTexture({
+      default: 'images/textures/face_default.png',
+      hit: 'images/textures/face_hit.png',
+      hpUnder60: 'images/textures/face_HpUnder_60.png',
+      hpUnder30: 'images/textures/face_HpUnder_30.png',
+    })
+  
     useImperativeHandle(
       ref,
       () => ({
@@ -48,11 +60,24 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
 
     useEffect(() => {
       Object.values(materials).forEach((material) => {
-        material.transparent = true
-        material.opacity = opacity
-        material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
+        // material.transparent = true
+        // material.opacity = opacity
+        // material.roughness = 0.5;
+        // material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
+        // 상태에 따라 텍스처 변경
+        if (hit) {
+          material.map = textures.hit
+        } else if (opponentHealth <= 30) {
+            material.map = textures.hpUnder30
+        } else if (opponentHealth <= 60) {
+            material.map = textures.hpUnder60
+        } else {
+            material.map = textures.default
+      }
+
+      material.needsUpdate = true
       })
-    }, [materials, hit])
+    }, [materials, hit, textures, opponentHealth])
 
     useFrame((state, delta) => {
       if (localRef.current) {
@@ -64,11 +89,11 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
         
         // Spring force towards original position
         const displacement = localRef.current.position.clone().sub(originalPosition.current)
-        const springForce = displacement.clone().multiplyScalar(-10) // Increase for stiffer spring
+        const springForce = displacement.clone().multiplyScalar(-5) // Increase for stiffer spring
         currentVelocity.current.add(springForce.multiplyScalar(delta))
         
         // Damping
-        currentVelocity.current.multiplyScalar(0.95) //0.94
+        currentVelocity.current.multiplyScalar(0.85) //0.94
         
         // Reset hit impulse
         setHitImpulse(new THREE.Vector3())
@@ -117,6 +142,25 @@ export function Opponent({ position, landmarks, opponentData }) {
   const count_optm = useRef(0)
   const roomId = useRef('')
   const hitSoundRef = useRef(null);
+  const voiceSoundRef = useRef(null);
+  const opponentInfo = useGameStore(state => state.opponentInfo);
+  const [audioUrls, setAudioUrls] = useState([]);
+
+  useEffect(() => {
+    if (opponentInfo && opponentInfo.email) {
+      const fetchAudioUrls = async () => {
+        try {
+          const urls = await getAudioUrls(opponentInfo);
+          setAudioUrls(urls);
+        } catch (err) {
+          console.error('Error fetching audio URLs:', err);
+        }
+      };
+
+      fetchAudioUrls();
+    }
+  }, [opponentInfo]);
+
 
   // 게이지 구현
   const { 
@@ -126,6 +170,7 @@ export function Opponent({ position, landmarks, opponentData }) {
 
   useEffect(() => {
     hitSoundRef.current = new Audio('./sounds/hit.MP3');
+    voiceSoundRef.current = new Audio();
   }, []);
 
   useEffect(() => {
@@ -133,11 +178,20 @@ export function Opponent({ position, landmarks, opponentData }) {
     roomId.current = searchParams.get('roomId');
   }, [roomId]);
 
+  const playRandomVoice = useCallback(() => {
+    if (audioUrls.length > 0 && voiceSoundRef.current) {
+      const randomIndex = Math.floor(Math.random() * audioUrls.length);
+      voiceSoundRef.current.src = audioUrls[randomIndex];
+      voiceSoundRef.current.play().catch(e => console.error("Error playing audio:", e));
+    }
+  }, [audioUrls]);
+
   const playHitSound = useCallback(() => {
     if (hitSoundRef.current) {
-      hitSoundRef.current.play();
+      hitSoundRef.current.play().catch(e => console.error("Error playing hit sound:", e));
     }
-  }, []);
+    playRandomVoice(); // 히트 사운드와 함께 랜덤 보이스 재생
+  }, [playRandomVoice]);
 
   const checkHit = useCallback(() => {
     if(!headRef.current || !landmarks.leftHand || !landmarks.rightHand) return
@@ -175,7 +229,7 @@ export function Opponent({ position, landmarks, opponentData }) {
         const damage = gaugeDamage // + (Math.floor(velocity * 20) / 3);
 
         // 데미지 정보를 서버로 전송
-        if (damage > 5) {
+        if (damage !== 0) {
           emitDamage(damage)
           playHitSound()
           setHit(true)
@@ -185,7 +239,7 @@ export function Opponent({ position, landmarks, opponentData }) {
 
         // 타격 위치 설정
         const hitDirection = handPosition.clone().sub(headPosition).normalize()
-        const hitImpulse = hitDirection.multiplyScalar(7) // 조절 가능한 힘
+        const hitImpulse = hitDirection.multiplyScalar(40+damage) // 조절 가능한 힘
         headRef.current.addHitImpulse(hitImpulse)
 
         resetGauge(name)
@@ -234,6 +288,6 @@ export function Opponent({ position, landmarks, opponentData }) {
 }
 
 // 모델 미리 로드
-useGLTF.preload('/models/head.glb');
+useGLTF.preload('/models/opponent-head.glb');
 useGLTF.preload('/models/left-hand.glb');
 useGLTF.preload('/models/right-hand.glb');

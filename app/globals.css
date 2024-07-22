@@ -1,6 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import 'bulma/css/bulma.min.css';
+@import '@fortawesome/fontawesome-free/css/all.min.css';
 
 @layer base {
   a{
@@ -20,6 +22,7 @@
       text-white text-center py-2.5
   }
 } 
+
 @keyframes bounce {
   0%, 100% {
     transform: translateY(-25%);
@@ -173,4 +176,37 @@
   font-weight: bold;
   font-size: 30px;
   z-index: 11;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2d3748; /* Tailwind의 bg-gray-800 색상 */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a5568; /* Tailwind의 bg-gray-700 색상 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #718096; /* Tailwind의 bg-gray-600 색상 */
+}
+
+@keyframes small-bounce {
+  0%, 100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-small-bounce {
+  animation: small-bounce 1s infinite;
 }

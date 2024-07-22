@@ -1,24 +1,45 @@
-let frameCount = 0;
-const LOG_INTERVAL = 60;
+const HEAD_POSITION_ALPHA = 0.3; // 머리 위치에 대한 알파값
+const HEAD_ROTATION_ALPHA = 0.2; // 머리 회전에 대한 알파값
+
+function applyEMA(newValue, prevValue, alpha) {
+    if (!prevValue) {
+        return newValue;
+    }
+    return newValue.map((val, index) => alpha * val + (1 - alpha) * prevValue[index]);
+}
 
 export function processLandmarks(faceResult, handResult, poseResult, prevLandmarks, lastValidLandmarks) {
     const face = faceResult.faceLandmarks?.[0] || [];
     const hands = handResult.landmarks || [];
 
+    let newHeadPosition, newHeadRotation;
+
+    // 머리 위치 처리
+    if (face.length > 0 && face[1]) {
+        const rawHeadPosition = [face[1].x || 0, face[1].y || 0, face[1].z || 0];
+        newHeadPosition = applyEMA(rawHeadPosition, prevLandmarks?.head?.[0], HEAD_POSITION_ALPHA);
+    } else {
+        newHeadPosition = lastValidLandmarks?.head?.[0] || [0, 0, 0];
+    }
+
+    // 머리 회전 처리
+    if (face.length > 0) {
+        const rawHeadRotation = calc_head_rotation_2d(face);
+        newHeadRotation = applyEMA(rawHeadRotation, prevLandmarks?.head?.[1], HEAD_ROTATION_ALPHA);
+    } else {
+        newHeadRotation = lastValidLandmarks?.head?.[1] || [0, 0, 0];
+    }
+
     const maxHeadMovement = 0.8;
     const maxHandMovement = 2.9;
 
     const newLandmarks = {
-        head: face.length > 0 && face[1] ?
-            [[face[1]?.x || 0, face[1]?.y || 0, face[1]?.z || 0], calc_head_rotation_2d(face)] :
-            lastValidLandmarks?.head || [[0, 0, 0], [0, 0, 0]],
-
+        head: [newHeadPosition, newHeadRotation],
         leftHand: hands[0] ? [
             calc_hand_center(hands[0]) || lastValidLandmarks?.leftHand?.[0] || [0, 0, 0],
             calculateHandRotation(hands[0][0], hands[0][5], hands[0][17], hands[0][10]) || lastValidLandmarks?.leftHand?.[1] || [0, 0],
             determineHandState(hands[0]) || 0
         ] : lastValidLandmarks?.leftHand || [[0, 0, 0], [0, 0], 0],
-
         rightHand: hands[1] ? [
             calc_hand_center(hands[1]) || lastValidLandmarks?.rightHand?.[0] || [0, 0, 0],
             calculateHandRotation(hands[1][0], hands[1][5], hands[1][17], hands[1][10]) || lastValidLandmarks?.rightHand?.[1] || [0, 0],
@@ -76,19 +97,7 @@ const processPoseLandmarks = (poseLandmarks) => {
     if (!poseLandmarks || poseLandmarks.length === 0) {
         return null;
     }
-    frameCount++;
-    if (frameCount % LOG_INTERVAL === 0) {
-        // console.log('Mediapipe 결과 - nose: ', poseLandmarks[0]);
-        //     console.log('Mediapipe 결과 - rightEye: ', poseLandmarks[2]);
-        //     console.log('Mediapipe 결과 - leftShoulder: ', poseLandmarks[11]);
-        //     console.log('Mediapipe 결과 - rightShoulder: ', poseLandmarks[12]);
-        //     console.log('Mediapipe 결과 - leftElbow: ', poseLandmarks[13]);
-        //     console.log('Mediapipe 결과 - rightElbow: ', poseLandmarks[14]);
-        //     console.log('Mediapipe 결과 - leftWrist: ', poseLandmarks[15]);
-        //     console.log('Mediapipe 결과 - rightWrist: ', poseLandmarks[16]);
-        //     console.log('Mediapipe 결과 - leftIndex: ', poseLandmarks[19]);
-        //     console.log('Mediapipe 결과 - rightIndex: ', poseLandmarks[20]);
-    }
+
     return {
         nose: poseLandmarks[0],
         rightEye: poseLandmarks[2],
