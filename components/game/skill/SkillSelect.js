@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import useSocketStore from '@/store/socketStore';
-import useSTT from '@/hooks/useSTT';
 import stringSimilarity from 'string-similarity';
 import SkillProgressBar from '@/components/game/skill/SkillProgressBar';
 import useGameStore from '@/store/gameStore';
@@ -10,6 +9,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const canvasRef = useRef(null);
   const [activeSkill, setActiveSkill] = useState(null);
   const [skillText, setSkillText] = useState('');
+  const skillTextRef = useRef('');
   const [skillTextColor, setSkillTextColor] = useState('');
   const [showSkillText, setShowSkillText] = useState(false);
   const [resultMessage, setResultMessage] = useState('');
@@ -28,39 +28,50 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   });
 
   const skillColors = {
-    Shield: 'bg-green-500', // Green
-    Heal: 'bg-blue-500', // Blue
-    Attack: 'bg-red-500', // Red
+    Shield: 'bg-green-500',
+    Heal: 'bg-blue-500',
+    Attack: 'bg-red-500',
   };
 
   const [maxSimilarity, setMaxSimilarity] = useState(0);
   const maxSimilarityRef = useRef(0);
   const transcriptRef = useRef('');
-  const intervalIds = useRef({}); // Interval ID를 저장하는 객체
+  const intervalIds = useRef({});
 
-  const onSTTResult = ({ finalTranscript }) => {
-    console.log('STT Result:', finalTranscript);
-    transcriptRef.current = finalTranscript;
-    if (skillText) {
-      const similarity = stringSimilarity.compareTwoStrings(
-        finalTranscript.toLowerCase(),
-        skillText.toLowerCase()
-      );
-      if (similarity > maxSimilarityRef.current) {
-        maxSimilarityRef.current = similarity;
-        setMaxSimilarity(similarity);
-      }
-    }
-  };
-
-  const onSTTError = (event) => {
-    console.error('STT Error:', event);
-  };
-
-  const { startRecognition, stopRecognition } = useSTT(onSTTResult, onSTTError);
+  const recognition = useRef(null);
 
   useEffect(() => {
-    // Load images
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition.current = new SpeechRecognition();
+      recognition.current.continuous = false;
+      recognition.current.interimResults = false;
+      recognition.current.lang = 'ko-KR';
+
+      recognition.current.onresult = (event) => {
+        const finalTranscript = event.results[0][0].transcript;
+        transcriptRef.current = finalTranscript;
+        console.log(`Final Transcript: ${finalTranscript}`);
+        console.log(`Skill Text: ${skillTextRef.current}`);
+        if (skillTextRef.current) {
+          const similarity = stringSimilarity.compareTwoStrings(
+            finalTranscript.toLowerCase(),
+            skillTextRef.current.toLowerCase()
+          );
+          if (similarity > maxSimilarityRef.current) {
+            maxSimilarityRef.current = similarity;
+            setMaxSimilarity(similarity);
+          }
+        }
+      };
+
+      recognition.current.onerror = (event) => {
+        console.error('STT Error:', event);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
     const shield_img = new Image();
     shield_img.src = '/images/skill/love.png';
     shield_img.onload = () => {
@@ -84,44 +95,49 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     if (activeSkill) {
       const textAudio = new Audio('./sounds/text.mp3');
       textAudio.play();
+      let newSkillText = '';
       if (activeSkill === 'Shield') {
-        setSkillText(shieldSkill.skillReading[Math.floor(Math.random() * shieldSkill.skillReading.length)]);
+        newSkillText = shieldSkill.skillReading[Math.floor(Math.random() * shieldSkill.skillReading.length)];
         setSkillTextColor(shieldSkill.textColor);
       } else if (activeSkill === 'Heal') {
-        setSkillText(healSkill.skillReading[Math.floor(Math.random() * healSkill.skillReading.length)]);
+        newSkillText = healSkill.skillReading[Math.floor(Math.random() * healSkill.skillReading.length)];
         setSkillTextColor(healSkill.textColor);
       } else if (activeSkill === 'Attack') {
-        setSkillText(attackSkill.skillReading[Math.floor(Math.random() * attackSkill.skillReading.length)]);
+        newSkillText = attackSkill.skillReading[Math.floor(Math.random() * attackSkill.skillReading.length)];
         setSkillTextColor(attackSkill.textColor);
       }
 
+      console.log(`New Skill Text: ${newSkillText}`);
+      setSkillText(newSkillText);
+      skillTextRef.current = newSkillText;
       setShowSkillText(true);
       maxSimilarityRef.current = 0;
       setMaxSimilarity(0);
       transcriptRef.current = '';
-      const timeoutId = setTimeout(() => {
-        console.log(`Final transcript: ${transcriptRef.current}`);
-        console.log(`Skill text: ${skillText}`);
-        console.log(`Max similarity: ${maxSimilarityRef.current}`);
-        emitUseSkill(activeSkill, maxSimilarityRef.current);
-        setShowSkillText(false);
-        handleSkillComplete();
-        if (activeSkill === "Heal") {
-          const healAudio = new Audio('./sounds/heal_sound.mp3');
-          console.log(1)
-          healAudio.play();
-        }
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        useSkill(activeSkill);
-      }, 5000);
 
-      if (!recognitionActive.current) {
-        startRecognition();
+      if (!recognitionActive.current && typeof window !== 'undefined') {
+        recognition.current.start();
+        console.log("recog");
         recognitionActive.current = true;
 
         const recognitionTimeoutId = setTimeout(() => {
           recognitionActive.current = false;
-          stopRecognition();
+          console.log("stop");
+          recognition.current.stop();
+        }, 5000);
+
+        const timeoutId = setTimeout(() => {
+          console.log(`Final transcript: ${transcriptRef.current}`);
+          console.log(`Skill text: ${newSkillText}`);
+          console.log(`Max similarity: ${maxSimilarityRef.current}`);
+          emitUseSkill(activeSkill, maxSimilarityRef.current);
+          setShowSkillText(false);
+          handleSkillComplete();
+          if (activeSkill === "Heal") {
+            const healAudio = new Audio('./sounds/heal_sound.mp3');
+            healAudio.play();
+          }
+          triggerSkillUse(activeSkill);
         }, 5000);
 
         return () => {
@@ -132,11 +148,11 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     }
   }, [activeSkill]);
 
-  const useSkill = (skillName) => {
+  const triggerSkillUse = (skillName) => {
     if (skillCooldowns[skillName] === 0) {
       setSkillCooldowns(prev => ({
         ...prev,
-        [skillName]: 10,
+        [skillName]: 25,
       }));
 
       const intervalId = setInterval(() => {
@@ -156,15 +172,14 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   };
 
   useEffect(() => {
-    if (gameStatus === "skilltime") {
-      // 게임 상태가 "skilltime"일 때 모든 interval을 멈춤
-      console.log(gameStatus)
-      Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
-    } else if (gameStatus === "playing") {
-      // 게임 상태가 "playing"일 때 다시 시작
-      console.log(gameStatus)
+    console.log(gameStatus);
+
+    Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
+    intervalIds.current = {};
+
+    if (gameStatus === "playing") {
       Object.keys(skillCooldowns).forEach(skillName => {
-        if (skillCooldowns[skillName] > 0 && !intervalIds.current[skillName]) {
+        if (skillCooldowns[skillName] > 0) {
           const intervalId = setInterval(() => {
             setSkillCooldowns(prev => {
               if (prev[skillName] > 0) {
@@ -181,30 +196,34 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         }
       });
     }
+
+    return () => {
+      Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
+    };
   }, [gameStatus, skillCooldowns]);
 
   const handleSkillComplete = useCallback(() => {
     setActiveSkill(null);
     setSkillText('');
+    skillTextRef.current = '';
     setSkillTextColor('');
     clearCanvas();
 
     if (maxSimilarityRef.current >= 0.75) {
-      setResultMessage('Perfect');
+      setResultMessage('Eww🤮');
       setResultColor('green');
     } else if (maxSimilarityRef.current >= 0.5) {
-      setResultMessage('Good');
+      setResultMessage('Perfect!');
       setResultColor('blue');
     } else if (maxSimilarityRef.current >= 0.25) {
-      setResultMessage('Eww');
+      setResultMessage('Good!');
       setResultColor('orange');
     } else {
-      setResultMessage('Bad');
+      setResultMessage('Bad!');
       setResultColor('red');
     }
     setShowResult(true);
 
-    // 결과 메시지를 1초 동안 보여주기
     setTimeout(() => {
       setShowResult(false);
       setResultColor('');
@@ -249,7 +268,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         leftIndex: poseLandmarks.leftIndex,
         rightIndex: poseLandmarks.rightIndex
       };
-  
+
       if (Object.values(detectedPose).every(landmark => landmark)) {
         const skills = [shieldSkill, healSkill, attackSkill];
         skills.forEach(skill => {
@@ -263,7 +282,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         });
       }
     }
-  }, [poseLandmarks, skillCooldowns, gameStatus]);
+  }, [poseLandmarks, gameStatus, skillCooldowns]);
 
   const clearCanvas = () => {
     if (canvasRef.current) {
@@ -286,7 +305,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             key={skill}
             skillName={skill}
             cooldown={skillCooldowns[skill]}
-            colorClass={skillColors[skill]} // 색상 추가
+            // colorClass={skillColors[skill]}
+            isActive={gameStatus === 'skillTime' && activeSkill === skill}
           />
         ))}
       </div>
