@@ -28,7 +28,6 @@ const DigitImage = styled.img`
   `}
 `;
 
-
 const preloadImages = () => {
   return new Promise((resolve, reject) => {
     const imageUrls = Array.from({ length: 10 }, (_, i) => `/images/count/${i}.png`);
@@ -51,7 +50,7 @@ const preloadImages = () => {
 const Timer = ({ count }) => {
   const [tens, setTens] = useState(0);
   const [ones, setOnes] = useState(0);
-  const isRed = count <=10
+  const isRed = count <=10;
   const isOrange = count > 10 && count <= 30;
 
   useEffect(() => {
@@ -66,7 +65,6 @@ const Timer = ({ count }) => {
     </TimerContainer>
   );
 };
-
 
 const HealthBarContainer = styled.div`
   width: 100%;
@@ -86,7 +84,6 @@ const BaseHealthBar = styled.div`
   transform-origin: left;
 `;
 
-
 const AnimatedHealthBar = styled(BaseHealthBar)`
   background-color: ${props => props.$isplayer 
     ? 'rgba(252, 165, 165, 0.8)' // 연한 빨강 (player)
@@ -102,6 +99,7 @@ const CurrentHealthBar = styled(BaseHealthBar)`
   transition: transform 0.5s ease-out;
   z-index: 1;
 `;
+
 const fadeInOut = keyframes`
   0% { opacity: 0; }
   50% { opacity: 0.5; }
@@ -124,6 +122,7 @@ export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner } = useGameStore();
   const socket = useSocketStore(state => state.socket);
   const [count, setCount] = useState(60);
+  const [pausedCount, setPausedCount] = useState(60); // 멈춘 시간 추적 상태
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
 
@@ -148,7 +147,6 @@ export default function StateBar() {
   const [isOpponentDecreasing, setIsOpponentDecreasing] = useState(false);
 
   const [showDamageOverlay, setShowDamageOverlay] = useState(false);
-
 
   useEffect(() => {
     if (playerHealth < currentPlayerHealth) {
@@ -213,14 +211,20 @@ export default function StateBar() {
   }, [gameStatus, count, isLoading]);
 
   useEffect(() => {
-    if (gameStatus === 'playing') {
-      setCount(60);  // 게임 시작 시 카운트를 120초로 초기화
-    } 
+    if (gameStatus === 'playing' && count === 60) {
+      setCount(pausedCount); // 게임 상태가 'playing'으로 전환될 때 이전에 멈춘 시간을 설정
+    }
   }, [gameStatus]);
 
+  useEffect(() => {
+    if (gameStatus === 'skilltime') {
+      setPausedCount(count); // 게임 상태가 'skilltime'으로 전환될 때 남은 시간을 저장
+    }
+  }, [gameStatus, count]);
+
   const handleRestart = () => {
-    // resetGame();
     setCount(60);
+    setPausedCount(60); // 재시작 시 타이머 초기화
   }
 
   return (
@@ -282,5 +286,5 @@ export default function StateBar() {
     </div>
     {showDamageOverlay && <DamageOverlay />}
   </>
-  )
+  );
 }
