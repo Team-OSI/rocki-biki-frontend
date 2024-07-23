@@ -1,7 +1,7 @@
 import React from 'react';
 
 const SkillProgressBar = ({ skillName, cooldown, colorClass }) => {
-  const percentage = (cooldown / 10) * 100; // 10초 기준으로 퍼센티지 계산
+  const percentage = (cooldown / 15) * 100; // 15초 기준으로 퍼센티지 계산
 
   return (
     <div className="skill-progress-bar mb-4">

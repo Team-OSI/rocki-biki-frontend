@@ -9,7 +9,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const canvasRef = useRef(null);
   const [activeSkill, setActiveSkill] = useState(null);
   const [skillText, setSkillText] = useState('');
-  const skillTextRef = useRef(''); // 추가
+  const skillTextRef = useRef('');
   const [skillTextColor, setSkillTextColor] = useState('');
   const [showSkillText, setShowSkillText] = useState(false);
   const [resultMessage, setResultMessage] = useState('');
@@ -28,15 +28,15 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   });
 
   const skillColors = {
-    Shield: 'bg-green-500', // Green
-    Heal: 'bg-blue-500', // Blue
-    Attack: 'bg-red-500', // Red
+    Shield: 'bg-green-500',
+    Heal: 'bg-blue-500',
+    Attack: 'bg-red-500',
   };
 
   const [maxSimilarity, setMaxSimilarity] = useState(0);
   const maxSimilarityRef = useRef(0);
   const transcriptRef = useRef('');
-  const intervalIds = useRef({}); // Interval ID를 저장하는 객체
+  const intervalIds = useRef({});
 
   const recognition = useRef(null);
 
@@ -53,7 +53,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         transcriptRef.current = finalTranscript;
         console.log(`Final Transcript: ${finalTranscript}`);
         console.log(`Skill Text: ${skillTextRef.current}`);
-        if (skillTextRef.current) { // skillText 대신 skillTextRef.current 사용
+        if (skillTextRef.current) {
           const similarity = stringSimilarity.compareTwoStrings(
             finalTranscript.toLowerCase(),
             skillTextRef.current.toLowerCase()
@@ -72,7 +72,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   }, []);
 
   useEffect(() => {
-    // Load images
     const shield_img = new Image();
     shield_img.src = '/images/skill/love.png';
     shield_img.onload = () => {
@@ -110,7 +109,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
 
       console.log(`New Skill Text: ${newSkillText}`);
       setSkillText(newSkillText);
-      skillTextRef.current = newSkillText; // 추가
+      skillTextRef.current = newSkillText;
       setShowSkillText(true);
       maxSimilarityRef.current = 0;
       setMaxSimilarity(0);
@@ -134,7 +133,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           emitUseSkill(activeSkill, maxSimilarityRef.current);
           setShowSkillText(false);
           handleSkillComplete();
-          if (activeSkill === "Heal" && maxSimilarityRef.current > 0.2) {
+          if (activeSkill === "Heal") {
             const healAudio = new Audio('./sounds/heal_sound.mp3');
             healAudio.play();
           }
@@ -153,7 +152,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     if (skillCooldowns[skillName] === 0) {
       setSkillCooldowns(prev => ({
         ...prev,
-        [skillName]: 10,
+        [skillName]: 15,
       }));
 
       const intervalId = setInterval(() => {
@@ -173,15 +172,16 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   };
 
   useEffect(() => {
-    if (gameStatus === "skilltime") {
-      // 게임 상태가 "skilltime"일 때 모든 interval을 멈춤
-      console.log(gameStatus);
-      Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
-    } else if (gameStatus === "playing") {
-      // 게임 상태가 "playing"일 때 다시 시작
-      console.log(gameStatus);
+    console.log(gameStatus);
+    
+    // 모든 인터벌 정리
+    Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
+    intervalIds.current = {};
+
+    if (gameStatus === "playing") {
+      // playing 상태일 때 쿨다운 중인 스킬에 대해 새로운 인터벌 설정
       Object.keys(skillCooldowns).forEach(skillName => {
-        if (skillCooldowns[skillName] > 0 && !intervalIds.current[skillName]) {
+        if (skillCooldowns[skillName] > 0) {
           const intervalId = setInterval(() => {
             setSkillCooldowns(prev => {
               if (prev[skillName] > 0) {
@@ -198,12 +198,17 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         }
       });
     }
+
+    // 컴포넌트 언마운트 시 모든 인터벌 정리
+    return () => {
+      Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
+    };
   }, [gameStatus, skillCooldowns]);
 
   const handleSkillComplete = useCallback(() => {
     setActiveSkill(null);
     setSkillText('');
-    skillTextRef.current = ''; // 추가
+    skillTextRef.current = '';
     setSkillTextColor('');
     clearCanvas();
 
@@ -222,7 +227,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     }
     setShowResult(true);
 
-    // 결과 메시지를 1초 동안 보여주기
     setTimeout(() => {
       setShowResult(false);
       setResultColor('');
@@ -281,7 +285,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         });
       }
     }
-  }, [poseLandmarks, skillCooldowns, gameStatus]);
+  }, [poseLandmarks, gameStatus, skillCooldowns]);
 
   const clearCanvas = () => {
     if (canvasRef.current) {
@@ -304,7 +308,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             key={skill}
             skillName={skill}
             cooldown={skillCooldowns[skill]}
-            colorClass={skillColors[skill]} // 색상 추가
+            colorClass={skillColors[skill]}
           />
         ))}
       </div>

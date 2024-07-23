@@ -58,7 +58,6 @@ function Scene({ receivedPoseData, landmarks, socket }) {
         }
 
         if (skill) {
-            console.log(skill);
             setBackground(skillBackgrounds[skill] || skillBackgrounds.default);
 
             if (timerRef.current) {
