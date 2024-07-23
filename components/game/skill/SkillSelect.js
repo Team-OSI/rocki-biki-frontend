@@ -18,7 +18,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const emitCastSkill = useSocketStore(state => state.emitCastSkill);
   const emitUseSkill = useSocketStore(state => state.emitUseSkill);
   const gameStatus = useGameStore(state => state.gameStatus);
-  const similarityThreshold = 0.70;
+  const similarityThreshold = 0.75;
   const recognitionActive = useRef(false);
 
   const [skillCooldowns, setSkillCooldowns] = useState({
@@ -133,7 +133,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           emitUseSkill(activeSkill, maxSimilarityRef.current);
           setShowSkillText(false);
           handleSkillComplete();
-          if (activeSkill === "Heal") {
+          if (activeSkill === "Heal" && maxSimilarityRef.current > 0.2) {
             const healAudio = new Audio('./sounds/heal_sound.mp3');
             healAudio.play();
           }
@@ -209,13 +209,13 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     setSkillTextColor('');
     clearCanvas();
 
-    if (maxSimilarityRef.current >= 0.75) {
+    if (maxSimilarityRef.current >= 0.70) {
       setResultMessage('Eww🤮');
       setResultColor('green');
     } else if (maxSimilarityRef.current >= 0.5) {
       setResultMessage('Perfect!');
       setResultColor('blue');
-    } else if (maxSimilarityRef.current >= 0.25) {
+    } else if (maxSimilarityRef.current > 0.20) {
       setResultMessage('Good!');
       setResultColor('orange');
     } else {
@@ -305,7 +305,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             key={skill}
             skillName={skill}
             cooldown={skillCooldowns[skill]}
-            // colorClass={skillColors[skill]}
             isActive={gameStatus === 'skillTime' && activeSkill === skill}
           />
         ))}
