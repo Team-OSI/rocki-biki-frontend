@@ -15,11 +15,12 @@ const useGameLogic = () => {
     if (!socket) return;
 
     socket.on('gameState', handleGameUpdate);
-    // socket.on('skillState',handleCastSkill);
     socket.on('opponentInfo', handleOpponentInfo);
+    // socket.on('skillState',handleCastSkill);
 
     return () => {
       socket.off('gameState');
+      socket.off('opponentInfo')
       // socket.off('skillState')
     };
   }, [socket]);
@@ -30,9 +31,9 @@ const useGameLogic = () => {
     setGameStatus(newState, socket.id);
   }, [setGameStatus, socket]);
 
-  const handleOpponentInfo = (info) => {
+  const handleOpponentInfo = useCallback((info) => {
     setOpponentInfo(info);
-  }
+  }, [setOpponentInfo, socket])
   // const handleCastSkill = useCallback((newState) => {
   //   console.log("skill:",newState);
   //   setGameStatus(newState, socket.id);

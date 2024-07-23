@@ -13,7 +13,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const [showClock, setShowClock] = useState(false);
   const emitCastSkill = useSocketStore(state => state.emitCastSkill);
   const emitUseSkill = useSocketStore(state => state.emitUseSkill);
-  const similarityThreshold = 0.80;
+  const similarityThreshold = 0.90;
   const recognitionActive = useRef(false);
   
   const [maxSimilarity, setMaxSimilarity] = useState(0);

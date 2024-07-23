@@ -8,6 +8,7 @@ import useGaugeStore from '@/store/gaugeStore';
 import useSocketStore from '@/store/socketStore';
 import useGameStore from "@/store/gameStore";
 import {getAudioUrls} from "@/api/user/api";
+import PNGSequenceAnimation from './PNGSequence';
 
 
 
@@ -36,7 +37,7 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
       if (opponentHealth <= 30) return textures.hpUnder30;
       if (opponentHealth <= 60) return textures.hpUnder60;
       return textures.default;
-    }, [hit, opponentHealth]);
+    }, [hit, opponentHealth, textures.hit, textures.hpUnder30, textures.hpUnder60, textures.default]);
   
     useImperativeHandle(
       ref,
@@ -73,7 +74,7 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
         material.metalness = 0.5;
         material.needsUpdate = true;
       });
-    }, [materials, currentTexture]);
+    }, [materials, currentTexture, hit]);
 
     useFrame((state, delta) => {
       if (localRef.current) {
@@ -96,7 +97,15 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
       }
     })
 
-    return <primitive ref={localRef} object={scene} scale={scale} name={name} />
+    return (<>
+    <primitive ref={localRef} object={scene} scale={scale} name={name} />
+    {opponentHealth <= 50 && (
+      <PNGSequenceAnimation
+        position={[-0.7, 1.7, 0]} 
+        health={opponentHealth} 
+      />
+    )}
+    </>)
   })
   
 OpponentHead.displayName = "OpponentHead";
