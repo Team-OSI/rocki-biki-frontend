@@ -21,12 +21,12 @@ export const attackSkill = {
 export const healSkill = {
     name: "Heal",
     targetPose: {
-        leftElbow: { x: 0.60, y: 0.46 },
-        rightElbow: { x: -0.60, y: 0.20 },
-        leftWrist: { x: 0.11, y: -0.20 },
+        leftElbow: { x: 0.60, y: -0.30 },
+        rightElbow: { x: -0.60, y: -0.30 },
+        leftWrist: { x: 0.11, y: -0.30 },
         rightWrist: { x: 0.06, y: -0.31 },
         leftIndex: { x: -0.09, y: -0.37 },
-        rightIndex: { x: 0.23, y: -0.49 },
+        rightIndex: { x: 0.23, y: -0.39 },
     },
     imagePosition: (landmarks, width, height) => ({
         x: landmarks.nose.x * width - 80,

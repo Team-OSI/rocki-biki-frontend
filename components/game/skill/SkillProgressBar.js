@@ -1,7 +1,7 @@
 import React from 'react';
 
 const SkillProgressBar = ({ skillName, cooldown, colorClass, isActive }) => {
-  const percentage = ((15 - cooldown) / 15) * 100; // 15초 기준으로 퍼센티지 계산
+  const percentage = ((25 - cooldown) / 25) * 100; // 15초 기준으로 퍼센티지 계산
   const skillImages = {
     Shield: '/images/skill/shield.png',
     Heal: '/images/skill/heal.png',

@@ -152,7 +152,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     if (skillCooldowns[skillName] === 0) {
       setSkillCooldowns(prev => ({
         ...prev,
-        [skillName]: 15,
+        [skillName]: 25,
       }));
 
       const intervalId = setInterval(() => {
