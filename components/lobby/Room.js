@@ -12,7 +12,7 @@ export default function Room({ title, player1, player2, status,  onClick }) {
       </div>
       <button 
         onClick={onClick} 
-        className={`py-2 px-4 rounded-md ${status ? 'bg-gray-300 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-light transition duration-300'}`}
+        className={`py-2 px-4 rounded-md ${status ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#bd1439] text-white hover:bg-primary-light transition duration-300'}`}
         disabled={isFull}
       >
         {isFull ? '경기중' : '참가하기'}
