@@ -54,7 +54,7 @@ export const shieldSkill = {
     }),
     imageSize: { width: 400, height: 400 },
     activationMessage: "내 마음을 담은 하트~⎝⎛♥‿♥⎞⎠",
-    skillReading: ["시켜줘 전병준 명예소방관", "오늘부터 김광윤은 전병준의 여자친구임을 공식 발표하는 바이다", " 병준씨는 몇살때부터 그렇게 예뻤나"],
+    skillReading: ["시켜줘 너만을 위한 명예소방관", "너 착할 줄 알았는데 안착하네 내 마음속에 안착", " 너 유모차지 왜 날 자꾸 애태워"],
     textColor: "yellowgreen"
 };
  

@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import useSocketStore from '@/store/socketStore';
-import useSTT from '@/hooks/useSTT';
 import stringSimilarity from 'string-similarity';
 import SkillProgressBar from '@/components/game/skill/SkillProgressBar';
 import useGameStore from '@/store/gameStore';
@@ -38,26 +37,37 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const transcriptRef = useRef('');
   const intervalIds = useRef({}); // Interval ID를 저장하는 객체
 
-  const onSTTResult = ({ finalTranscript }) => {
-    console.log('STT Result:', finalTranscript);
-    transcriptRef.current = finalTranscript;
-    if (skillText) {
-      const similarity = stringSimilarity.compareTwoStrings(
-        finalTranscript.toLowerCase(),
-        skillText.toLowerCase()
-      );
-      if (similarity > maxSimilarityRef.current) {
-        maxSimilarityRef.current = similarity;
-        setMaxSimilarity(similarity);
-      }
+  const recognition = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition.current = new SpeechRecognition();
+      recognition.current.continuous = false;
+      recognition.current.interimResults = false;
+      recognition.current.lang = 'ko-KR';
+
+      recognition.current.onresult = (event) => {
+        const finalTranscript = event.results[0][0].transcript;
+        console.log('STT Result:', finalTranscript);
+        transcriptRef.current = finalTranscript;
+        if (skillText) {
+          const similarity = stringSimilarity.compareTwoStrings(
+            finalTranscript.toLowerCase(),
+            skillText.toLowerCase()
+          );
+          if (similarity > maxSimilarityRef.current) {
+            maxSimilarityRef.current = similarity;
+            setMaxSimilarity(similarity);
+          }
+        }
+      };
+
+      recognition.current.onerror = (event) => {
+        console.error('STT Error:', event);
+      };
     }
-  };
-
-  const onSTTError = (event) => {
-    console.error('STT Error:', event);
-  };
-
-  const { startRecognition, stopRecognition } = useSTT(onSTTResult, onSTTError);
+  }, [skillText]);
 
   useEffect(() => {
     // Load images
@@ -108,19 +118,20 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         handleSkillComplete();
         if (activeSkill === "Heal") {
           const healAudio = new Audio('./sounds/heal_sound.mp3');
-          console.log(1)
           healAudio.play();
         }
-        useSkill(activeSkill);
+        triggerSkillUse(activeSkill);
       }, 5000);
 
-      if (!recognitionActive.current) {
-        startRecognition();
+      if (!recognitionActive.current && typeof window !== 'undefined') {
+        recognition.current.start();
+        console.log("recog")
         recognitionActive.current = true;
 
         const recognitionTimeoutId = setTimeout(() => {
           recognitionActive.current = false;
-          stopRecognition();
+          console.log("stop")
+          recognition.current.stop();
         }, 5000);
 
         return () => {
@@ -131,7 +142,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     }
   }, [activeSkill]);
 
-  const useSkill = (skillName) => {
+  const triggerSkillUse = (skillName) => {
     if (skillCooldowns[skillName] === 0) {
       setSkillCooldowns(prev => ({
         ...prev,
@@ -189,16 +200,16 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     clearCanvas();
 
     if (maxSimilarityRef.current >= 0.75) {
-      setResultMessage('Perfect');
+      setResultMessage('Eww🤮');
       setResultColor('green');
     } else if (maxSimilarityRef.current >= 0.5) {
-      setResultMessage('Good');
+      setResultMessage('Perfect!');
       setResultColor('blue');
     } else if (maxSimilarityRef.current >= 0.25) {
-      setResultMessage('Eww');
+      setResultMessage('Good!');
       setResultColor('orange');
     } else {
-      setResultMessage('Bad');
+      setResultMessage('Bad!');
       setResultColor('red');
     }
     setShowResult(true);
@@ -248,7 +259,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         leftIndex: poseLandmarks.leftIndex,
         rightIndex: poseLandmarks.rightIndex
       };
-  
+
       if (Object.values(detectedPose).every(landmark => landmark)) {
         const skills = [shieldSkill, healSkill, attackSkill];
         skills.forEach(skill => {
