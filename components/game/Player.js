@@ -190,7 +190,7 @@ export function Player({ position, landmarks }) {
   const headRef = useRef(null)
   // 공격
   const playerSkills = useGameStore(state => state.playerSkills)
-  const isAttacking = playerSkills[0] === 'Attack' && opponentSkills[1] !== null;
+  const isAttacking = playerSkills[0] === 'Attack' && playerSkills[1] !== null;
 
   // 게이지 구현
   const { 

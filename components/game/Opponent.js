@@ -120,7 +120,6 @@ OpponentHead.displayName = "OpponentHead";
 const OpponentHand = forwardRef(({ position, rotation, scale, name, isAttacking }, ref) => {
     const localRef = useRef()
     const { scene } = useGLTF(name === 'opponentLeftHand' ? '/models/left-hand.glb' : '/models/right-hand.glb')
-    const trailRef = useRef()
 
     useEffect(() => {
       scene.traverse((child) => {
@@ -317,6 +316,7 @@ export function Opponent({ position, landmarks, opponentData }) {
           rotation={[(opponentData.rightHand[1][0]-Math.PI), Math.PI , -(opponentData.rightHand[1][1]-Math.PI/2)]}
             scale={0.33}
             name='opponentRightHand'
+            isAttacking={isAttacking}
           />
         )}
         {opponentData.leftHand && (
@@ -325,6 +325,7 @@ export function Opponent({ position, landmarks, opponentData }) {
             rotation={[-(opponentData.leftHand[1][0]-Math.PI), 0 ,-(opponentData.leftHand[1][1]+Math.PI/2)]}
             scale={0.33}
             name='opponentLeftHand'
+            isAttacking={isAttacking}
           />
         )}
     </group>
