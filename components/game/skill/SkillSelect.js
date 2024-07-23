@@ -57,7 +57,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           const similarity = stringSimilarity.compareTwoStrings(
             finalTranscript.toLowerCase(),
             skillTextRef.current.toLowerCase()
-          );
+          ); 
           if (similarity > maxSimilarityRef.current) {
             maxSimilarityRef.current = similarity;
             setMaxSimilarity(similarity);
@@ -174,12 +174,10 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   useEffect(() => {
     console.log(gameStatus);
     
-    // 모든 인터벌 정리
     Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
     intervalIds.current = {};
 
     if (gameStatus === "playing") {
-      // playing 상태일 때 쿨다운 중인 스킬에 대해 새로운 인터벌 설정
       Object.keys(skillCooldowns).forEach(skillName => {
         if (skillCooldowns[skillName] > 0) {
           const intervalId = setInterval(() => {
@@ -199,7 +197,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       });
     }
 
-    // 컴포넌트 언마운트 시 모든 인터벌 정리
     return () => {
       Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
     };
@@ -308,7 +305,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             key={skill}
             skillName={skill}
             cooldown={skillCooldowns[skill]}
-            colorClass={skillColors[skill]}
+            // colorClass={skillColors[skill]}
+            isActive={gameStatus === 'skillTime' && activeSkill === skill}
           />
         ))}
       </div>
