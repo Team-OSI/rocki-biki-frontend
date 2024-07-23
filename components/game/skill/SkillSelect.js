@@ -9,6 +9,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const canvasRef = useRef(null);
   const [activeSkill, setActiveSkill] = useState(null);
   const [skillText, setSkillText] = useState('');
+  const skillTextRef = useRef(''); // 추가
   const [skillTextColor, setSkillTextColor] = useState('');
   const [showSkillText, setShowSkillText] = useState(false);
   const [resultMessage, setResultMessage] = useState('');
@@ -49,12 +50,13 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
 
       recognition.current.onresult = (event) => {
         const finalTranscript = event.results[0][0].transcript;
-        console.log('STT Result:', finalTranscript);
         transcriptRef.current = finalTranscript;
-        if (skillText) {
+        console.log(`Final Transcript: ${finalTranscript}`);
+        console.log(`Skill Text: ${skillTextRef.current}`);
+        if (skillTextRef.current) { // skillText 대신 skillTextRef.current 사용
           const similarity = stringSimilarity.compareTwoStrings(
             finalTranscript.toLowerCase(),
-            skillText.toLowerCase()
+            skillTextRef.current.toLowerCase()
           );
           if (similarity > maxSimilarityRef.current) {
             maxSimilarityRef.current = similarity;
@@ -67,7 +69,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         console.error('STT Error:', event);
       };
     }
-  }, [skillText]);
+  }, []);
 
   useEffect(() => {
     // Load images
@@ -94,44 +96,49 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     if (activeSkill) {
       const textAudio = new Audio('./sounds/text.mp3');
       textAudio.play();
+      let newSkillText = '';
       if (activeSkill === 'Shield') {
-        setSkillText(shieldSkill.skillReading[Math.floor(Math.random() * shieldSkill.skillReading.length)]);
+        newSkillText = shieldSkill.skillReading[Math.floor(Math.random() * shieldSkill.skillReading.length)];
         setSkillTextColor(shieldSkill.textColor);
       } else if (activeSkill === 'Heal') {
-        setSkillText(healSkill.skillReading[Math.floor(Math.random() * healSkill.skillReading.length)]);
+        newSkillText = healSkill.skillReading[Math.floor(Math.random() * healSkill.skillReading.length)];
         setSkillTextColor(healSkill.textColor);
       } else if (activeSkill === 'Attack') {
-        setSkillText(attackSkill.skillReading[Math.floor(Math.random() * attackSkill.skillReading.length)]);
+        newSkillText = attackSkill.skillReading[Math.floor(Math.random() * attackSkill.skillReading.length)];
         setSkillTextColor(attackSkill.textColor);
       }
 
+      console.log(`New Skill Text: ${newSkillText}`);
+      setSkillText(newSkillText);
+      skillTextRef.current = newSkillText; // 추가
       setShowSkillText(true);
       maxSimilarityRef.current = 0;
       setMaxSimilarity(0);
       transcriptRef.current = '';
-      const timeoutId = setTimeout(() => {
-        console.log(`Final transcript: ${transcriptRef.current}`);
-        console.log(`Skill text: ${skillText}`);
-        console.log(`Max similarity: ${maxSimilarityRef.current}`);
-        emitUseSkill(activeSkill, maxSimilarityRef.current);
-        setShowSkillText(false);
-        handleSkillComplete();
-        if (activeSkill === "Heal") {
-          const healAudio = new Audio('./sounds/heal_sound.mp3');
-          healAudio.play();
-        }
-        triggerSkillUse(activeSkill);
-      }, 5000);
 
       if (!recognitionActive.current && typeof window !== 'undefined') {
         recognition.current.start();
-        console.log("recog")
+        console.log("recog");
         recognitionActive.current = true;
 
         const recognitionTimeoutId = setTimeout(() => {
           recognitionActive.current = false;
-          console.log("stop")
+          console.log("stop");
           recognition.current.stop();
+        }, 5000);
+
+        const timeoutId = setTimeout(() => {
+          console.log(`Final transcript: ${transcriptRef.current}`);
+          console.log(`Skill text: ${newSkillText}`);
+          console.log(`Max similarity: ${maxSimilarityRef.current}`);
+          emitUseSkill(activeSkill, maxSimilarityRef.current);
+          setShowSkillText(false);
+          handleSkillComplete();
+          if (activeSkill === "Heal" && maxSimilarityRef.current > 0.2) {
+            const healAudio = new Audio('./sounds/heal_sound.mp3');
+            healAudio.play();
+          }
+          triggerSkillUse(activeSkill);
         }, 5000);
 
         return () => {
@@ -168,11 +175,11 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   useEffect(() => {
     if (gameStatus === "skilltime") {
       // 게임 상태가 "skilltime"일 때 모든 interval을 멈춤
-      console.log(gameStatus)
+      console.log(gameStatus);
       Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
     } else if (gameStatus === "playing") {
       // 게임 상태가 "playing"일 때 다시 시작
-      console.log(gameStatus)
+      console.log(gameStatus);
       Object.keys(skillCooldowns).forEach(skillName => {
         if (skillCooldowns[skillName] > 0 && !intervalIds.current[skillName]) {
           const intervalId = setInterval(() => {
@@ -196,6 +203,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const handleSkillComplete = useCallback(() => {
     setActiveSkill(null);
     setSkillText('');
+    skillTextRef.current = ''; // 추가
     setSkillTextColor('');
     clearCanvas();
 
