@@ -111,6 +111,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           console.log(1)
           healAudio.play();
         }
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         useSkill(activeSkill);
       }, 5000);
 
