@@ -3,19 +3,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
-import {throttle} from 'lodash';
+import { throttle } from 'lodash';
 
 export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const canvasRef = useRef(null);
   const timerRef = useRef(null);
-  const { gameStatus, setMyReady } = useGameStore();
+  const { gameStatus, setMyReady, myReady } = useGameStore();
   const [similarityResult, setSimilarityResult] = useState(null);
   const [remainingTime, setRemainingTime] = useState(5);
   const [playerReady, setPlayerReady] = useState(false);
-  const emitPlayerReady = useSocketStore(state=> state.emitPlayerReady);
+  const emitPlayerReady = useSocketStore(state => state.emitPlayerReady);
   const keypoints = useMemo(() => ['nose', 'leftShoulder', 'rightShoulder'], []);
   const similarityThreshold = 0.20;
-  const roomIdRef = useRef('')
+  const roomIdRef = useRef('');
+  
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     roomIdRef.current = searchParams.get('roomId');
@@ -80,54 +81,44 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   }, [onReady]);
 
   const checkReadyPose = useMemo(
-      () => throttle(() => {
-    if (landmarks && canvasRef.current) {
-      const requiredLandmarks = extractRequiredLandmarks(landmarks);
-      const similarity = calculatePoseSimilarity(requiredLandmarks, targetPose.current);
-      setSimilarityResult(similarity);
-  
-      if (similarity >= similarityThreshold) {
-        if(!playerReady){
-          setPlayerReady(true)
-          setMyReady(true)
-          emitPlayerReady(true);
-        }
-      } else {
-        if(playerReady){
-          setPlayerReady(false)
-          setMyReady(false)
-          emitPlayerReady(false);
+    () => throttle(() => {
+      if (landmarks && canvasRef.current) {
+        const requiredLandmarks = extractRequiredLandmarks(landmarks);
+        const similarity = calculatePoseSimilarity(requiredLandmarks, targetPose.current);
+        setSimilarityResult(similarity);
+
+        if (similarity >= similarityThreshold) {
+          if (!playerReady) {
+            setPlayerReady(true);
+            setMyReady(true);
+            emitPlayerReady(true);
+          }
+        } else {
+          if (playerReady) {
+            setPlayerReady(false);
+            setMyReady(false);
+            emitPlayerReady(false);
+          }
         }
       }
-    }
-  }, 500),
-      [landmarks,
-        calculatePoseSimilarity,
-        similarityThreshold,
-        extractRequiredLandmarks,
-        emitPlayerReady,
-        playerReady,
-        canvasRef,
-        targetPose,
-        setSimilarityResult,
-        setPlayerReady,
-        setMyReady]);
+    }, 500),
+    [landmarks, calculatePoseSimilarity, similarityThreshold, extractRequiredLandmarks, emitPlayerReady, playerReady, canvasRef, targetPose, setSimilarityResult, setPlayerReady, setMyReady]
+  );
 
-  useEffect(()=>{
-    // console.log('readyState: ',gameStatus)
+  useEffect(() => {
     if (gameStatus === 'bothReady') {
-      if(!timerRef.current){
+      if (!timerRef.current) {
         startTimer();
+        // Ready sound 출력하기
       }
     } else {
-      if (timerRef.current){
+      if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
       setRemainingTime(5);
     }
-  },[landmarks, playerReady, startTimer, checkReadyPose, gameStatus ])
-
+  }, [landmarks, playerReady, startTimer, checkReadyPose, gameStatus]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -144,15 +135,15 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
 
   useEffect(() => {
     setHeaderText(playerReady ? "거리를 유지해주세요" : "점선에 어깨와 머리를 맞춰주세요");
-  }, [playerReady, setHeaderText]); 
-  
+  }, [playerReady, setHeaderText]);
+
   useEffect(() => {
     const checkTimer = () => {
       setHeaderText(playerReady ? "거리를 유지해주세요" : "점선에 어깨와 머리를 맞춰주세요");
     };
     checkTimer();
     const intervalId = setInterval(checkTimer, 100);
-  
+
     return () => clearInterval(intervalId);
   }, [playerReady, setHeaderText]);
 
@@ -163,7 +154,8 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   }, [similarityResult]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full" >
+      <div className="absolute w-full h-full"/>
       <div className="ready-header" style={{ '--header-color': headerColor }}>
         {headerText}
       </div>
@@ -175,6 +167,18 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
         <div className="countdown-text">
           {remainingTime === 1 ? 'GO!' : remainingTime - 1}
         </div>
+      )}
+      {myReady && !playerReady && (
+        <img src="/images/ready_logo.png" className="absolute right-0 top-1/2 transform -translate-y-1/2" alt="Ready Logo" />
+      )}
+      {playerReady && !myReady && (
+        <img src="/images/ready_logo.png" className="absolute left-0 top-1/2 transform -translate-y-1/2" alt="Ready Logo" />
+      )}
+      {myReady && playerReady && (
+        <>
+          <img src="/images/ready_logo.png" className="absolute left-0 top-1/2 transform -translate-y-1/2" alt="Ready Logo" />
+          <img src="/images/ready_logo.png" className="absolute right-0 top-1/2 transform -translate-y-1/2" alt="Ready Logo" />
+        </>
       )}
     </div>
   );

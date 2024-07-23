@@ -124,7 +124,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           recognitionActive.current = false;
           console.log("stop");
           recognition.current.stop();
-        }, 5000);
+        }, 6000);
 
         const timeoutId = setTimeout(() => {
           console.log(`Final transcript: ${transcriptRef.current}`);
@@ -138,7 +138,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             healAudio.play();
           }
           triggerSkillUse(activeSkill);
-        }, 5000);
+        }, 6000);
 
         return () => {
           clearTimeout(timeoutId);
@@ -273,7 +273,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         const skills = [shieldSkill, healSkill, attackSkill];
         skills.forEach(skill => {
           const poseSimilarity = calculatePoseSimilarity(detectedPose, skill.targetPose);
-          if (poseSimilarity >= similarityThreshold && skillCooldowns[skill.name] === 0) {
+          if (poseSimilarity >= similarityThreshold && skillCooldowns[skill.name] === 0 && gameStatus === 'playing') {
             if (activeSkill !== skill.name) {
               emitCastSkill(skill.name);
               setActiveSkill(skill.name);
@@ -299,7 +299,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         height={canvasSize.height}
         style={{ position: 'absolute', top: 0, left: 0 }}
       />
-      <div className="absolute top-40 left-1/2 transform -translate-x-1/2 flex space-x-4">
+      <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 flex space-x-8"> {/* Increased spacing */}
         {['Shield', 'Heal', 'Attack'].map(skill => (
           <SkillProgressBar
             key={skill}
@@ -311,8 +311,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       </div>
       {showSkillText && (
         <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-          <div className="p-4 rounded-lg shadow-lg" style={{ color: skillTextColor }}>
-            <span className="text-3xl">
+          <div className="p-6 rounded-lg shadow-lg bg-white" style={{ color: skillTextColor }}>
+            <span className="text-4xl"> 
               {skillText}
             </span>
           </div>
@@ -320,13 +320,13 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       )}
       {showResult && (
         <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-          <div className="p-4 rounded-lg shadow-lg" style={{ color: resultColor }}>
-            <span className="text-3xl">
+          <div className="p-4 rounded-lg shadow-lg bg-white" style={{ color: resultColor }}>
+            <span className="text-5xl">
               {resultMessage}
             </span>
           </div>
         </div>
       )}
     </div>
-  );
+  )
 }
