@@ -97,15 +97,17 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
       }
     })
 
-    return (<>
-    <primitive ref={localRef} object={scene} scale={scale} name={name} />
-    {opponentHealth <= 50 && (
-      <PNGSequenceAnimation
-        position={[-0.5, 1.5, 0]} 
-        health={opponentHealth} 
-      />
-    )}
-    </>)
+    return (
+      <group ref={localRef}>
+      <primitive object={scene} scale={scale} name={name} />
+      {opponentHealth <= 50 && (
+        <PNGSequenceAnimation
+          position={[-0.7, 1.4, 0]} 
+          health={opponentHealth}
+        />
+      )}
+      </group>
+    )
   })
   
 OpponentHead.displayName = "OpponentHead";
