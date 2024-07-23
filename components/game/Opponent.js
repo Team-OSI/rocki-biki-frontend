@@ -101,7 +101,7 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
     <primitive ref={localRef} object={scene} scale={scale} name={name} />
     {opponentHealth <= 50 && (
       <PNGSequenceAnimation
-        position={[-0.7, 1.7, 0]} 
+        position={[-0.5, 1.5, 0]} 
         health={opponentHealth} 
       />
     )}
