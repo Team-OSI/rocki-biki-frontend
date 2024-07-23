@@ -33,7 +33,7 @@ function BackGround({ texturePath }) {
 
 function Scene({ receivedPoseData, landmarks, socket }) {
   const [background, setBackground] = useState(skillBackgrounds.default);
-  const [showBackground, setShowBackground] = useState(true);
+  const [showBackground, setShowBackground] = useState(false);
   const gameStatus = useGameStore(state => state.gameStatus);
   const opponentSkills = useGameStore(state => state.opponentSkills);
   const playerSkills = useGameStore(state => state.playerSkills);

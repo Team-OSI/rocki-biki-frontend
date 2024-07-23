@@ -161,7 +161,7 @@ export default function GameMain() {
     }, []);
 
     return (
-        <div className="relative w-screen h-screen bg-gray-900 overflow-hidden">
+        <div className="relative w-screen h-screen overflow-hidden " style={{ backgroundImage: 'url(/images/ready_background.png)', backgroundSize: 'cover'}}>
             {gameStatus === 'playing'  && <GaugeUi />}
             <div style={videoContainerStyle(true)}>
                 <VideoProcessor

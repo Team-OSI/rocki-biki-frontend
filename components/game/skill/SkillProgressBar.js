@@ -1,7 +1,7 @@
 import React from 'react';
 
 const SkillProgressBar = ({ skillName, cooldown, colorClass, isActive }) => {
-  const percentage = ((25 - cooldown) / 25) * 100; // 15초 기준으로 퍼센티지 계산
+  const percentage = ((25 - cooldown) / 25) * 100; 
   const skillImages = {
     Shield: '/images/skill/shield.png',
     Heal: '/images/skill/heal.png',
@@ -10,7 +10,7 @@ const SkillProgressBar = ({ skillName, cooldown, colorClass, isActive }) => {
 
   return (
     <div className="skill-progress-bar mb-4 relative">
-      <div className={`w-16 h-16  rounded-md overflow-hidden relative`}>
+      <div className={`w-24 h-24 rounded-full overflow-hidden relative`}> {/* Increased size */}
         <img 
           src={skillImages[skillName]} 
           alt={skillName} 
@@ -24,7 +24,7 @@ const SkillProgressBar = ({ skillName, cooldown, colorClass, isActive }) => {
           style={{ height: `${percentage}%` }}
         ></div>
         {cooldown > 0 && !isActive && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white font-bold">
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white font-bold text-6xl">
             {cooldown}
           </div>
         )}
