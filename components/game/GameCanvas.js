@@ -101,10 +101,12 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
     <>
       <StateBar />
       <Canvas
-          dpr={[1, 2]}
-          performance={{ min: 0.5 }}
+          dpr={[0.5, 1]}
+          performance={{ min: 0.3 }}
           gl={{ 
             powerPreference: "high-performance", 
+            shadows: false,
+            precision: "lowp",
             antialias: false,
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 0.5 
@@ -112,7 +114,7 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
       >
         <PerspectiveCamera makeDefault fov={30} position={[0, 0, 0]} />
         <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
-        <Stats />
+        {/* <Stats /> */}
       </Canvas>
     </>
   );
