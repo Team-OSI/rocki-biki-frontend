@@ -3,6 +3,8 @@ import { attackSkill, healSkill, shieldSkill } from './SkillConfig';
 import useSocketStore from '@/store/socketStore';
 import useSTT from '@/hooks/useSTT';
 import stringSimilarity from 'string-similarity';
+import SkillProgressBar from '@/components/game/skill/SkillProgressBar';
+import useGameStore from '@/store/gameStore';
 
 export default function SkillSelect({ localVideoRef, landmarks, canvasSize, poseLandmarks, onUseSkill, finalTranscript }) {
   const canvasRef = useRef(null);
@@ -10,15 +12,31 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const [skillText, setSkillText] = useState('');
   const [skillTextColor, setSkillTextColor] = useState('');
   const [showSkillText, setShowSkillText] = useState(false);
-  const [showClock, setShowClock] = useState(false);
+  const [resultMessage, setResultMessage] = useState('');
+  const [resultColor, setResultColor] = useState('');
+  const [showResult, setShowResult] = useState(false);
   const emitCastSkill = useSocketStore(state => state.emitCastSkill);
   const emitUseSkill = useSocketStore(state => state.emitUseSkill);
-  const similarityThreshold = 0.80;
+  const gameStatus = useGameStore(state => state.gameStatus);
+  const similarityThreshold = 0.70;
   const recognitionActive = useRef(false);
-  
+
+  const [skillCooldowns, setSkillCooldowns] = useState({
+    Shield: 0,
+    Heal: 0,
+    Attack: 0,
+  });
+
+  const skillColors = {
+    Shield: 'bg-green-500', // Green
+    Heal: 'bg-blue-500', // Blue
+    Attack: 'bg-red-500', // Red
+  };
+
   const [maxSimilarity, setMaxSimilarity] = useState(0);
   const maxSimilarityRef = useRef(0);
   const transcriptRef = useRef('');
+  const intervalIds = useRef({}); // Interval ID를 저장하는 객체
 
   const onSTTResult = ({ finalTranscript }) => {
     console.log('STT Result:', finalTranscript);
@@ -64,6 +82,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
 
   useEffect(() => {
     if (activeSkill) {
+      const textAudio = new Audio('./sounds/text.mp3');
+      textAudio.play();
       if (activeSkill === 'Shield') {
         setSkillText(shieldSkill.skillReading[Math.floor(Math.random() * shieldSkill.skillReading.length)]);
         setSkillTextColor(shieldSkill.textColor);
@@ -76,7 +96,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       }
 
       setShowSkillText(true);
-      setShowClock(true);
       maxSimilarityRef.current = 0;
       setMaxSimilarity(0);
       transcriptRef.current = '';
@@ -86,14 +105,20 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         console.log(`Max similarity: ${maxSimilarityRef.current}`);
         emitUseSkill(activeSkill, maxSimilarityRef.current);
         setShowSkillText(false);
-        setShowClock(false);
         handleSkillComplete();
+        if (activeSkill === "Heal") {
+          const healAudio = new Audio('./sounds/heal_sound.mp3');
+          console.log(1)
+          healAudio.play();
+        }
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        useSkill(activeSkill);
       }, 5000);
 
       if (!recognitionActive.current) {
         startRecognition();
         recognitionActive.current = true;
-        
+
         const recognitionTimeoutId = setTimeout(() => {
           recognitionActive.current = false;
           stopRecognition();
@@ -107,11 +132,84 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     }
   }, [activeSkill]);
 
+  const useSkill = (skillName) => {
+    if (skillCooldowns[skillName] === 0) {
+      setSkillCooldowns(prev => ({
+        ...prev,
+        [skillName]: 10,
+      }));
+
+      const intervalId = setInterval(() => {
+        setSkillCooldowns(prev => {
+          if (prev[skillName] > 0) {
+            return { ...prev, [skillName]: prev[skillName] - 1 };
+          } else {
+            clearInterval(intervalIds.current[skillName]);
+            delete intervalIds.current[skillName];
+            return { ...prev, [skillName]: 0 };
+          }
+        });
+      }, 1000);
+
+      intervalIds.current[skillName] = intervalId;
+    }
+  };
+
+  useEffect(() => {
+    if (gameStatus === "skilltime") {
+      // 게임 상태가 "skilltime"일 때 모든 interval을 멈춤
+      console.log(gameStatus)
+      Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
+    } else if (gameStatus === "playing") {
+      // 게임 상태가 "playing"일 때 다시 시작
+      console.log(gameStatus)
+      Object.keys(skillCooldowns).forEach(skillName => {
+        if (skillCooldowns[skillName] > 0 && !intervalIds.current[skillName]) {
+          const intervalId = setInterval(() => {
+            setSkillCooldowns(prev => {
+              if (prev[skillName] > 0) {
+                return { ...prev, [skillName]: prev[skillName] - 1 };
+              } else {
+                clearInterval(intervalIds.current[skillName]);
+                delete intervalIds.current[skillName];
+                return { ...prev, [skillName]: 0 };
+              }
+            });
+          }, 1000);
+
+          intervalIds.current[skillName] = intervalId;
+        }
+      });
+    }
+  }, [gameStatus, skillCooldowns]);
+
   const handleSkillComplete = useCallback(() => {
     setActiveSkill(null);
     setSkillText('');
     setSkillTextColor('');
     clearCanvas();
+
+    if (maxSimilarityRef.current >= 0.75) {
+      setResultMessage('Perfect');
+      setResultColor('green');
+    } else if (maxSimilarityRef.current >= 0.5) {
+      setResultMessage('Good');
+      setResultColor('blue');
+    } else if (maxSimilarityRef.current >= 0.25) {
+      setResultMessage('Eww');
+      setResultColor('orange');
+    } else {
+      setResultMessage('Bad');
+      setResultColor('red');
+    }
+    setShowResult(true);
+
+    // 결과 메시지를 1초 동안 보여주기
+    setTimeout(() => {
+      setShowResult(false);
+      setResultColor('');
+      setResultMessage('');
+    }, 1000);
   }, []);
 
   const calculatePoseSimilarity = (detectedPose, targetPose) => {
@@ -156,9 +254,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         const skills = [shieldSkill, healSkill, attackSkill];
         skills.forEach(skill => {
           const poseSimilarity = calculatePoseSimilarity(detectedPose, skill.targetPose);
-          if (poseSimilarity >= similarityThreshold) {
+          if (poseSimilarity >= similarityThreshold && skillCooldowns[skill.name] === 0) {
             if (activeSkill !== skill.name) {
-              console.log("here");
               emitCastSkill(skill.name);
               setActiveSkill(skill.name);
             }
@@ -166,7 +263,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         });
       }
     }
-  }, [poseLandmarks]);
+  }, [poseLandmarks, skillCooldowns, gameStatus]);
 
   const clearCanvas = () => {
     if (canvasRef.current) {
@@ -183,11 +280,30 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         height={canvasSize.height}
         style={{ position: 'absolute', top: 0, left: 0 }}
       />
+      <div className="absolute top-40 left-1/2 transform -translate-x-1/2 flex space-x-4">
+        {['Shield', 'Heal', 'Attack'].map(skill => (
+          <SkillProgressBar
+            key={skill}
+            skillName={skill}
+            cooldown={skillCooldowns[skill]}
+            colorClass={skillColors[skill]} // 색상 추가
+          />
+        ))}
+      </div>
       {showSkillText && (
         <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
-          <div className="p-4 rounded-lg shadow-lg" style={{color: skillTextColor }}>
+          <div className="p-4 rounded-lg shadow-lg" style={{ color: skillTextColor }}>
             <span className="text-3xl">
               {skillText}
+            </span>
+          </div>
+        </div>
+      )}
+      {showResult && (
+        <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+          <div className="p-4 rounded-lg shadow-lg" style={{ color: resultColor }}>
+            <span className="text-3xl">
+              {resultMessage}
             </span>
           </div>
         </div>

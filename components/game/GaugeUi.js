@@ -8,15 +8,15 @@ const GaugeBar = ({ hand }) => {
   const filledBlocks = Math.floor((gaugeValue / maxGauge) * blocks);
 
   return (
-    <div className="flex flex-col-reverse h-40 w-6 bg-gray-200 rounded-full overflow-hidden">
+    <div className="flex flex-col-reverse h-[200px] w-8 bg-gray-200 rounded-full overflow-hidden">
       {[...Array(blocks)].map((_, index) => (
         <div
           key={index}
-          className={`w-full h-[16px] ${
+          className={`w-full h-[20px] ${
             index < filledBlocks
               ? hand === 'left' 
-                ? 'bg-blue-500' 
-                : 'bg-red-500'
+                ? 'bg-red-500' 
+                : 'bg-blue-500'
               : 'bg-transparent'
           } border-t border-gray-300`}
         />
@@ -28,7 +28,7 @@ const GaugeBar = ({ hand }) => {
 const GaugeUi = () => {
 
   return (
-    <div className="absolute top-1/2 w-full p-3 flex flex-row justify-between z-50">
+    <div className="absolute top-1/2 w-full px-5 flex flex-row justify-between z-50">
       <GaugeBar hand="left" />
       <GaugeBar hand="right" />
     </div>

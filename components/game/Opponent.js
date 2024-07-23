@@ -69,6 +69,8 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
       Object.values(materials).forEach((material) => {
         material.color.setRGB(hit ? 1 : 1, hit ? 0 : 1, hit ? 0 : 1) // Set color to red when hit
         material.map = currentTexture;
+        material.roughness = 0.5;
+        material.metalness = 0.5;
         material.needsUpdate = true;
       });
     }, [materials, currentTexture]);

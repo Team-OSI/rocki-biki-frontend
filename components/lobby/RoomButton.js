@@ -5,9 +5,9 @@ export default function RoomButton({ onClick }) {
   return (
     <button 
       onClick={onClick} 
-      className="py-3 px-6 bg-secondary text-white font-bold rounded-md shadow-md hover:bg-secondary-dark transition duration-300 mt-4"
+      className="py-3 w-full text-xl bg-[#ed7716] text-white font-bold rounded-full shadow-md hover:scale-105 transition duration-300 mt-4"
     >
-      방 생성
+      CREATE
     </button>
   );
 }

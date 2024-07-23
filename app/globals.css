@@ -1,8 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import 'bulma/css/bulma.min.css';
-@import '@fortawesome/fontawesome-free/css/all.min.css';
 
 @layer base {
   a{
@@ -209,4 +207,25 @@
 
 .animate-small-bounce {
   animation: small-bounce 1s infinite;
+}
+
+@keyframes glow {
+  0% {
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+  }
+  100% {
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+  }
+}
+
+.glow-effect {
+  animation: glow 2s infinite;
+}
+
+.glow-effect:hover {
+  animation: none;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1));
 }
