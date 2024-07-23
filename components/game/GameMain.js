@@ -98,9 +98,10 @@ export default function GameMain() {
     const myReady = useGameStore(state => state.myReady);
     const opponentReady = useGameStore(state => state.opponentReadyState)
     const emitGameStart = useSocketStore(state => state.emitGameStart);
-
+    const opponentInfo = useGameStore(state => state.opponentInfo);
     const handleReady = () => {
         playBgmSound();
+        console.log('opInfo: ',opponentInfo);
         emitGameStart();
     };
 

@@ -100,22 +100,27 @@ const CurrentHealthBar = styled(BaseHealthBar)`
   z-index: 1;
 `;
 
-const fadeInOut = keyframes`
-  0% { opacity: 0; }
-  50% { opacity: 0.5; }
-  100% { opacity: 0; }
+const pulseAnimation = keyframes`
+  0% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
 `;
 
 const DamageOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: red;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw;
+  height: 100vh;
+  background-image: url('/images/damage_overlay.webp');
+  background-size: cover;
+  background-position: center;
   pointer-events: none;
   z-index: 9999;
-  animation: ${fadeInOut} 0.5s ease-in-out;
+  opacity: 0;
+  transition: all 0.5s ease-in-out;
+  animation: ${pulseAnimation} 0.5s ease-in-out;
 `;
 
 export default function StateBar() {
