@@ -10,7 +10,7 @@ const SkillProgressBar = ({ skillName, cooldown, colorClass, isActive }) => {
 
   return (
     <div className="skill-progress-bar mb-4 relative">
-      <div className={`w-16 h-16 border border-black rounded-md overflow-hidden relative`}>
+      <div className={`w-16 h-16  rounded-md overflow-hidden relative`}>
         <img 
           src={skillImages[skillName]} 
           alt={skillName} 
