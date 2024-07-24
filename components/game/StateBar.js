@@ -134,6 +134,7 @@ export default function StateBar() {
   const damageAudio = useRef(null);
   const { handleRoomInfo } = useGameLogic();
   const [nickname, setNickname] = useState('');
+  const setIsLoadingImages = useGameStore(state => state.setIsLoadingImages);
   const emitGameEnd = useSocketStore(state => state.emitGameEnd);
 
   const winAudioRef = useRef(null);
@@ -209,15 +210,19 @@ export default function StateBar() {
   }, [isOpponentDecreasing]);
 
   useEffect(() => {
-    preloadImages()
-      .then(() => {
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error preloading images:", error);
-        setIsLoading(false);
-      });
-  }, []);
+    if (isLoading) {
+      preloadImages()
+        .then(() => {
+          setIsLoading(false);
+          setIsLoadingImages(false); // 이미지 로딩이 완료되면 전역 상태 업데이트
+        })
+        .catch((error) => {
+          console.error("Error preloading images:", error);
+          setIsLoading(false);
+          setIsLoadingImages(false);
+        });
+    }
+  }, [isLoading, setIsLoadingImages]);
 
   useEffect(() => {
     let timer;
@@ -235,13 +240,13 @@ export default function StateBar() {
 
   useEffect(() => {
     if (gameStatus === 'playing' && count === 60) {
-      setCount(pausedCount); 
+      setCount(pausedCount);
     }
   }, [gameStatus]);
 
   useEffect(() => {
     if (gameStatus === 'skilltime') {
-      setPausedCount(count); 
+      setPausedCount(count);
     }
 
     if (gameStatus === 'playing' && count === 0) {
@@ -272,7 +277,7 @@ export default function StateBar() {
 
   const handleRestart = () => {
     setCount(60);
-    setPausedCount(60); 
+    setPausedCount(60);
   };
 
   const renderRainEffect = () => {
@@ -302,7 +307,7 @@ export default function StateBar() {
         />
       )}
       {gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
-      <div className='absolute z-40 top-1 w-full h-full'>
+      <div className='absolute z-40 w-full h-full'>
         <div className='absolute flex flex-row justify-between w-full h-full px-4'>
           <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
             <HealthBarContainer>
@@ -376,6 +381,16 @@ export default function StateBar() {
                 }}
               >
                 재시작
+              </button>
+              <button
+                onClick={handleRestart}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+                style={{
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
+                  transition: 'transform 0.2s ease-in-out'
+                }}
+              >
+                나가기
               </button>
             </div>
           </div>

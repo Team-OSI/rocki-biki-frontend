@@ -38,12 +38,12 @@ export function processLandmarks(faceResult, handResult, poseResult, prevLandmar
         leftHand: hands[0] ? [
             calc_hand_center(hands[0]) || lastValidLandmarks?.leftHand?.[0] || [0, 0, 0],
             calculateHandRotation(hands[0][0], hands[0][5], hands[0][17], hands[0][10]) || lastValidLandmarks?.leftHand?.[1] || [0, 0],
-            determineHandState(hands[0]) || 0
+            0 //determineHandState(hands[0]) || 0
         ] : lastValidLandmarks?.leftHand || [[0, 0, 0], [0, 0], 0],
         rightHand: hands[1] ? [
             calc_hand_center(hands[1]) || lastValidLandmarks?.rightHand?.[0] || [0, 0, 0],
             calculateHandRotation(hands[1][0], hands[1][5], hands[1][17], hands[1][10]) || lastValidLandmarks?.rightHand?.[1] || [0, 0],
-            determineHandState(hands[1]) || 0
+            0 //determineHandState(hands[1]) || 0
         ] : lastValidLandmarks?.rightHand || [[0, 0, 0], [0, 0], 0],
     };
 
