@@ -4,13 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
 import { throttle } from 'lodash';
+import { useMusic } from '@/app/contexts/MusicContext';
 
 export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const canvasRef = useRef(null);
   const timerRef = useRef(null);
   const countdownAudio = useRef(null);
-  const bgmAudio = useRef(null); // 배경음악을 위한 ref 추가
-  const { gameStatus, setMyReady, myReady, } = useGameStore();
+  const { gameStatus, setMyReady, myReady } = useGameStore();
   const [similarityResult, setSimilarityResult] = useState(null);
   const [remainingTime, setRemainingTime] = useState(5);
   const [playerReady, setPlayerReady] = useState(false);
@@ -24,21 +24,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
     const searchParams = new URLSearchParams(window.location.search);
     roomIdRef.current = searchParams.get('roomId');
   }, []);
-  
-  useEffect(() => {
-    if (!bgmAudio.current) {
-      bgmAudio.current = new Audio('./sounds/bgm.mp3');
-      bgmAudio.current.loop = true; 
-      bgmAudio.current.play();
-    }
-    return () => {
-      if (bgmAudio.current) {
-        bgmAudio.current.pause();
-        bgmAudio.current.currentTime = 0;
-      }
-    };
-  }, []);
-  
+
   const targetPose = useRef({
     nose: { x: 0.5, y: 0.45 },
     leftShoulder: { x: 0.7, y: 0.65 },
@@ -186,9 +172,9 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   }, [similarityResult]);
 
   return (
-    <div className="relative w-full h-full" >
-      <div className="absolute w-full h-full"/>
-      <div className="ready-header" style={{ '--header-color': headerColor , top: 16 }}>
+    <div className="relative w-full h-full">
+      <div className="absolute w-full h-full" />
+      <div className="ready-header" style={{ '--header-color': headerColor, top: 16 }}>
         {headerText}
       </div>
       <canvas ref={canvasRef} className="absolute inset-0" />
@@ -196,22 +182,10 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
         Similarity: {similarityResult ? similarityResult.toFixed(2) : 'N/A'}
       </div>
       {(timerRef.current && remainingTime <= 4) && (
-        <div className="countdown-text" style={{ fontSize: '200px', fontWeight: 'bold', color: 'red', textShadow: '2px 2px 8px rgba(0, 0, 0, 0.7)' }}>
+        <div className="countdown-text text-6xl font-bold text-red-500" style={{ textShadow: '2px 2px 8px rgba(0, 0, 0, 0.7)' }}>
           {remainingTime === 1 ? 'GO!' : remainingTime - 1}
         </div>
       )}
-      {myReady && !opponentReadyState && (
-        <img src="/images/ready_logo.png" className="absolute" style={{ right: '350px', top: '11%' }} alt="Ready Logo" />
-      )}
-      {opponentReadyState && !myReady && (
-        <img src="/images/ready_logo.png" className="absolute" style={{ left: '350px', top: '11%' }} alt="Ready Logo" />
-      )}
-      {myReady && opponentReadyState && (
-        <>
-          <img src="/images/ready_logo.png" className="absolute" style={{ left: '350px', top: '11%' }} alt="Ready Logo" />
-          <img src="/images/ready_logo.png" className="absolute" style={{ right: '350px', top: '11%' }} alt="Ready Logo" />
-        </>
-      )}
     </div>
-  )
+  );
 }

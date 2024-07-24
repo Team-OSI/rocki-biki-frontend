@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -7,10 +7,11 @@ import { FaCog } from 'react-icons/fa';
 import ProfileEditModal from "@/components/myPage/ProfileEditModal";
 import {getNickname, onFollowing, updateProfile} from '@/api/user/api';
 import Cookies from 'js-cookie';
-import { jwtDecode } from "jwt-decode";
+import {jwtDecode} from 'jwt-decode';
 import { useTitle } from "@/app/contexts/TitleContext";
 import GameResultComponent from "@/components/myPage/GameResult";
 import RecordingComponent from "@/components/myPage/Recording";
+import { useMusic } from '@/app/contexts/MusicContext';
 
 export default function MyPage() {
     const params = useParams();
@@ -22,63 +23,56 @@ export default function MyPage() {
     const [userNickname, setUserNickname] = useState('');
     const [userProfileImage, setUserProfileImage] = useState('');
     const { setTitle } = useTitle();
-    const bgmAudio = useRef(null);
+    const { setVolume } = useMusic();
 
-    useEffect(() => {
-        setTitle("My Page")
-    }, [setTitle]);
+  useEffect(() => {
+    setTitle("My Page");
+  }, [setTitle]);
 
-    useEffect(() => {
-        fetchUserData();
-    }, [userEmail]);
-
-    useEffect(() => {
-        if (!bgmAudio.current) {
-          bgmAudio.current = new Audio('/sounds/bgm.mp3');
-          bgmAudio.current.loop = true;
-          bgmAudio.current.play();
-        }
-        return () => {
-          if (bgmAudio.current) {
-            bgmAudio.current.pause();
-            bgmAudio.current.currentTime = 0;
-          }
-        };
-      }, []);
-
-    useEffect(() => {
-        const currentUserEmail = getCurrentUserEmail();
-        setIsCurrentUser(currentUserEmail === userEmail);
-    }, [userEmail]);
-
-    const getCurrentUserEmail = () => {
-        const token = Cookies.get('JWT_TOKEN');
-        if (!token) {
-            return null;
-        }
-        try {
-            const decoded = jwtDecode(token);
-            return decoded.sub;
-        } catch (error) {
-            console.error('JWT decoding failed:', error);
-            return null;
-        }
+  useEffect(() => {
+    setVolume(0.3); // 마이페이지에 들어올 때 볼륨 30%
+    return () => {
+      setVolume(1.0); // 마이페이지를 떠날 때 볼륨 100%
     };
+  }, [setVolume]);
 
-    const fetchUserData = async () => {
-        try {
-            const response = await getNickname(userEmail);
-            setUserNickname(response.nickname);
-            setUserProfileImage(response.profileImage);
-        } catch (err) {
-            console.log(err);
-        }
-    };
+  useEffect(() => {
+    fetchUserData();
+  }, [userEmail]);
 
-    const following = async () => {
-        await onFollowing(userEmail);
-        alert("Following!");
-    };
+  useEffect(() => {
+    const currentUserEmail = getCurrentUserEmail();
+    setIsCurrentUser(currentUserEmail === userEmail);
+  }, [userEmail]);
+
+  const getCurrentUserEmail = () => {
+    const token = Cookies.get('JWT_TOKEN');
+    if (!token) {
+      return null;
+    }
+    try {
+      const decoded = jwtDecode(token);
+      return decoded.sub;
+    } catch (error) {
+      console.error('JWT decoding failed:', error);
+      return null;
+    }
+  };
+
+  const fetchUserData = async () => {
+    try {
+      const response = await getNickname(userEmail);
+      setUserNickname(response.nickname);
+      setUserProfileImage(response.profileImage);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const following = async () => {
+    await onFollowing(userEmail);
+    alert("Following!");
+  };
 
     const openProfileEditModal = () => setIsProfileEditModalOpen(true);
     const closeProfileEditModal = () => setIsProfileEditModalOpen(false);

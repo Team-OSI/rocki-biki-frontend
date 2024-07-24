@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import GameCanvas from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
@@ -13,25 +13,16 @@ import useGameStore from '@/store/gameStore';
 import useWorkerStore from '@/store/workerStore';
 import GaugeUi from './GaugeUi';
 import VideoProcessor from "@/components/video/VideoProcessor";
-import {parseLandmarks} from "@/lib/utils/landmarkParser";
+import { parseLandmarks } from "@/lib/utils/landmarkParser";
+import { useMusic } from '@/app/contexts/MusicContext';
 
 export default function GameMain() {
     const { sharedArray } = useWorkerStore();
     const videoRef = useRef(null);
     const roomId = useRef(null);
-    const bgmSoundRef = useRef(null);
+    const { playReadyBgm, playGameBgm, stopAllMusic } = useMusic();
 
-    useEffect(() => {
-        bgmSoundRef.current = new Audio('./sounds/bgm.mp3');
-        bgmSoundRef.current.volume = 0.4
-      }, []);
-
-    const playBgmSound = useCallback(() => {
-    if (bgmSoundRef.current) {
-        bgmSoundRef.current.play();
-    }
-    }, []);
-    const { gameStatus, handleUseSkill } = useGameLogic(); //game 로직
+    const { gameStatus, handleUseSkill } = useGameLogic(); // game 로직
     const router = useRouter();
 
     useEffect(() => {
@@ -58,26 +49,26 @@ export default function GameMain() {
         });
     }, [sharedArray]);
 
-    useEffect(()=> {
-        landmarksRef.current = landmarks.landmarks
-    },[landmarks])
+    useEffect(() => {
+        landmarksRef.current = landmarks.landmarks;
+    }, [landmarks]);
 
     useEffect(() => {
         const onRoomClosed = () => {
-          router.push('/lobby');
+            router.push('/lobby');
         };
-    
+
         const socket = useSocketStore.getState().socket;
         if (socket) {
-          socket.on('ROOM_CLOSE', onRoomClosed);
+            socket.on('ROOM_CLOSE', onRoomClosed);
         }
-    
+
         return () => {
-          if (socket) {
-            socket.off('ROOM_CLOSE', onRoomClosed);
-          }
+            if (socket) {
+                socket.off('ROOM_CLOSE', onRoomClosed);
+            }
         };
-      }, [router]);
+    }, [router]);
 
     // WebRTC 연결 설정
     const {
@@ -102,18 +93,10 @@ export default function GameMain() {
     const isLoadingImages = useGameStore(state => state.isLoadingImages);
     const opponentInfo = useGameStore(state => state.opponentInfo);
 
-    const handleReady = useCallback(() => {
-        playBgmSound();
+    const handleReady = () => {
         console.log('opInfo: ', opponentInfo);
-        setIsLoadingImages(true);
-      }, [playBgmSound, opponentInfo, setIsLoadingImages]);
-    
-      useEffect(() => {
-        if (isLoadingImages) {
-          emitGameStart();
-        }
-      }, [isLoadingImages, emitGameStart]);
-
+        emitGameStart();
+    };
 
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
@@ -123,7 +106,7 @@ export default function GameMain() {
         zIndex: 30,
         ...(['playing', 'finished', 'skillTime'].includes(gameStatus)
             ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
-            : { 
+            : {
                 top: '50%',
                 left: isLocal ? 'calc(50% + 5px)' : 'calc(50% - 40vw - 5px)',
                 transform: 'translate(0, -50%)'
@@ -170,46 +153,26 @@ export default function GameMain() {
         return () => window.removeEventListener('resize', updateCanvasSize);
     }, []);
 
+    useEffect(() => {
+        if (['waiting', 'bothReady'].includes(gameStatus)) {
+            playReadyBgm();
+        } else if (['playing', 'skillTime'].includes(gameStatus)) {
+            playGameBgm();
+        }
+    }, [gameStatus, playGameBgm, playReadyBgm]);
+
     return (
-        <div className="relative w-screen h-screen overflow-hidden " style={{ backgroundImage: 'url(/images/ready_background.png)', backgroundSize: 'cover'}}>
-            {gameStatus === 'playing'  && <GaugeUi />}
+        <div className="relative w-screen h-screen overflow-hidden" style={{ backgroundImage: 'url(/images/ready_background.png)', backgroundSize: 'cover' }}>
+            {gameStatus === 'playing' && <GaugeUi />}
             <div style={videoContainerStyle(true)}>
-                <VideoProcessor
-                    ref={videoRef}
-                    onLandmarksUpdate={handleLandmarksUpdate}
-                    style={videoStyle}
-                    gameStatus={gameStatus}
-                />
-                {!myReady && (
-                    <Image
-                        src="/images/ready_pose.webp"
-                        alt="Ready Pose"
-                        layout="fill"
-                        objectFit="cover"
-                        style={overlayStyle}
-                    />
-                )}
-            </div>
-            <div style={videoContainerStyle(false)} className="z-30">
-            <>
-                {connectionState !== 'connected' &&(
-                    <div
-                    className="bg-slate-400 mt-5 opacity-80 flex items-center justify-center text-white"
-                    style={videoStyle}
-                    >
-                    연결 대기 중...
-                    </div>
-                )}
-                    <video
-                        className={`scale-x-[-1] opacity-80 mt-5 transition-transform  ${
-                            (opponentReady && !['playing', 'finished', 'skillTime'].includes(gameStatus)) ? 'ring-green-400 ring-8' : ''
-                          }`}
-                        ref={remoteVideoRef}
+                <div className="relative w-full h-full">
+                    <VideoProcessor
+                        ref={videoRef}
+                        onLandmarksUpdate={handleLandmarksUpdate}
                         style={videoStyle}
-                        autoPlay
-                        playsInline
+                        gameStatus={gameStatus}
                     />
-                    {(!opponentReady && connectionState === 'connected') && (
+                    {!myReady && (
                         <Image
                             src="/images/ready_pose.webp"
                             alt="Ready Pose"
@@ -218,7 +181,43 @@ export default function GameMain() {
                             style={overlayStyle}
                         />
                     )}
-                </>
+                    {myReady && (
+                        <img src="/images/ready_logo.png" className="absolute top-[-124px] right-0 transform -translate-x-1/2 w-1/2 h-auto" alt="Ready Logo" />
+                    )}
+                </div>
+            </div>
+            <div style={videoContainerStyle(false)} className="z-30">
+                <div className="relative w-full h-full">
+                    {connectionState !== 'connected' && (
+                        <div
+                            className="bg-slate-400 mt-5 opacity-80 flex items-center justify-center text-white"
+                            style={videoStyle}
+                        >
+                            연결 대기 중...
+                        </div>
+                    )}
+                    <video
+                        className={`scale-x-[-1] opacity-80 mt-5 transition-transform ${
+                            (opponentReady && !['playing', 'finished', 'skillTime'].includes(gameStatus)) ? 'ring-green-400 ring-8' : ''
+                        }`}
+                        ref={remoteVideoRef}
+                        style={videoStyle}
+                        autoPlay
+                        playsInline
+                    />
+                    {!opponentReady && connectionState === 'connected' && (
+                        <Image
+                            src="/images/ready_pose.webp"
+                            alt="Ready Pose"
+                            layout="fill"
+                            objectFit="cover"
+                            style={overlayStyle}
+                        />
+                    )}
+                    {opponentReady && (
+                        <img src="/images/ready_logo.png" className="absolute top-[-124px] right-0 transform -translate-x-1/2 w-1/2 h-auto" alt="Ready Logo" />
+                    )}
+                </div>
             </div>
             <div className="absolute inset-0" ref={cameraRef}>
                 {gameStatus === 'waiting' || gameStatus === 'bothReady' ? (
