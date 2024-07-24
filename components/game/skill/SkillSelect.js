@@ -143,7 +143,9 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           console.log(`Final transcript: ${transcriptRef.current}`);
           console.log(`Skill text: ${newSkillText}`);
           console.log(`Max similarity: ${maxSimilarityRef.current}`);
-          emitUseSkill(activeSkill, maxSimilarityRef.current);
+          if (gameStatus !== 'finished'){
+            emitUseSkill(activeSkill, maxSimilarityRef.current);
+          }
           setShowSkillText(false);
           handleSkillComplete();
           if (activeSkill === "Heal" && maxSimilarityRef.current > 0.2) {
