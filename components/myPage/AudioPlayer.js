@@ -35,10 +35,30 @@ export default function AudioPlayer({ audioBlob, audioUrl }) {
 
     if (!audioBlob && !audioUrl) return null;
 
+    const buttonStyle = {
+        marginTop: '0.5rem',
+        width: '2rem',
+        height: '2rem',
+        padding: '0',
+        backgroundColor: isPlaying ? '#FFFFFF' : '#E5E7EB',
+        color: isPlaying ? '#000000' : '#000000', // 텍스트 색상을 항상 검정색으로
+        borderRadius: '50%', // 원 모양으로 만들기
+        fontSize: '1.5rem',
+        transition: 'all 0.3s ease',
+        boxShadow: isPlaying
+            ? '0 0 10px #FFFFFF, 0 0 20px #FFFFFF, 0 0 30px #FFFFFF'
+            : 'none',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        border: 'none',
+        cursor: 'pointer',
+    };
+
     return (
         <button
             onClick={togglePlay}
-            className="mt-2 p-3 bg-gray-200 rounded-full text-xl hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            style={buttonStyle}
         >
             {isPlaying ? '⏸️' : '▶️'}
         </button>

@@ -1,7 +1,7 @@
 import { useGLTF } from '@react-three/drei'
 
 function Model({ position, scale }) {
-  const { scene } = useGLTF('/models/bg2.glb')
+  const { scene } = useGLTF('/models/background.glb')
   return <primitive object={scene} position={position} scale={[scale,scale,scale]}/>
 }
 

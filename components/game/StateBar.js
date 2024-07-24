@@ -95,8 +95,8 @@ const AnimatedHealthBar = styled(BaseHealthBar)`
 
 const CurrentHealthBar = styled(BaseHealthBar)`
   background-color: ${props => props.$isplayer
-    ? 'rgba(220, 38, 38, 0.8)' // 진한 빨강 (player)
-    : 'rgba(37, 99, 235, 0.8)' // 진한 파랑 (opponent)
+    ? 'rgba(220, 38, 38, 0.8)' 
+    : 'rgba(37, 99, 235, 0.8)' 
   };
   transition: transform 0.5s ease-out;
   z-index: 1;
@@ -128,18 +128,30 @@ const DamageOverlay = styled.div`
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
   const socket = useSocketStore(state => state.socket);
-  const [count, setCount] = useState(60);
-  const [pausedCount, setPausedCount] = useState(60); // 멈춘 시간 추적 상태
+  const [count, setCount] = useState(90);
+  const [pausedCount, setPausedCount] = useState(90); // 멈춘 시간 추적 상태
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
   const { handleRoomInfo } = useGameLogic();
   const [nickname, setNickname] = useState('');
+  const setIsLoadingImages = useGameStore(state => state.setIsLoadingImages);
+  const emitGameEnd = useSocketStore(state => state.emitGameEnd);
+
+  const winAudioRef = useRef(null);
+  const loseAudioRef = useRef(null);
 
   const playDamageSound = useCallback(() => {
     if (damageAudio.current) {
       damageAudio.current.currentTime = 0;
       damageAudio.current.play().catch(error => console.log('오디오 재생 실패:', error));
     }
+  }, []);
+
+  useEffect(() => {
+    winAudioRef.current = new Audio('./sounds/text.mp3');
+    winAudioRef.current.loop = true;
+    loseAudioRef.current = new Audio('./sounds/bgm.mp3');
+    loseAudioRef.current.loop = true;
   }, []);
 
   useEffect(() => {
@@ -198,15 +210,19 @@ export default function StateBar() {
   }, [isOpponentDecreasing]);
 
   useEffect(() => {
-    preloadImages()
-      .then(() => {
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error preloading images:", error);
-        setIsLoading(false);
-      });
-  }, []);
+    if (isLoading) {
+      preloadImages()
+        .then(() => {
+          setIsLoading(false);
+          setIsLoadingImages(false); // 이미지 로딩이 완료되면 전역 상태 업데이트
+        })
+        .catch((error) => {
+          console.error("Error preloading images:", error);
+          setIsLoading(false);
+          setIsLoadingImages(false);
+        });
+    }
+  }, [isLoading, setIsLoadingImages]);
 
   useEffect(() => {
     let timer;
@@ -223,20 +239,45 @@ export default function StateBar() {
   }, [gameStatus, count, isLoading]);
 
   useEffect(() => {
-    if (gameStatus === 'playing' && count === 60) {
-      setCount(pausedCount); // 게임 상태가 'playing'으로 전환될 때 이전에 멈춘 시간을 설정
+    if (gameStatus === 'playing' && count === 90) {
+      setCount(pausedCount);
     }
   }, [gameStatus]);
 
   useEffect(() => {
     if (gameStatus === 'skilltime') {
-      setPausedCount(count); // 게임 상태가 'skilltime'으로 전환될 때 남은 시간을 저장
+      setPausedCount(count);
+    }
+
+    if (gameStatus === 'playing' && count === 0) {
+      emitGameEnd();
     }
   }, [gameStatus, count]);
 
+  useEffect(() => {
+    if (gameStatus === 'finished') {
+      if (winner === socket.id) {
+        winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
+      } else {
+        loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+      }
+    }
+
+    return () => {
+      if (winAudioRef.current) {
+        winAudioRef.current.pause();
+        winAudioRef.current.currentTime = 0;
+      }
+      if (loseAudioRef.current) {
+        loseAudioRef.current.pause();
+        loseAudioRef.current.currentTime = 0;
+      }
+    };
+  }, [gameStatus, winner, socket.id]);
+
   const handleRestart = () => {
-    setCount(60);
-    setPausedCount(60); // 재시작 시 타이머 초기화
+    setCount(90);
+    setPausedCount(90);
   };
 
   const renderRainEffect = () => {
@@ -262,10 +303,11 @@ export default function StateBar() {
           height={window.innerHeight}
           numberOfPieces={500}
           recycle={true}
+          style={{ zIndex: 60 }}
         />
       )}
       {gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
-      <div className='absolute z-50 top-1 w-full h-full'>
+      <div className='absolute z-40 w-full h-full'>
         <div className='absolute flex flex-row justify-between w-full h-full px-4'>
           <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
             <HealthBarContainer>
@@ -339,6 +381,16 @@ export default function StateBar() {
                 }}
               >
                 재시작
+              </button>
+              <button
+                onClick={handleRestart}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+                style={{
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
+                  transition: 'transform 0.2s ease-in-out'
+                }}
+              >
+                나가기
               </button>
             </div>
           </div>

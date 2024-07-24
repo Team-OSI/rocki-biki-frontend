@@ -12,9 +12,9 @@ import * as THREE from 'three'
 
 const skillBackgrounds = {
   default: '/images/background.png',
-  Attack: '/images/skill/attack_background.png',
+  Attack: '/images/skill/attack_background.jpg',
   Heal: '/images/skill/heal_background.jpg',
-  Shield: '/images/skill/shield_background.jpg',
+  Shield: '/images/skill/speed_background.png',
 };
 
 function BackGround({ texturePath }) {
@@ -68,7 +68,7 @@ function Scene({ receivedPoseData, landmarks, socket }) {
             timerRef.current = setTimeout(() => {
                 setBackground(skillBackgrounds.default);
                 timerRef.current = null;
-            }, 10000);
+            }, 4000);
         }
     }
 }, [opponentSkills, playerSkills]);
@@ -101,10 +101,12 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
     <>
       <StateBar />
       <Canvas
-          dpr={[1, 2]}
-          performance={{ min: 0.5 }}
+          dpr={[0.5, 1]}
+          performance={{ min: 0.3 }}
           gl={{ 
             powerPreference: "high-performance", 
+            shadows: false,
+            precision: "lowp",
             antialias: false,
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 0.5 
@@ -112,7 +114,7 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
       >
         <PerspectiveCamera makeDefault fov={30} position={[0, 0, 0]} />
         <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
-        <Stats />
+        {/* <Stats /> */}
       </Canvas>
     </>
   );

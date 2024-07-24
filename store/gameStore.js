@@ -11,6 +11,8 @@ const useGameStore = create((set, get) => ({
   opponentSkills: [null, null],
   opponentInfo: null, // 새로 추가된 상태
   roomInfo:null,
+  isLoadingImages: false,
+  setIsLoadingImages: (isLoading) => set({ isLoadingImages: isLoading }),
 
   setGameStatus: (status, socketId) => {
     const playerIds = Object.keys(status.players);

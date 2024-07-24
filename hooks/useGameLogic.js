@@ -17,12 +17,11 @@ const useGameLogic = () => {
     socket.on('gameState', handleGameUpdate);
     socket.on('opponentInfo', handleOpponentInfo);
     socket.on('roomInfo', handleRoomInfo);
-    // socket.on('skillState',handleCastSkill);
 
     return () => {
       socket.off('gameState');
       socket.off('opponentInfo')
-      // socket.off('skillState')
+      socket.off('roomInfo');
     };
   }, [socket]);
 
@@ -38,7 +37,7 @@ const useGameLogic = () => {
 
   const handleRoomInfo = useCallback((room) => {
     setRoomInfo(room);
-    console.log(room);
+    console.log("room :" , room);
   }, [setRoomInfo,socket])
   // const handleCastSkill = useCallback((newState) => {
   //   console.log("skill:",newState);

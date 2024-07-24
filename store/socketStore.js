@@ -134,6 +134,15 @@ const useSocketStore = create((set, get) => ({
             socket.emit('start')
         }
     },
+
+    // 게임 시작하기
+    emitGameEnd: () => {
+        const { socket } = get();
+        if (socket) {
+            socket.emit('end')
+        }
+    },
+
     // Map을 사용하는 새로운 유틸리티 메서드들
     getRoomById: (roomId) => {
         return get().rooms.get(roomId);

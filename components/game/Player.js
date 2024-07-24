@@ -76,14 +76,14 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
       })
     }, [materials, hit, currentTexture])
   
-     useEffect(() => {
+     useFrame(() => {
       if (localRef.current && position) {
         localRef.current.position.set((position.x - 0.5) * 5, - (position.y - 0.5) * 5, - (position.z+0.01) * 15)
         if (rotation) {
           localRef.current.rotation.set(rotation[0], rotation[1], rotation[2]);
         }
       }
-    },[position, rotation])
+    })
     return <primitive ref={localRef} object={scene} scale={adjustedScale} name={name} />
   })
   Head.displayName = "Head";
@@ -127,7 +127,7 @@ const Hand = forwardRef(({ position, rotation, scale, name, color = 'red', isAtt
     changeColor();
   }, [changeColor]);
 
-  useEffect(() => {
+  useFrame(() => {
       if (localRef.current && position) {
         if (rotation) {
           // localRef.current.rotation.set((rotation[0]-Math.PI/6)*0.5, 0, -(rotation[2]-Math.PI/2));
@@ -135,7 +135,7 @@ const Hand = forwardRef(({ position, rotation, scale, name, color = 'red', isAtt
         }
         localRef.current.position.set((position[0]-0.5)*4, -(position[1]-0.5)*4, -position[2]*30)
       }
-    },[position, rotation])
+    })
   
     return (
       <group ref={localRef}>

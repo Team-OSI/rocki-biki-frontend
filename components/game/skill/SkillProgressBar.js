@@ -3,7 +3,7 @@ import React from 'react';
 const SkillProgressBar = ({ skillName, cooldown, colorClass, isActive }) => {
   const percentage = ((25 - cooldown) / 25) * 100; 
   const skillImages = {
-    Shield: '/images/skill/shield.png',
+    Shield: '/images/skill/speed.png',
     Heal: '/images/skill/heal.png',
     Attack: '/images/skill/attack.png'
   };

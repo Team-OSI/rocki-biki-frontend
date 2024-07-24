@@ -244,7 +244,7 @@ export function Opponent({ position, landmarks, opponentData }) {
 
     hands.forEach(({ landmark, name }) => {
       // console.log(hand[2])
-      if(landmark[2] !== 0) return // 주먹상태인지 확인
+      // if(landmark[2] !== 0) return // 주먹상태인지 확인
 
       const handPosition = new THREE.Vector3(
         (landmark[0][0] - 0.5) * 4,
