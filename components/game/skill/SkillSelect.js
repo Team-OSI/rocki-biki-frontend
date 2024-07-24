@@ -124,7 +124,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           recognitionActive.current = false;
           console.log("stop");
           recognition.current.stop();
-        }, 6000);
+        }, 4000);
 
         const timeoutId = setTimeout(() => {
           console.log(`Final transcript: ${transcriptRef.current}`);
@@ -138,7 +138,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             healAudio.play();
           }
           triggerSkillUse(activeSkill);
-        }, 6000);
+        }, 4000);
 
         return () => {
           clearTimeout(timeoutId);

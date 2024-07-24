@@ -95,8 +95,8 @@ const AnimatedHealthBar = styled(BaseHealthBar)`
 
 const CurrentHealthBar = styled(BaseHealthBar)`
   background-color: ${props => props.$isplayer
-    ? 'rgba(220, 38, 38, 0.8)' // 진한 빨강 (player)
-    : 'rgba(37, 99, 235, 0.8)' // 진한 파랑 (opponent)
+    ? 'rgba(220, 38, 38, 0.8)' 
+    : 'rgba(37, 99, 235, 0.8)' 
   };
   transition: transform 0.5s ease-out;
   z-index: 1;
@@ -224,19 +224,19 @@ export default function StateBar() {
 
   useEffect(() => {
     if (gameStatus === 'playing' && count === 60) {
-      setCount(pausedCount); // 게임 상태가 'playing'으로 전환될 때 이전에 멈춘 시간을 설정
+      setCount(pausedCount); 
     }
   }, [gameStatus]);
 
   useEffect(() => {
     if (gameStatus === 'skilltime') {
-      setPausedCount(count); // 게임 상태가 'skilltime'으로 전환될 때 남은 시간을 저장
+      setPausedCount(count); 
     }
   }, [gameStatus, count]);
 
   const handleRestart = () => {
     setCount(60);
-    setPausedCount(60); // 재시작 시 타이머 초기화
+    setPausedCount(60); 
   };
 
   const renderRainEffect = () => {

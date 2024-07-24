@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import useSocketStore from '@/store/socketStore';
@@ -28,6 +28,7 @@ export default function Lobby() {
   const [userNickname, setUserNickname] = useState('');
   const [userProfileImage, setUserProfileImage] = useState('');
   const { setTitle } = useTitle();
+  const bgmAudio = useRef(null);
 
   useEffect(() => {
     const initializeUser = async () => {
@@ -65,7 +66,20 @@ export default function Lobby() {
     setTitle("Lobby")
   }, [setTitle]);
 
-  
+  useEffect(() => {
+    if (!bgmAudio.current) {
+      bgmAudio.current = new Audio('./sounds/bgm.mp3');
+      bgmAudio.current.loop = true; // 배경음악이 반복되도록 설정
+      bgmAudio.current.play();
+    }
+    return () => {
+      if (bgmAudio.current) {
+        bgmAudio.current.pause();
+        bgmAudio.current.currentTime = 0;
+      }
+    };
+  }, []);
+
   const goGame = (roomId) => {
     joinRoom(roomId, userEmail, userNickname, userProfileImage);
     router.push(`/game?roomId=${roomId}`);
@@ -155,7 +169,6 @@ export default function Lobby() {
             </div>
           </div>
 
-          {/* 오른쪽 패널: 방 검색 및 목록 또는 튜토리얼 */}
           <div
               className="w-2/3 p-6 bg-gray-100 bg-opacity-85 rounded-lg shadow-lg h-[calc(100vh-12rem)] overflow-hidden relative">
             <h2 className="text-gray-800 text-3xl text-center font-bold mb-4">Find rooms</h2>
