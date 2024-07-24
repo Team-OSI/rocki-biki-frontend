@@ -128,8 +128,8 @@ const DamageOverlay = styled.div`
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
   const socket = useSocketStore(state => state.socket);
-  const [count, setCount] = useState(60);
-  const [pausedCount, setPausedCount] = useState(60); // 멈춘 시간 추적 상태
+  const [count, setCount] = useState(90);
+  const [pausedCount, setPausedCount] = useState(90); // 멈춘 시간 추적 상태
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
   const { handleRoomInfo } = useGameLogic();
@@ -239,7 +239,7 @@ export default function StateBar() {
   }, [gameStatus, count, isLoading]);
 
   useEffect(() => {
-    if (gameStatus === 'playing' && count === 60) {
+    if (gameStatus === 'playing' && count === 90) {
       setCount(pausedCount);
     }
   }, [gameStatus]);
@@ -276,8 +276,8 @@ export default function StateBar() {
   }, [gameStatus, winner, socket.id]);
 
   const handleRestart = () => {
-    setCount(60);
-    setPausedCount(60);
+    setCount(90);
+    setPausedCount(90);
   };
 
   const renderRainEffect = () => {
