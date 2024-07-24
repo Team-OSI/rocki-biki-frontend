@@ -2,7 +2,7 @@
 
 import { forwardRef, useRef,useState, useEffect, useImperativeHandle, useMemo, useCallback } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { useGLTF, useTexture } from '@react-three/drei'
+import { useGLTF, useTexture, Trail } from '@react-three/drei'
 import * as THREE from 'three';
 import useGaugeStore from '@/store/gaugeStore';
 import useGameStore from '@/store/gameStore';
@@ -15,6 +15,15 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
     const playerHealth = useGameStore(state => state.playerHealth);
     const [hit, setHit] = useState(false)
     const prevHealthRef = useRef(playerHealth)
+
+    //shield
+    const playerSkills = useGameStore(state => state.playerSkills);
+    const shieldActive = playerSkills[0] === 'Shield';
+    const shieldPer = playerSkills[1];
+
+    const adjustedScale = shieldActive && shieldPer !== null 
+    ? scale * (1 - (shieldPer || 0) * 0.6) 
+    : scale;
 
     // 텍스처 로드
     const textures = useTexture({
@@ -75,19 +84,23 @@ const Head = forwardRef(({ position, rotation, scale, name }, ref) => {
         }
       }
     },[position, rotation])
-    return <primitive ref={localRef} object={scene} scale={scale} name={name} />
+    return <primitive ref={localRef} object={scene} scale={adjustedScale} name={name} />
   })
   Head.displayName = "Head";
+  // export { Hand };
   
   const leftHandModel = '/models/left-hand.glb';
   const rightHandModel = '/models/right-hand.glb';
 
 // player 손 불러오기
-const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref) => {
-    const localRef = useRef()
-    const { scene: originalScene } = useGLTF(name === 'leftHand' ? leftHandModel : rightHandModel)
-    const colorChangedRef = useRef(false)
+const Hand = forwardRef(({ position, rotation, scale, name, color = 'red', isAttacking }, ref) => {
+    const localRef = useRef();
+    const { scene: originalScene } = useGLTF(name === 'leftHand' ? leftHandModel : rightHandModel);
+    const colorChangedRef = useRef(false);
+    const trailRef = useRef();
 
+     // 트레일 텍스처 로드
+     const trailTexture = useTexture('/images/logo/kakao.png')
     // scene을 복제하고 메모이제이션
     const scene = useMemo(() => originalScene.clone(), [originalScene])
 
@@ -124,7 +137,28 @@ const Hand = forwardRef(({ position, rotation, scale, name, color = 'red' }, ref
       }
     },[position, rotation])
   
-    return <primitive ref={localRef} object={scene} scale={scale} name={name} />
+    return (
+      <group ref={localRef}>
+          <primitive object={scene} scale={scale} name={name} />
+          {isAttacking && (
+              <>
+                  <primitive object={new THREE.PointLight(color, 100, 50)} />
+                  <Trail
+                      width={7}
+                      length={4}
+                      color={color}
+                      attenuation={(t) => t * t}
+                      texture={trailTexture}
+                  >
+                      <mesh visible={false}>
+                          <sphereGeometry args={[0.1]} />
+                          <meshBasicMaterial />
+                      </mesh>
+                  </Trail>
+              </>
+          )}
+      </group>
+  )
   })
   Hand.displayName = "Hand";
   
@@ -151,17 +185,22 @@ function CameraControls({target}){
 }
 
 export function Player({ position, landmarks }) {
+
   const groupRef = useRef(null)
   const headRef = useRef(null)
-    // 게이지 구현
-    const { 
-      updateGauge, 
-      headChargeDistance 
-    } = useGaugeStore();
-    useFrame(() => {
-        updateGauges();
-      }
-    )
+  // 공격
+  const playerSkills = useGameStore(state => state.playerSkills)
+  const isAttacking = playerSkills[0] === 'Attack' && playerSkills[1] !== null;
+
+  // 게이지 구현
+  const { 
+    updateGauge, 
+    headChargeDistance 
+  } = useGaugeStore();
+  useFrame(() => {
+      updateGauges();
+    }
+  )
   const updateGauges = useCallback(() => {
     if(!headRef.current || !landmarks.leftHand || !landmarks.rightHand) return
 
@@ -203,6 +242,7 @@ export function Player({ position, landmarks }) {
             scale={0.33}
             name='rightHand'
             color = 'red'
+            isAttacking={isAttacking}
           />
         )}
         {landmarks?.leftHand && (
@@ -212,6 +252,7 @@ export function Player({ position, landmarks }) {
             scale={0.33}
             name='leftHand'
             color = 'red'
+            isAttacking={isAttacking}
           />
         )}
       </group>

@@ -2,7 +2,7 @@
 
 import { forwardRef, useRef, useEffect, useMemo, useState, useCallback, useImperativeHandle } from 'react'
 import { useFrame} from '@react-three/fiber'
-import { useGLTF, useTexture } from '@react-three/drei'
+import { useGLTF, useTexture, Trail } from '@react-three/drei'
 import * as THREE from 'three'
 import useGaugeStore from '@/store/gaugeStore';
 import useSocketStore from '@/store/socketStore';
@@ -14,13 +14,17 @@ import PNGSequenceAnimation from './PNGSequence';
 
 
 // Opponent 전용 Head 컴포넌트
-const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) => {
+const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield, shieldPer }, ref) => {
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/opponent-head.glb')
     const opacity = 1
     const [hitImpulse, setHitImpulse] = useState(new THREE.Vector3())
     const originalPosition = useRef(new THREE.Vector3());
     const currentVelocity = useRef(new THREE.Vector3())
+
+    const adjustedScale = shield && shieldPer !== null
+        ? scale * (1 - (shieldPer || 0) * 0.6)
+        : scale;
 
     const opponentHealth = useGameStore(state => state.opponentHealth);
 
@@ -97,21 +101,23 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit }, ref) 
       }
     })
 
-    return (<>
-    <primitive ref={localRef} object={scene} scale={scale} name={name} />
-    {opponentHealth <= 50 && (
-      <PNGSequenceAnimation
-        position={[-0.5, 1.5, 0]} 
-        health={opponentHealth} 
-      />
-    )}
-    </>)
+    return (
+      <group ref={localRef}>
+      <primitive object={scene} scale={adjustedScale} name={name} />
+      {opponentHealth <= 50 && (
+        <PNGSequenceAnimation
+          position={[-0.7, 1.4, 0]} 
+          health={opponentHealth}
+        />
+      )}
+      </group>
+    )
   })
   
 OpponentHead.displayName = "OpponentHead";
 
 // Opponent 전용 Hand 컴포넌트
-const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
+const OpponentHand = forwardRef(({ position, rotation, scale, name, isAttacking }, ref) => {
     const localRef = useRef()
     const { scene } = useGLTF(name === 'opponentLeftHand' ? '/models/left-hand.glb' : '/models/right-hand.glb')
 
@@ -133,7 +139,27 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name }, ref) => {
       }
     }, [position, rotation])
   
-    return <primitive ref={localRef} object={scene.clone()} scale={scale} name={name} />
+    return (
+      <group ref={localRef}>
+        <primitive object={scene.clone()} scale={scale} name={name} />
+        {isAttacking && (
+          <>
+            <primitive object={new THREE.PointLight('blue', 100, 50)} />
+            <Trail
+              width={7}
+              length={4}
+              color={'blue'}
+              attenuation={(t) => t * t}
+            >
+              <mesh visible={false}>
+                <sphereGeometry args={[0.1]} />
+                <meshBasicMaterial />
+              </mesh>
+            </Trail>
+          </>
+        )}
+      </group>
+    )
   })
 
 OpponentHand.displayName = "OpponentHand";
@@ -198,6 +224,11 @@ export function Opponent({ position, landmarks, opponentData }) {
     playRandomVoice(); // 히트 사운드와 함께 랜덤 보이스 재생
   }, [playRandomVoice]);
 
+  const opponentSkills = useGameStore(state => state.opponentSkills);
+  const shieldActive = opponentSkills[0] === 'Shield';
+  const shieldPer = opponentSkills[1];
+  const isAttacking = opponentSkills[0] === 'Attack' && opponentSkills[1] !== null;
+
   const checkHit = useCallback(() => {
     if(!headRef.current || !landmarks.leftHand || !landmarks.rightHand) return
 
@@ -228,7 +259,13 @@ export function Opponent({ position, landmarks, opponentData }) {
 
       const distance = headPosition.distanceTo(handPosition)
 
-      if (distance < 1.4 && currentTime - lastHitTime.current > 1000) {
+      // Shield 활성화 시 유효 거리를 줄임
+      const baseHitDistance = 1.3; // 기본거리
+      const hitDistance = shieldActive && shieldPer !== null
+          ? baseHitDistance * (1 - (shieldPer || 0) * 0.6)
+          : baseHitDistance;
+      
+      if (distance < hitDistance && currentTime - lastHitTime.current > 1000) {
         // const velocity = landmark[0].reduce((sum, coord) => sum + Math.abs(coord), 0)
         const gaugeDamage = getGaugeDamage(name);
         const damage = gaugeDamage // + (Math.floor(velocity * 20) / 3);
@@ -250,7 +287,7 @@ export function Opponent({ position, landmarks, opponentData }) {
         resetGauge(name)
       }
     })
-  }, [landmarks, playHitSound, emitDamage, getGaugeDamage, resetGauge])
+  }, [landmarks, playHitSound, emitDamage, getGaugeDamage, resetGauge, shieldActive, shieldPer])
 
   useFrame(() => {
   if(count_optm.current % 4 === 0) {
@@ -270,6 +307,8 @@ export function Opponent({ position, landmarks, opponentData }) {
           scale={0.25}
           name='opponentHead'
           hit={hit}
+          shield={shieldActive}
+          shieldPer={shieldPer}
         />)}
         {opponentData.rightHand && (
           <OpponentHand
@@ -277,6 +316,7 @@ export function Opponent({ position, landmarks, opponentData }) {
           rotation={[(opponentData.rightHand[1][0]-Math.PI), Math.PI , -(opponentData.rightHand[1][1]-Math.PI/2)]}
             scale={0.33}
             name='opponentRightHand'
+            isAttacking={isAttacking}
           />
         )}
         {opponentData.leftHand && (
@@ -285,6 +325,7 @@ export function Opponent({ position, landmarks, opponentData }) {
             rotation={[-(opponentData.leftHand[1][0]-Math.PI), 0 ,-(opponentData.leftHand[1][1]+Math.PI/2)]}
             scale={0.33}
             name='opponentLeftHand'
+            isAttacking={isAttacking}
           />
         )}
     </group>
