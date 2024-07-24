@@ -3,7 +3,7 @@ import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
 
 const useGameLogic = () => {
-  const { setGameStatus, gameStatus, setOpponentInfo } = useGameStore();
+  const { setGameStatus, gameStatus, setOpponentInfo, setRoomInfo } = useGameStore();
   const useSkill = useSocketStore(state => state.useSkill);
   // 소켓 연결 설정
   const socket = useSocketStore(state => state.socket);
@@ -16,6 +16,7 @@ const useGameLogic = () => {
 
     socket.on('gameState', handleGameUpdate);
     socket.on('opponentInfo', handleOpponentInfo);
+    socket.on('roomInfo', handleRoomInfo);
     // socket.on('skillState',handleCastSkill);
 
     return () => {
@@ -34,6 +35,11 @@ const useGameLogic = () => {
   const handleOpponentInfo = useCallback((info) => {
     setOpponentInfo(info);
   }, [setOpponentInfo, socket])
+
+  const handleRoomInfo = useCallback((room) => {
+    setRoomInfo(room);
+    console.log(room);
+  }, [setRoomInfo,socket])
   // const handleCastSkill = useCallback((newState) => {
   //   console.log("skill:",newState);
   //   setGameStatus(newState, socket.id);
@@ -102,6 +108,7 @@ const useGameLogic = () => {
   return {
     gameStatus,
     handleUseSkill,
+    handleRoomInfo
   };
 };
 

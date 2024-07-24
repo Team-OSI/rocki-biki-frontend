@@ -8,14 +8,17 @@ import { throttle } from 'lodash';
 export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const canvasRef = useRef(null);
   const timerRef = useRef(null);
-  const { gameStatus, setMyReady, myReady } = useGameStore();
+  const countdownAudio = useRef(null);
+  const { gameStatus, setMyReady, myReady, } = useGameStore();
   const [similarityResult, setSimilarityResult] = useState(null);
   const [remainingTime, setRemainingTime] = useState(5);
   const [playerReady, setPlayerReady] = useState(false);
   const emitPlayerReady = useSocketStore(state => state.emitPlayerReady);
+  const opponentReadyState = useGameStore(state => state.opponentReadyState);
   const keypoints = useMemo(() => ['nose', 'leftShoulder', 'rightShoulder'], []);
   const similarityThreshold = 0.20;
   const roomIdRef = useRef('');
+  
   
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -89,6 +92,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
 
         if (similarity >= similarityThreshold) {
           if (!playerReady) {
+            console.log(opponentReadyState)
             setPlayerReady(true);
             setMyReady(true);
             emitPlayerReady(true);
@@ -106,19 +110,33 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   );
 
   useEffect(() => {
-    if (gameStatus === 'bothReady') {
-      if (!timerRef.current) {
-        startTimer();
-        // Ready sound 출력하기
-      }
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
+    if (!countdownAudio.current) {
+      countdownAudio.current = new Audio('./sounds/countdown.mp3');
+      countdownAudio.current.addEventListener('ended', () => {
+        countdownAudio.current.pause();
+        countdownAudio.current.currentTime = 0;
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (gameStatus === 'bothReady' && remainingTime === 4) {
+      countdownAudio.current.play();
+    }
+
+    if (gameStatus !== 'bothReady' || remainingTime === 1) {
+      countdownAudio.current.pause();
+      countdownAudio.current.currentTime = 0;
+    }
+
+    if (gameStatus === 'bothReady' && !timerRef.current) {
+      startTimer();
+    } else if (gameStatus !== 'bothReady' && timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
       setRemainingTime(5);
     }
-  }, [landmarks, playerReady, startTimer, checkReadyPose, gameStatus]);
+  }, [gameStatus, remainingTime, startTimer]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -156,7 +174,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   return (
     <div className="relative w-full h-full" >
       <div className="absolute w-full h-full"/>
-      <div className="ready-header" style={{ '--header-color': headerColor }}>
+      <div className="ready-header" style={{ '--header-color': headerColor , top: 16 }}>
         {headerText}
       </div>
       <canvas ref={canvasRef} className="absolute inset-0" />
@@ -164,22 +182,22 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
         Similarity: {similarityResult ? similarityResult.toFixed(2) : 'N/A'}
       </div>
       {(timerRef.current && remainingTime <= 4) && (
-        <div className="countdown-text">
+        <div className="countdown-text" style={{ fontSize: '200px', fontWeight: 'bold', color: 'red', textShadow: '2px 2px 8px rgba(0, 0, 0, 0.7)' }}>
           {remainingTime === 1 ? 'GO!' : remainingTime - 1}
         </div>
       )}
-      {myReady && !playerReady && (
-        <img src="/images/ready_logo.png" className="absolute right-0 top-1/2 transform -translate-y-1/2" alt="Ready Logo" />
+      {myReady && !opponentReadyState && (
+        <img src="/images/ready_logo.png" className="absolute" style={{ right: '350px', top: '11%' }} alt="Ready Logo" />
       )}
-      {playerReady && !myReady && (
-        <img src="/images/ready_logo.png" className="absolute left-0 top-1/2 transform -translate-y-1/2" alt="Ready Logo" />
+      {opponentReadyState && !myReady && (
+        <img src="/images/ready_logo.png" className="absolute" style={{ left: '350px', top: '11%' }} alt="Ready Logo" />
       )}
-      {myReady && playerReady && (
+      {myReady && opponentReadyState && (
         <>
-          <img src="/images/ready_logo.png" className="absolute left-0 top-1/2 transform -translate-y-1/2" alt="Ready Logo" />
-          <img src="/images/ready_logo.png" className="absolute right-0 top-1/2 transform -translate-y-1/2" alt="Ready Logo" />
+          <img src="/images/ready_logo.png" className="absolute" style={{ left: '350px', top: '11%' }} alt="Ready Logo" />
+          <img src="/images/ready_logo.png" className="absolute" style={{ right: '350px', top: '11%' }} alt="Ready Logo" />
         </>
       )}
     </div>
-  );
+  )
 }
