@@ -96,14 +96,24 @@ export default function GameMain() {
     );
 
     const myReady = useGameStore(state => state.myReady);
-    const opponentReady = useGameStore(state => state.opponentReadyState)
+    const opponentReady = useGameStore(state => state.opponentReadyState);
     const emitGameStart = useSocketStore(state => state.emitGameStart);
+    const setIsLoadingImages = useGameStore(state => state.setIsLoadingImages);
+    const isLoadingImages = useGameStore(state => state.isLoadingImages);
     const opponentInfo = useGameStore(state => state.opponentInfo);
-    const handleReady = () => {
+
+    const handleReady = useCallback(() => {
         playBgmSound();
-        console.log('opInfo: ',opponentInfo);
-        emitGameStart();
-    };
+        console.log('opInfo: ', opponentInfo);
+        setIsLoadingImages(true);
+      }, [playBgmSound, opponentInfo, setIsLoadingImages]);
+    
+      useEffect(() => {
+        if (isLoadingImages) {
+          emitGameStart();
+        }
+      }, [isLoadingImages, emitGameStart]);
+
 
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',

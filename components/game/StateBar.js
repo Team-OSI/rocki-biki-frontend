@@ -134,6 +134,7 @@ export default function StateBar() {
   const damageAudio = useRef(null);
   const { handleRoomInfo } = useGameLogic();
   const [nickname, setNickname] = useState('');
+  const setIsLoadingImages = useGameStore(state => state.setIsLoadingImages);
 
   const playDamageSound = useCallback(() => {
     if (damageAudio.current) {
@@ -198,15 +199,19 @@ export default function StateBar() {
   }, [isOpponentDecreasing]);
 
   useEffect(() => {
-    preloadImages()
-      .then(() => {
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error preloading images:", error);
-        setIsLoading(false);
-      });
-  }, []);
+    if (isLoading) {
+      preloadImages()
+        .then(() => {
+          setIsLoading(false);
+          setIsLoadingImages(false); // 이미지 로딩이 완료되면 전역 상태 업데이트
+        })
+        .catch((error) => {
+          console.error("Error preloading images:", error);
+          setIsLoading(false);
+          setIsLoadingImages(false);
+        });
+    }
+  }, [isLoading, setIsLoadingImages]);
 
   useEffect(() => {
     let timer;

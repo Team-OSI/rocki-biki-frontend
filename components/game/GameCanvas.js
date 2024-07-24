@@ -112,7 +112,7 @@ export default function GameCanvas({ receivedPoseData, landmarks }) {
       >
         <PerspectiveCamera makeDefault fov={30} position={[0, 0, 0]} />
         <Scene receivedPoseData={receivedPoseData} landmarks={landmarks}/>
-        <Stats />
+        {/* <Stats /> */}
       </Canvas>
     </>
   );
