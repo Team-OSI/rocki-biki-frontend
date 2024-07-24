@@ -18,12 +18,17 @@ import { useMusic } from '@/app/contexts/MusicContext';
 
 export default function GameMain() {
     const { sharedArray } = useWorkerStore();
+    const roomInfo = useGameStore(state => state.roomInfo);
+    const socket = useSocketStore(state => state.socket);
     const videoRef = useRef(null);
     const roomId = useRef(null);
     const { playReadyBgm, playGameBgm, stopAllMusic } = useMusic();
 
     const { gameStatus, handleUseSkill } = useGameLogic(); // game 로직
     const router = useRouter();
+    
+    const [myNickname, setMyNickname] = useState('');
+    const [opponentNickname, setOpponentNickname] = useState('');
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -58,7 +63,6 @@ export default function GameMain() {
             router.push('/lobby');
         };
 
-        const socket = useSocketStore.getState().socket;
         if (socket) {
             socket.on('ROOM_CLOSE', onRoomClosed);
         }
@@ -68,7 +72,36 @@ export default function GameMain() {
                 socket.off('ROOM_CLOSE', onRoomClosed);
             }
         };
-    }, [router]);
+    }, [router, socket]);
+
+    useEffect(() => {
+        if (roomInfo && socket && roomInfo.playerInfo) {
+            const player = roomInfo.playerInfo.find(p => p.socketId === socket.id);
+            const opponent = roomInfo.playerInfo.find(p => p.socketId !== socket.id);
+            if (player) setMyNickname(player.nickname);
+            if (opponent) setOpponentNickname(opponent.nickname);
+        }
+    }, [roomInfo, socket]);
+
+    useEffect(() => {
+        const handlePlayerInfo = (playerInfo) => {
+            if (playerInfo.socketId === socket.id) {
+                setMyNickname(playerInfo.nickname);
+            } else {
+                setOpponentNickname(playerInfo.nickname);
+            }
+        };
+
+        if (socket) {
+            socket.on('PLAYER_INFO', handlePlayerInfo);
+        }
+
+        return () => {
+            if (socket) {
+                socket.off('PLAYER_INFO', handlePlayerInfo);
+            }
+        };
+    }, [socket]);
 
     // WebRTC 연결 설정
     const {
@@ -131,6 +164,18 @@ export default function GameMain() {
         transition: 'opacity 0.5s ease-in-out',
     };
 
+    const nicknameStyle = {
+        position: 'absolute',
+        bottom: '-38px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: '24px',
+        color: 'white', 
+        backgroundColor: 'black', 
+        padding: '0px 40px',
+        borderRadius: '20px / 20px',
+    };
+
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
     const cameraRef = useRef(null);
 
@@ -184,6 +229,7 @@ export default function GameMain() {
                     {myReady && (
                         <img src="/images/ready_logo.png" className="absolute top-[-124px] right-0 transform -translate-x-1/2 w-1/2 h-auto" alt="Ready Logo" />
                     )}
+                    <div style={nicknameStyle}>{myNickname}</div>
                 </div>
             </div>
             <div style={videoContainerStyle(false)} className="z-30">
@@ -217,6 +263,7 @@ export default function GameMain() {
                     {opponentReady && (
                         <img src="/images/ready_logo.png" className="absolute top-[-124px] right-0 transform -translate-x-1/2 w-1/2 h-auto" alt="Ready Logo" />
                     )}
+                    <div style={nicknameStyle}>{opponentNickname}</div>
                 </div>
             </div>
             <div className="absolute inset-0" ref={cameraRef}>
