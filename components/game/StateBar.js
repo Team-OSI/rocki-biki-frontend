@@ -270,7 +270,7 @@ export default function StateBar() {
         />
       )}
       {gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
-      <div className='absolute z-50 top-1 w-full h-full'>
+      <div className='absolute z-50 w-full h-full pt-2'>
         <div className='absolute flex flex-row justify-between w-full h-full px-4'>
           <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
             <HealthBarContainer>
@@ -344,6 +344,16 @@ export default function StateBar() {
                 }}
               >
                 재시작
+              </button>
+              <button
+                onClick={handleRestart}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+                style={{
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
+                  transition: 'transform 0.2s ease-in-out'
+                }}
+              >
+                나가기
               </button>
             </div>
           </div>
