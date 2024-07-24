@@ -128,7 +128,7 @@ const DamageOverlay = styled.div`
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
   const socket = useSocketStore(state => state.socket);
-  const [count, setCount] = useState(600);
+  const [count, setCount] = useState(60);
   const [pausedCount, setPausedCount] = useState(60); // 멈춘 시간 추적 상태
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
