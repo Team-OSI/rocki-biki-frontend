@@ -12,9 +12,9 @@ import * as THREE from 'three'
 
 const skillBackgrounds = {
   default: '/images/background.png',
-  Attack: '/images/skill/attack_background.png',
+  Attack: '/images/skill/attack_background.jpg',
   Heal: '/images/skill/heal_background.jpg',
-  Shield: '/images/skill/shield_background.jpg',
+  Shield: '/images/skill/speed_background.png',
 };
 
 function BackGround({ texturePath }) {
