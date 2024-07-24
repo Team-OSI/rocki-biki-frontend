@@ -37,7 +37,7 @@ const useGameLogic = () => {
 
   const handleRoomInfo = useCallback((room) => {
     setRoomInfo(room);
-    console.log(room);
+    console.log("room :" , room);
   }, [setRoomInfo,socket])
   // const handleCastSkill = useCallback((newState) => {
   //   console.log("skill:",newState);
