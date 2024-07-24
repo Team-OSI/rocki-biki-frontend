@@ -134,12 +134,23 @@ export default function StateBar() {
   const damageAudio = useRef(null);
   const { handleRoomInfo } = useGameLogic();
   const [nickname, setNickname] = useState('');
+  const emitGameEnd = useSocketStore(state => state.emitGameEnd);
+
+  const winAudioRef = useRef(null);
+  const loseAudioRef = useRef(null);
 
   const playDamageSound = useCallback(() => {
     if (damageAudio.current) {
       damageAudio.current.currentTime = 0;
       damageAudio.current.play().catch(error => console.log('오디오 재생 실패:', error));
     }
+  }, []);
+
+  useEffect(() => {
+    winAudioRef.current = new Audio('./sounds/text.mp3');
+    winAudioRef.current.loop = true;
+    loseAudioRef.current = new Audio('./sounds/bgm.mp3');
+    loseAudioRef.current.loop = true;
   }, []);
 
   useEffect(() => {
@@ -232,7 +243,32 @@ export default function StateBar() {
     if (gameStatus === 'skilltime') {
       setPausedCount(count); 
     }
+
+    if (gameStatus === 'playing' && count === 0) {
+      emitGameEnd();
+    }
   }, [gameStatus, count]);
+
+  useEffect(() => {
+    if (gameStatus === 'finished') {
+      if (winner === socket.id) {
+        winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
+      } else {
+        loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+      }
+    }
+
+    return () => {
+      if (winAudioRef.current) {
+        winAudioRef.current.pause();
+        winAudioRef.current.currentTime = 0;
+      }
+      if (loseAudioRef.current) {
+        loseAudioRef.current.pause();
+        loseAudioRef.current.currentTime = 0;
+      }
+    };
+  }, [gameStatus, winner, socket.id]);
 
   const handleRestart = () => {
     setCount(60);
@@ -262,10 +298,11 @@ export default function StateBar() {
           height={window.innerHeight}
           numberOfPieces={500}
           recycle={true}
+          style={{ zIndex: 60 }}
         />
       )}
       {gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
-      <div className='absolute z-50 top-1 w-full h-full'>
+      <div className='absolute z-40 top-1 w-full h-full'>
         <div className='absolute flex flex-row justify-between w-full h-full px-4'>
           <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
             <HealthBarContainer>
