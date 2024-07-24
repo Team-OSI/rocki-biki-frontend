@@ -58,7 +58,7 @@ export const MusicProvider = ({ children }) => {
 
   const playReadyBgm = () => {
     setCurrentTrack('ready');
-    setVolume(0.7); // 레디 BGM 볼륨 설정
+    setVolume(0.17); // 레디 BGM 볼륨 설정
   };
 
   return (
