@@ -175,8 +175,8 @@ export default function Lobby() {
                   <Room
                       key={roomId}
                       title={room.title}
-                      player1={room.players[0]}
-                      player2={room.players[1]}
+                      player1={room.playerInfo[0] ? room.playerInfo[0].nickname : ''}
+                      player2={room.playerInfo[1] ? room.playerInfo[1].nickname : ''}
                       status={room.players.length < 2 ? false : true}
                       onClick={() => goGame(roomId)}
                   />

@@ -27,13 +27,14 @@ module.exports = {
         dark: '#262626', // Dark
       },
       keyframes: {
-        clock: {
-          '0%': { transform: 'rotate(0deg)' },
-          '100%': { transform: 'rotate(360deg)' },
+        rain: {
+          '0%': { top: '-10%', opacity: '0' },
+          '30%': { opacity: '1' },
+          '100%': { top: '100%', opacity: '0' },
         },
       },
       animation: {
-        clock: 'clock 5s linear infinite',
+        rain: 'rain 0.5s linear infinite',
       },
     },
   },

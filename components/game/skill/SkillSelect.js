@@ -210,7 +210,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     clearCanvas();
 
     if (maxSimilarityRef.current >= 0.70) {
-      setResultMessage('Eww🤮');
+      setResultMessage('Excelent🤮');
       setResultColor('green');
     } else if (maxSimilarityRef.current >= 0.5) {
       setResultMessage('Perfect!');
