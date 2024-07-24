@@ -10,6 +10,7 @@ const useGameStore = create((set, get) => ({
   playerSkills: [null, null],
   opponentSkills: [null, null],
   opponentInfo: null, // 새로 추가된 상태
+  roomInfo:null,
 
   setGameStatus: (status, socketId) => {
     const playerIds = Object.keys(status.players);
@@ -32,6 +33,10 @@ const useGameStore = create((set, get) => ({
   // 새로 추가된 액션
   setOpponentInfo: (info) => {
     set({ opponentInfo: info })
+  },
+
+  setRoomInfo: (info) => {
+    set({ roomInfo: info })
   }
 }));
 

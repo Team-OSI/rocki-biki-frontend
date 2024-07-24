@@ -1,7 +1,9 @@
 import styled, { keyframes, css } from 'styled-components';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import useGameStore from '../../store/gameStore'
+import useGameStore from '../../store/gameStore';
 import useSocketStore from '@/store/socketStore';
+import useGameLogic from '@/hooks/useGameLogic';
+import Confetti from 'react-confetti';
 
 const scaleAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -50,7 +52,7 @@ const preloadImages = () => {
 const Timer = ({ count }) => {
   const [tens, setTens] = useState(0);
   const [ones, setOnes] = useState(0);
-  const isRed = count <=10;
+  const isRed = count <= 10;
   const isOrange = count > 10 && count <= 30;
 
   useEffect(() => {
@@ -60,8 +62,8 @@ const Timer = ({ count }) => {
 
   return (
     <TimerContainer>
-      <DigitImage src={`/images/count/${tens}.png`}  $isRed={isRed} $isOrange={isOrange}/>
-      <DigitImage src={`/images/count/${ones}.png`} $isRed={isRed} $isOrange={isOrange}/>
+      <DigitImage src={`/images/count/${tens}.png`} $isRed={isRed} $isOrange={isOrange} />
+      <DigitImage src={`/images/count/${ones}.png`} $isRed={isRed} $isOrange={isOrange} />
     </TimerContainer>
   );
 };
@@ -85,14 +87,14 @@ const BaseHealthBar = styled.div`
 `;
 
 const AnimatedHealthBar = styled(BaseHealthBar)`
-  background-color: ${props => props.$isplayer 
+  background-color: ${props => props.$isplayer
     ? 'rgba(252, 165, 165, 0.8)' // 연한 빨강 (player)
     : 'rgba(147, 197, 253, 0.8)' // 연한 파랑 (opponent)
   };
 `;
 
 const CurrentHealthBar = styled(BaseHealthBar)`
-  background-color: ${props => props.$isplayer 
+  background-color: ${props => props.$isplayer
     ? 'rgba(220, 38, 38, 0.8)' // 진한 빨강 (player)
     : 'rgba(37, 99, 235, 0.8)' // 진한 파랑 (opponent)
   };
@@ -124,12 +126,14 @@ const DamageOverlay = styled.div`
 `;
 
 export default function StateBar() {
-  const { gameStatus, opponentHealth, playerHealth, winner } = useGameStore();
+  const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
   const socket = useSocketStore(state => state.socket);
   const [count, setCount] = useState(60);
   const [pausedCount, setPausedCount] = useState(60); // 멈춘 시간 추적 상태
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
+  const { handleRoomInfo } = useGameLogic();
+  const [nickname, setNickname] = useState('');
 
   const playDamageSound = useCallback(() => {
     if (damageAudio.current) {
@@ -139,9 +143,13 @@ export default function StateBar() {
   }, []);
 
   useEffect(() => {
-    damageAudio.current = new Audio('/sounds/hit_player.mp3');
-  }, []);
-
+    if (roomInfo && socket.id && roomInfo.playerInfo && roomInfo.playerInfo.length) {
+      const player = roomInfo.playerInfo.find(p => p.socketId === socket.id);
+      if (player) {
+        setNickname(player.nickname);
+      }
+    }
+  }, [roomInfo]);
 
   const [currentPlayerHealth, setCurrentPlayerHealth] = useState(playerHealth);
   const [previousPlayerHealth, setPreviousPlayerHealth] = useState(playerHealth);
@@ -150,7 +158,6 @@ export default function StateBar() {
 
   const [isPlayerDecreasing, setIsPlayerDecreasing] = useState(false);
   const [isOpponentDecreasing, setIsOpponentDecreasing] = useState(false);
-
   const [showDamageOverlay, setShowDamageOverlay] = useState(false);
 
   useEffect(() => {
@@ -203,7 +210,7 @@ export default function StateBar() {
 
   useEffect(() => {
     let timer;
-    if (gameStatus === 'playing' && count > 0  && !isLoading) {
+    if (gameStatus === 'playing' && count > 0 && !isLoading) {
       timer = setInterval(() => {
         setCount((prevCount) => prevCount - 1);
       }, 1000);
@@ -230,66 +237,114 @@ export default function StateBar() {
   const handleRestart = () => {
     setCount(60);
     setPausedCount(60); // 재시작 시 타이머 초기화
-  }
+  };
+
+  const renderRainEffect = () => {
+    const rainDrops = Array.from({ length: 50 }, (_, i) => (
+      <div
+        key={i}
+        className="absolute w-1 h-8 bg-blue-700 opacity-50 animate-rain"
+        style={{ left: `${Math.random() * 100}%`, animationDuration: `${0.5 + Math.random() * 0.5}s` }}
+      />
+    ));
+    return (
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
+        {rainDrops}
+      </div>
+    );
+  };
 
   return (
     <>
-    <div className='absolute z-50 top-1 w-full h-full'>
-      <div className='absolute flex flex-row justify-between w-full h-full px-4'>
-        <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
-        <HealthBarContainer>
-          <CurrentHealthBar 
-            style={{transform: `scaleX(${currentOpponentHealth / 100})`}} 
-            $isplayer={false} 
-          />
-          {isOpponentDecreasing && (
-              <AnimatedHealthBar 
-                style={{
-                  transform: `scaleX(${previousOpponentHealth / 100})`,
-                }} 
+      {gameStatus === 'finished' && winner === socket.id && (
+        <Confetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          numberOfPieces={500}
+          recycle={true}
+        />
+      )}
+      {gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
+      <div className='absolute z-50 top-1 w-full h-full'>
+        <div className='absolute flex flex-row justify-between w-full h-full px-4'>
+          <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
+            <HealthBarContainer>
+              <CurrentHealthBar
+                style={{ transform: `scaleX(${currentOpponentHealth / 100})` }}
                 $isplayer={false}
               />
-            )}
-        </HealthBarContainer>
-        </div>
-        <div className='font-custom text-lg'>
-          <Timer count={count} />
-        </div>
-        <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
-        <HealthBarContainer>
-            <CurrentHealthBar 
-              style={{transform: `scaleX(${currentPlayerHealth / 100})`}} 
-              $isplayer={true} 
-            />
-            {isPlayerDecreasing && (
-              <AnimatedHealthBar 
-                style={{
-                  transform: `scaleX(${previousPlayerHealth / 100})`,
-                }} 
+              {isOpponentDecreasing && (
+                <AnimatedHealthBar
+                  style={{
+                    transform: `scaleX(${previousOpponentHealth / 100})`,
+                  }}
+                  $isplayer={false}
+                />
+              )}
+            </HealthBarContainer>
+          </div>
+          <div className='font-custom text-lg'>
+            <Timer count={count} />
+          </div>
+          <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
+            <HealthBarContainer>
+              <CurrentHealthBar
+                style={{ transform: `scaleX(${currentPlayerHealth / 100})` }}
                 $isplayer={true}
               />
-            )}
-          </HealthBarContainer>
-
-        </div>
-      </div>
-      {gameStatus === 'finished' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded-lg text-center">
-            <h2 className="text-2xl font-bold mb-4">
-              {winner === socket.id ? '승리!' :  '패배!'}
-            </h2>
-            <button 
-              onClick={handleRestart}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >
-              재시작
-            </button>
+              {isPlayerDecreasing && (
+                <AnimatedHealthBar
+                  style={{
+                    transform: `scaleX(${previousPlayerHealth / 100})`,
+                  }}
+                  $isplayer={true}
+                />
+              )}
+            </HealthBarContainer>
           </div>
         </div>
-      )}
-    </div>
-    {showDamageOverlay && <DamageOverlay />}
-  </>
+        {gameStatus === 'finished' && (
+          <div className="absolute inset-0 bg-black bg-opacity-70 flex justify-center items-center">
+            <div className="bg-white p-16 rounded-3xl text-center shadow-2xl w-1/5 mx-auto relative"
+                 style={{backgroundImage: 'url("/images/result_background.png")', backgroundSize: 'cover'}}>
+              <h2 className={`text-6xl font-extrabold mb-8 animate-pulse`}
+                style={{
+                  background: winner === socket.id
+                    ? 'linear-gradient(90deg, rgba(34,193,195,1) 0%, rgba(253,187,45,1) 100%)'
+                    : 'linear-gradient(90deg, rgba(255,0,150,1) 0%, rgba(0,204,255,1) 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textShadow: '2px 2px 5px rgba(0,0,0,0.5)', 
+                }}>
+                {winner === socket.id ? '승리!' : '패배!'}
+              </h2>
+              <h3
+                className="text-7xl mb-12"
+                style={{
+                  background: 'linear-gradient(to right, #32CD32, #ADFF2F)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textShadow: '2px 2px 5px rgba(0,0,0,0.5)',
+                  fontWeight: 'bold',
+                }}
+              >
+                {nickname}
+              </h3>
+              <button
+                onClick={handleRestart}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+                style={{
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
+                  transition: 'transform 0.2s ease-in-out'
+                }}
+              >
+                재시작
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+      {showDamageOverlay && <DamageOverlay />}
+    </>
   );
 }
