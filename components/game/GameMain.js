@@ -22,7 +22,7 @@ export default function GameMain() {
     const bgmSoundRef = useRef(null);
 
     useEffect(() => {
-        bgmSoundRef.current = new Audio('./sounds/bgm.MP3');
+        bgmSoundRef.current = new Audio('./sounds/bgm.mp3');
         bgmSoundRef.current.volume = 0.4
       }, []);
 

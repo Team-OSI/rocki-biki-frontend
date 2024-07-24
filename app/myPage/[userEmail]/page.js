@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import {useState, useEffect, useRef} from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { FaCog } from 'react-icons/fa';
@@ -36,7 +36,7 @@ export default function MyPage() {
 
     useEffect(() => {
         if (!bgmAudio.current) {
-          bgmAudio.current = new Audio('./sounds/bgm.mp3');
+          bgmAudio.current = new Audio('/sounds/bgm.mp3');
           bgmAudio.current.loop = true; // 배경음악이 반복되도록 설정
           bgmAudio.current.play();
         }
