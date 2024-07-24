@@ -14,7 +14,7 @@ export const attackSkill = {
     }),
     imageSize: { width: 45, height: 61 },
     activationMessage: "시시해서 죽고 싶어졌다..(ʘ言ʘ╬)",
-    skillReading: ["시시해서 죽고 싶어졌다", "꿇어라 이것이 너와 나의 눈높이다", "여의 존명을 부르는 것을 이번만 특별히 허하마 여의 이름은 머전드래곤이다"],
+    skillReading: ["시시해서 죽고 싶어졌다", "넌 이미 죽어있다", "아픈 교훈을 새겨주겠소"],
     textColor: "gray"
 };
 
@@ -54,7 +54,7 @@ export const shieldSkill = {
     }),
     imageSize: { width: 400, height: 400 },
     activationMessage: "내 마음을 담은 하트~⎝⎛♥‿♥⎞⎠",
-    skillReading: ["시켜줘 너만을 위한 명예소방관", "너 착할 줄 알았는데 안착하네 내 마음속에 안착", " 너 유모차지 왜 날 자꾸 애태워"],
+    skillReading: ["못잡겠지 약오르지", "나 잡아봐라", "나 도망갈랭"],
     textColor: "yellowgreen"
 };
  
