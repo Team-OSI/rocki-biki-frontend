@@ -24,6 +24,7 @@ export default function MyPage() {
     const [userNickname, setUserNickname] = useState('');
     const [userProfileImage, setUserProfileImage] = useState('');
     const { setTitle } = useTitle();
+    const bgmAudio = useRef(null);
 
     useEffect(() => {
         setTitle("My Page")
@@ -32,6 +33,20 @@ export default function MyPage() {
     useEffect(() => {
         fetchUserData();
     }, [userEmail]);
+
+    useEffect(() => {
+        if (!bgmAudio.current) {
+          bgmAudio.current = new Audio('./sounds/bgm.mp3');
+          bgmAudio.current.loop = true; // 배경음악이 반복되도록 설정
+          bgmAudio.current.play();
+        }
+        return () => {
+          if (bgmAudio.current) {
+            bgmAudio.current.pause();
+            bgmAudio.current.currentTime = 0;
+          }
+        };
+      }, []);
 
     useEffect(() => {
         const currentUserEmail = getCurrentUserEmail();

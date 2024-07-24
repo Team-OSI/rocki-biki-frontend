@@ -9,6 +9,7 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const canvasRef = useRef(null);
   const timerRef = useRef(null);
   const countdownAudio = useRef(null);
+  const bgmAudio = useRef(null); // 배경음악을 위한 ref 추가
   const { gameStatus, setMyReady, myReady, } = useGameStore();
   const [similarityResult, setSimilarityResult] = useState(null);
   const [remainingTime, setRemainingTime] = useState(5);
@@ -19,12 +20,25 @@ export default function ReadyCanvas({ onReady, landmarks, canvasSize }) {
   const similarityThreshold = 0.20;
   const roomIdRef = useRef('');
   
-  
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     roomIdRef.current = searchParams.get('roomId');
   }, []);
-
+  
+  useEffect(() => {
+    if (!bgmAudio.current) {
+      bgmAudio.current = new Audio('./sounds/bgm.mp3');
+      bgmAudio.current.loop = true; 
+      bgmAudio.current.play();
+    }
+    return () => {
+      if (bgmAudio.current) {
+        bgmAudio.current.pause();
+        bgmAudio.current.currentTime = 0;
+      }
+    };
+  }, []);
+  
   const targetPose = useRef({
     nose: { x: 0.5, y: 0.45 },
     leftShoulder: { x: 0.7, y: 0.65 },

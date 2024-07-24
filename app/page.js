@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import LoginDiv from '@/components/login/LoginDiv';
 import Cookies from 'js-cookie';
@@ -10,6 +10,7 @@ export default function App() {
   const [login, setLogin] = useState(false);
   const [showLoginDiv, setShowLoginDiv] = useState(false);
   const router = useRouter();
+  const bgmAudio = useRef(null);
 
   useEffect(() => {
     const token = Cookies.get('JWT_TOKEN');
@@ -17,6 +18,20 @@ export default function App() {
       setLogin(true);
     }
   },[]);
+
+  useEffect(() => {
+    if (!bgmAudio.current) {
+      bgmAudio.current = new Audio('./sounds/bgm.mp3');
+      bgmAudio.current.loop = true; 
+      bgmAudio.current.play();
+    }
+    return () => {
+      if (bgmAudio.current) {
+        bgmAudio.current.pause();
+        bgmAudio.current.currentTime = 0;
+      }
+    };
+  }, []);
 
   const handleLogin = () => {
     setLogin(true);

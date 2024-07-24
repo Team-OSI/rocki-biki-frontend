@@ -15,9 +15,11 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const [resultMessage, setResultMessage] = useState('');
   const [resultColor, setResultColor] = useState('');
   const [showResult, setShowResult] = useState(false);
+  const [showSkillInUseMessage, setShowSkillInUseMessage] = useState(false); // 스킬 사용 중 메시지 상태 추가
   const emitCastSkill = useSocketStore(state => state.emitCastSkill);
   const emitUseSkill = useSocketStore(state => state.emitUseSkill);
   const gameStatus = useGameStore(state => state.gameStatus);
+  const playerSkills = useGameStore(state => state.playerSkills);
   const similarityThreshold = 0.75;
   const recognitionActive = useRef(false);
 
@@ -124,7 +126,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           recognitionActive.current = false;
           console.log("stop");
           recognition.current.stop();
-        }, 6000);
+        }, 4000);
 
         const timeoutId = setTimeout(() => {
           console.log(`Final transcript: ${transcriptRef.current}`);
@@ -138,7 +140,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             healAudio.play();
           }
           triggerSkillUse(activeSkill);
-        }, 6000);
+        }, 4000);
 
         return () => {
           clearTimeout(timeoutId);
@@ -172,7 +174,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   };
 
   useEffect(() => {
-    console.log(gameStatus);
 
     Object.values(intervalIds.current).forEach(intervalId => clearInterval(intervalId));
     intervalIds.current = {};
@@ -275,14 +276,19 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           const poseSimilarity = calculatePoseSimilarity(detectedPose, skill.targetPose);
           if (poseSimilarity >= similarityThreshold && skillCooldowns[skill.name] === 0 && gameStatus === 'playing') {
             if (activeSkill !== skill.name) {
-              emitCastSkill(skill.name);
-              setActiveSkill(skill.name);
+              if(playerSkills[0] !== null && playerSkills[1] !== null){
+                setShowSkillInUseMessage(true); 
+                setTimeout(() => setShowSkillInUseMessage(false), 2000); 
+              } else {
+                emitCastSkill(skill.name);
+                setActiveSkill(skill.name);
+              }
             }
           }
         });
       }
     }
-  }, [poseLandmarks, gameStatus, skillCooldowns]);
+  }, [poseLandmarks, gameStatus, skillCooldowns, activeSkill, playerSkills, emitCastSkill]);
 
   const clearCanvas = () => {
     if (canvasRef.current) {
@@ -323,6 +329,15 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           <div className="p-4 rounded-lg shadow-lg bg-white" style={{ color: resultColor }}>
             <span className="text-5xl">
               {resultMessage}
+            </span>
+          </div>
+        </div>
+      )}
+      {showSkillInUseMessage && ( 
+        <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+          <div className="p-4 rounded-lg shadow-lg bg-white" style={{ color: 'red' }}>
+            <span className="text-3xl">
+              다른 스킬 사용 중입니다!
             </span>
           </div>
         </div>
