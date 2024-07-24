@@ -300,10 +300,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     }
   }, [poseLandmarks, gameStatus, skillCooldowns, activeSkill, playerSkills, emitCastSkill]);
 
-  // 이전 opponentSkills 상태를 저장
   const previousOpponentSkill = usePrevious(opponentSkills[0]);
 
-  // 상대방이 스킬을 시전 중일 때 메시지를 4초 동안만 보여주는 기능 추가
   useEffect(() => {
     
     if (previousOpponentSkill === null && opponentSkills[0] !== null && gameStatus === 'skillTime') {

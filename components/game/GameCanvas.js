@@ -68,7 +68,7 @@ function Scene({ receivedPoseData, landmarks, socket }) {
             timerRef.current = setTimeout(() => {
                 setBackground(skillBackgrounds.default);
                 timerRef.current = null;
-            }, 12000);
+            }, 4000);
         }
     }
 }, [opponentSkills, playerSkills]);
