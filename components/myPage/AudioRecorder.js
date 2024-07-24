@@ -55,7 +55,9 @@ export default function AudioRecorder({ onRecordingComplete }) {
         <button
             onClick={startRecording}
             disabled={isRecording}
-            className={`p-4 rounded-full ${isRecording ? 'bg-red-500' : 'bg-blue-500'} text-white text-2xl w-16 h-16 flex items-center justify-center`}
+            className={`p-4 rounded-full ${
+                isRecording ? 'bg-[#50C710] animate-pulse' : 'bg-[#50C710]'
+            } hover:scale-105 text-white text-2xl w-16 h-16 flex items-center justify-center transition-all duration-300`}
         >
             {isRecording ? '⏺️' : '🎙️'}
         </button>
