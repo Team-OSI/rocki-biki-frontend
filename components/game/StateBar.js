@@ -43,9 +43,6 @@ const ResultModalContainer = styled.div`
 `;
 
 const ResultModal = styled.div`
-  background-image: ${props => props.$isWinner
-    ? 'url("/images/winner_background.png")'
-    : 'url("/images/loser_background.png")'};
   background-size: cover;
   padding: 4rem;
   border-radius: 1.5rem;
@@ -83,8 +80,8 @@ const NicknameText = styled.h3`
 
 const ExitButton = styled.button`
   background: ${props => props.$isWinner
-    ? 'linear-gradient(90deg, #4CAF50, #45a049)'
-    : 'linear-gradient(90deg, #f44336, #d32f2f)'};
+      ? 'linear-gradient(90deg, #4CAF50, #45a049)'
+      : 'linear-gradient(90deg, #f44336, #d32f2f)'};
   color: white;
   font-weight: bold;
   padding: 1rem 2rem;
@@ -92,7 +89,8 @@ const ExitButton = styled.button`
   transition: all 0.3s ease-in-out;
   transform: scale(1);
   box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-
+  z-index: 2; 
+  
   &:hover {
     transform: scale(1.05);
     box-shadow: 0 15px 30px rgba(0,0,0,0.3);
@@ -159,6 +157,36 @@ const DamageOverlay = styled.div`
   opacity: 0;
   transition: all 0.5s ease-in-out;
   animation: ${pulseAnimation} 0.5s ease-in-out;
+`;
+
+const waveAnimation = keyframes`
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+`;
+
+const WaveContainer = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 33%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+`;
+
+const Wave = styled.div`
+  position: absolute;
+  bottom: 0;
+  width: 200%;
+  height: 100px;
+  background: url(${props => props.$isWinner ? '/images/win_wave.svg' : '/images/wave.svg'}) repeat-x;
+  animation: ${waveAnimation} 5s linear infinite;
+  opacity: 0.5;
 `;
 
 const preloadImages = () => {
@@ -444,10 +472,10 @@ export default function StateBar() {
                   {winner === socket.id ? '승리!' : '패배!'}
                 </ResultText>
                 <NicknameText>{nickname}</NicknameText>
-                <ExitButton
-                    onClick={handleLobby}
-                    $isWinner={winner === socket.id}
-                >
+                <WaveContainer>
+                  <Wave $isWinner={winner === socket.id} />
+                </WaveContainer>
+                <ExitButton onClick={handleLobby} $isWinner={winner === socket.id}>
                   {winner === socket.id ? '나가기' : '나가기'}
                 </ExitButton>
               </ResultModal>
