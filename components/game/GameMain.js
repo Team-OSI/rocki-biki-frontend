@@ -174,6 +174,10 @@ export default function GameMain() {
         backgroundColor: 'black', 
         padding: '0px 40px',
         borderRadius: '20px / 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        whiteSpace: 'nowrap'
     };
 
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
