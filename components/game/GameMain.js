@@ -20,6 +20,7 @@ export default function GameMain() {
     const roomInfo = useGameStore(state => state.roomInfo);
     const socket = useSocketStore(state => state.socket);
     const opponentSkills = useGameStore(state => state.opponentSkills);
+    const playerSkills = useGameStore(state => state.playerSkills);
     const videoRef = useRef(null);
     const roomId = useRef(null);
     const { playReadyBgm, playGameBgm, stopAllMusic } = useMusic();
@@ -157,9 +158,11 @@ export default function GameMain() {
     useEffect(() => {
         if (opponentSkills[0] !== null && gameStatus === 'skillTime') {
             setIsOpponentUsingSkill(true);
-            setTimeout(() => setIsOpponentUsingSkill(false), 4000); // 4초 후 원래 상태로 돌아갑니다
+            setTimeout(() => setIsOpponentUsingSkill(false), 4000);
         }
     }, [opponentSkills, gameStatus]);
+
+    const amIUsingSkill = playerSkills[0] !== null && gameStatus === 'skillTime';
 
     useEffect(() => {
         if (['waiting', 'bothReady'].includes(gameStatus)) {
@@ -187,7 +190,7 @@ export default function GameMain() {
             />
             <VideoComponent
                 isLocal={false}
-                isOpponentUsingSkill={isOpponentUsingSkill}
+                isOpponentUsingSkill={isOpponentUsingSkill && !amIUsingSkill}
                 gameStatus={gameStatus}
                 ready={opponentReady}
                 nickname={opponentNickname}
