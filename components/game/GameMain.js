@@ -20,6 +20,7 @@ export default function GameMain() {
     const { sharedArray } = useWorkerStore();
     const roomInfo = useGameStore(state => state.roomInfo);
     const socket = useSocketStore(state => state.socket);
+    const opponentSkills = useGameStore(state => state.opponentSkills);
     const videoRef = useRef(null);
     const roomId = useRef(null);
     const { playReadyBgm, playGameBgm, stopAllMusic } = useMusic();
@@ -29,6 +30,7 @@ export default function GameMain() {
     
     const [myNickname, setMyNickname] = useState('');
     const [opponentNickname, setOpponentNickname] = useState('');
+    const [isOpponentUsingSkill, setIsOpponentUsingSkill] = useState(false);
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -134,11 +136,17 @@ export default function GameMain() {
     const videoContainerStyle = (isLocal) => ({
         transition: 'all 0.5s ease-in-out',
         position: 'absolute',
-        width: ['playing', 'finished', 'skillTime'].includes(gameStatus) ? '200px' : 'calc(40vw - 10px)',
-        height: ['playing', 'finished', 'skillTime'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)', // 4:3 비율 유지
-        zIndex: 30,
+        width: isOpponentUsingSkill && !isLocal ? '60vw' : (['playing', 'finished', 'skillTime'].includes(gameStatus) ? '200px' : 'calc(40vw - 10px)'),
+        height: isOpponentUsingSkill && !isLocal ? '45vw' : (['playing', 'finished', 'skillTime'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)'),
+        zIndex: isOpponentUsingSkill && !isLocal ? 40 : 30,
         ...(['playing', 'finished', 'skillTime'].includes(gameStatus)
-            ? { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
+            ? isOpponentUsingSkill && !isLocal
+                ? {
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)'
+                }
+                : { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
             : {
                 top: '50%',
                 left: isLocal ? 'calc(50% + 5px)' : 'calc(50% - 40vw - 5px)',
@@ -203,6 +211,13 @@ export default function GameMain() {
     }, []);
 
     useEffect(() => {
+        if (opponentSkills[0] !== null && gameStatus === 'skillTime') {
+            setIsOpponentUsingSkill(true);
+            setTimeout(() => setIsOpponentUsingSkill(false), 4000); // 4초 후 원래 상태로 돌아갑니다
+        }
+    }, [opponentSkills, gameStatus]);
+
+    useEffect(() => {
         if (['waiting', 'bothReady'].includes(gameStatus)) {
             playReadyBgm();
         } else if (['playing', 'skillTime'].includes(gameStatus)) {
@@ -236,7 +251,10 @@ export default function GameMain() {
                     <div style={nicknameStyle}>{myNickname}</div>
                 </div>
             </div>
-            <div style={videoContainerStyle(false)} className="z-30">
+            <div
+                style={videoContainerStyle(false)}
+                className={`${isOpponentUsingSkill ? 'z-40' : 'z-30'}`}
+            >
                 <div className="relative w-full h-full">
                     {connectionState !== 'connected' && (
                         <div
@@ -265,7 +283,9 @@ export default function GameMain() {
                         />
                     )}
                     {opponentReady && (
-                        <img src="/images/ready_logo.png" className="absolute top-[-124px] right-0 transform -translate-x-1/2 w-1/2 h-auto" alt="Ready Logo" />
+                        <img src="/images/ready_logo.png"
+                             className="absolute top-[-124px] right-0 transform -translate-x-1/2 w-1/2 h-auto"
+                             alt="Ready Logo"/>
                     )}
                     <div style={nicknameStyle}>{opponentNickname}</div>
                 </div>
