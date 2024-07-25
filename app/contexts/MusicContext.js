@@ -19,12 +19,12 @@ export const MusicProvider = ({ children }) => {
     playCurrentTrack();
 
     return () => {
-      pauseAllTracks();
+      stopAllMusic();
     };
   }, [currentTrack]);
 
   const playCurrentTrack = () => {
-    pauseAllTracks();
+    stopAllMusic();
     if (currentTrack === 'main' && mainBgm.current) {
       mainBgm.current.play();
     } else if (currentTrack === 'game' && gameBgm.current) {
@@ -34,10 +34,19 @@ export const MusicProvider = ({ children }) => {
     }
   };
 
-  const pauseAllTracks = () => {
-    if (mainBgm.current) mainBgm.current.pause();
-    if (gameBgm.current) gameBgm.current.pause();
-    if (readyBgm.current) readyBgm.current.pause();
+  const stopAllMusic = () => {
+    if (mainBgm.current) {
+      mainBgm.current.pause();
+      mainBgm.current.currentTime = 0;
+    }
+    if (gameBgm.current) {
+      gameBgm.current.pause();
+      gameBgm.current.currentTime = 0;
+    }
+    if (readyBgm.current) {
+      readyBgm.current.pause();
+      readyBgm.current.currentTime = 0;
+    }
   };
 
   const setVolume = (volume) => {
@@ -62,7 +71,7 @@ export const MusicProvider = ({ children }) => {
   };
 
   return (
-    <MusicContext.Provider value={{ setVolume, playMainBgm, playGameBgm, playReadyBgm }}>
+    <MusicContext.Provider value={{ setVolume, playMainBgm, playGameBgm, playReadyBgm, stopAllMusic }}>
       {children}
     </MusicContext.Provider>
   );

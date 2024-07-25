@@ -5,7 +5,7 @@ import useSocketStore from '@/store/socketStore';
 import useGameLogic from '@/hooks/useGameLogic';
 import Confetti from 'react-confetti';
 import { useRouter } from 'next/navigation';
-import {saveGameResults} from "@/api/user/api";
+import { saveGameResults } from "@/api/user/api";
 
 const scaleAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -189,6 +189,21 @@ const Wave = styled.div`
   opacity: 0.5;
 `;
 
+const KOScreen = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000; // 다른 요소들보다 위에 표시
+  font-size: 20rem;
+  color: red;
+  font-weight: bold;
+  text-shadow: 4px 4px 8px black;
+`;
+
 const preloadImages = () => {
   return new Promise((resolve, reject) => {
     const imageUrls = Array.from({ length: 10 }, (_, i) => `/images/count/${i}.png`);
@@ -244,6 +259,8 @@ export default function StateBar() {
 
   const winAudioRef = useRef(null);
   const loseAudioRef = useRef(null);
+
+  const [showKO, setShowKO] = useState(false);
 
   const playDamageSound = useCallback(() => {
     if (damageAudio.current) {
@@ -369,17 +386,22 @@ export default function StateBar() {
   }, [gameStatus, count]);
 
   useEffect(() => {
+    let koTimeout;
     if (gameStatus === 'finished') {
-      if (winner === socket.id) {
-        saveGameResults(opponentEmail, true);
-        winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
-      } else {
-        saveGameResults(opponentEmail, false);
-        loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
-      }
+      setShowKO(true);
+      koTimeout = setTimeout(() => {
+        setShowKO(false);
+        if (winner === socket.id) {
+          winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
+        } else {
+          loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+        }
+      }, 2000);
     }
 
+
     return () => {
+      clearTimeout(koTimeout);
       if (winAudioRef.current) {
         winAudioRef.current.pause();
         winAudioRef.current.currentTime = 0;
@@ -389,6 +411,16 @@ export default function StateBar() {
         loseAudioRef.current.currentTime = 0;
       }
     };
+  }, [gameStatus, winner, socket.id]);
+
+  useEffect(() => {
+    if (gameStatus === 'finished') {
+      if (winner === socket.id) {
+        saveGameResults(roomInfo.opponentEmail, true);
+      } else {
+        saveGameResults(roomInfo.opponentEmail, false);
+      }
+    }
   }, [gameStatus, winner, socket.id]);
 
   const handleRestart = () => {
@@ -417,7 +449,12 @@ export default function StateBar() {
 
   return (
     <>
-      {gameStatus === 'finished' && winner === socket.id && (
+      {showKO && (
+        <KOScreen>
+          KO
+        </KOScreen>
+      )}
+      {!showKO && gameStatus === 'finished' && winner === socket.id && (
         <Confetti
           width={window.innerWidth}
           height={window.innerHeight}
@@ -426,7 +463,7 @@ export default function StateBar() {
           style={{ zIndex: 60 }}
         />
       )}
-      {gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
+      {!showKO && gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
       <div className='absolute z-40 w-full h-full'>
         <div className='absolute flex flex-row justify-between w-full h-full px-4'>
           <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
@@ -465,7 +502,7 @@ export default function StateBar() {
             </HealthBarContainer>
           </div>
         </div>
-        {gameStatus === 'finished' && (
+        {!showKO && gameStatus === 'finished' && (
             <ResultModalContainer>
               <ResultModal $isWinner={winner === socket.id}>
                 <ResultText $isWinner={winner === socket.id}>

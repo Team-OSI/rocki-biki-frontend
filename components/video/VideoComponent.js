@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { videoContainerStyle, videoStyle, overlayStyle, nicknameStyle } from './videoStyles';
+import { videoContainerStyle, videoStyle, overlayStyle, nicknameStyle } from './VideoStyles';
 import VideoProcessor from "@/components/video/VideoProcessor";
 
 const VideoComponent = ({
@@ -53,7 +53,7 @@ const VideoComponent = ({
                         style={overlayStyle}
                     />
                 )}
-                {ready && (
+                {(ready && (gameStatus === 'waiting' || gameStatus === 'bothReady')) && (
                     <img src="/images/ready_logo.png" className="absolute top-[-124px] right-0 transform -translate-x-1/2 w-1/2 h-auto" alt="Ready Logo" />
                 )}
                 <div style={nicknameStyle}>{nickname}</div>

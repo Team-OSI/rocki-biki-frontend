@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import GameCanvas from "@/components/game/GameCanvas";
 import ReadyCanvas from "@/components/game/ReadyCanvas";
 import useWebRTCConnection from '@/hooks/useWebRTCConnection';
-import Image from 'next/image';
 import SkillSelect from './skill/SkillSelect';
 import useGameLogic from '@/hooks/useGameLogic';
 import { useRouter } from 'next/navigation';
@@ -12,7 +11,6 @@ import useSocketStore from '@/store/socketStore';
 import useGameStore from '@/store/gameStore';
 import useWorkerStore from '@/store/workerStore';
 import GaugeUi from './GaugeUi';
-import VideoProcessor from "@/components/video/VideoProcessor";
 import { parseLandmarks } from "@/lib/utils/landmarkParser";
 import { useMusic } from '@/app/contexts/MusicContext';
 import VideoComponent from "@/components/video/VideoComponent";
@@ -168,8 +166,10 @@ export default function GameMain() {
             playReadyBgm();
         } else if (['playing', 'skillTime'].includes(gameStatus)) {
             playGameBgm();
+        } else if (gameStatus === 'finished') {
+            stopAllMusic();
         }
-    }, [gameStatus, playGameBgm, playReadyBgm]);
+    }, [gameStatus, playGameBgm, playReadyBgm, stopAllMusic]);
 
     return (
         <div className="relative w-screen h-screen overflow-hidden"
