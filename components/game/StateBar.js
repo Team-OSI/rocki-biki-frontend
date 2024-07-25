@@ -5,7 +5,7 @@ import useSocketStore from '@/store/socketStore';
 import useGameLogic from '@/hooks/useGameLogic';
 import Confetti from 'react-confetti';
 import { useRouter } from 'next/navigation';
-import {saveGameResults} from "@/api/user/api";
+import { saveGameResults } from "@/api/user/api";
 
 const scaleAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -132,14 +132,11 @@ const KOScreen = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 100vw;
-  height: 100vh;
-  background-color: black; // KO 화면 배경색 설정
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 10000; // 다른 요소들보다 위에 표시
-  font-size: 10rem;
+  font-size: 20rem;
   color: red;
   font-weight: bold;
   text-shadow: 4px 4px 8px black;
@@ -149,7 +146,7 @@ export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
   const router = useRouter();
   const socket = useSocketStore(state => state.socket);
-  const [count, setCount] = useState(10);
+  const [count, setCount] = useState(90);
   const [pausedCount, setPausedCount] = useState(90); // 멈춘 시간 추적 상태
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
@@ -288,7 +285,7 @@ export default function StateBar() {
         } else {
           loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
         }
-      }, 1000);
+      }, 2000);
     }
     return () => {
       clearTimeout(koTimeout);
