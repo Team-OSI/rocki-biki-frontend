@@ -137,6 +137,7 @@ export default function StateBar() {
   const damageAudio = useRef(null);
   const { handleRoomInfo } = useGameLogic();
   const [nickname, setNickname] = useState('');
+  const [opponentEmail, setOpponentEmail] = useState('');
   const setIsLoadingImages = useGameStore(state => state.setIsLoadingImages);
   const emitGameEnd = useSocketStore(state => state.emitGameEnd);
 
@@ -162,6 +163,15 @@ export default function StateBar() {
       const player = roomInfo.playerInfo.find(p => p.socketId === socket.id);
       if (player) {
         setNickname(player.nickname);
+      }
+    }
+  }, [roomInfo]);
+
+  useEffect(() => {
+    if (roomInfo && socket.id && roomInfo.playerInfo && roomInfo.playerInfo.length) {
+      const player = roomInfo.playerInfo.find(p => p.socketId !== socket.id);
+      if (player) {
+        setOpponentEmail(player.email);
       }
     }
   }, [roomInfo]);
@@ -260,10 +270,10 @@ export default function StateBar() {
   useEffect(() => {
     if (gameStatus === 'finished') {
       if (winner === socket.id) {
-        saveGameResults(roomInfo.opponentEmail, true);
+        saveGameResults(opponentEmail, true);
         winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
       } else {
-        saveGameResults(roomInfo.opponentEmail, false);
+        saveGameResults(opponentEmail, false);
         loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
       }
     }
