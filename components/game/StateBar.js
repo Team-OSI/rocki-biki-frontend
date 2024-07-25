@@ -4,6 +4,7 @@ import useGameStore from '../../store/gameStore';
 import useSocketStore from '@/store/socketStore';
 import useGameLogic from '@/hooks/useGameLogic';
 import Confetti from 'react-confetti';
+import { useRouter } from 'next/navigation';
 
 const scaleAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -127,6 +128,7 @@ const DamageOverlay = styled.div`
 
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
+  const router = useRouter();
   const socket = useSocketStore(state => state.socket);
   const [count, setCount] = useState(90);
   const [pausedCount, setPausedCount] = useState(90); // 멈춘 시간 추적 상태
@@ -148,10 +150,10 @@ export default function StateBar() {
   }, []);
 
   useEffect(() => {
-    winAudioRef.current = new Audio('./sounds/text.mp3');
-    winAudioRef.current.loop = true;
-    loseAudioRef.current = new Audio('./sounds/bgm.mp3');
-    loseAudioRef.current.loop = true;
+    winAudioRef.current = new Audio('./sounds/victory.mp3');
+    winAudioRef.current.loop = false;
+    loseAudioRef.current = new Audio('./sounds/defeat.mp3');
+    loseAudioRef.current.loop = false;
   }, []);
 
   useEffect(() => {
@@ -280,6 +282,10 @@ export default function StateBar() {
     setPausedCount(90);
   };
 
+  const handleLobby = () => {
+    router.push('/lobby');
+  };
+
   const renderRainEffect = () => {
     const rainDrops = Array.from({ length: 50 }, (_, i) => (
       <div
@@ -372,7 +378,7 @@ export default function StateBar() {
               >
                 {nickname}
               </h3>
-              <button
+              {/* <button
                 onClick={handleRestart}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
                 style={{
@@ -381,9 +387,9 @@ export default function StateBar() {
                 }}
               >
                 재시작
-              </button>
+              </button> */}
               <button
-                onClick={handleRestart}
+                onClick={handleLobby}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
                 style={{
                   boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
