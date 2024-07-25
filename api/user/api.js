@@ -209,3 +209,16 @@ export const getGameResults = async (userEmail, page = 0, size = 10, sort = 'DES
     throw error;
   }
 };
+
+export const saveGameResults = async (opponentEmail, win) => {
+  try {
+    const response = await api.post('/api/game/result', {
+      opponentEmail,
+      win
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching game results:', error);
+    throw error;
+  }
+};

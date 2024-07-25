@@ -5,6 +5,7 @@ import useSocketStore from '@/store/socketStore';
 import useGameLogic from '@/hooks/useGameLogic';
 import Confetti from 'react-confetti';
 import { useRouter } from 'next/navigation';
+import {saveGameResults} from "@/api/user/api";
 
 const scaleAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -256,11 +257,13 @@ export default function StateBar() {
     }
   }, [gameStatus, count]);
 
-  useEffect(() => {
+  useEffect(async () => {
     if (gameStatus === 'finished') {
       if (winner === socket.id) {
+        await saveGameResults(roomInfo.opponentEmail, true);
         winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
       } else {
+        await saveGameResults(roomInfo.opponentEmail, false);
         loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
       }
     }
