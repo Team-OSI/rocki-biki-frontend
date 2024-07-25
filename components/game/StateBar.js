@@ -5,7 +5,7 @@ import useSocketStore from '@/store/socketStore';
 import useGameLogic from '@/hooks/useGameLogic';
 import Confetti from 'react-confetti';
 import { useRouter } from 'next/navigation';
-import {saveGameResults} from "@/api/user/api";
+import { saveGameResults } from "@/api/user/api";
 
 const scaleAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -161,6 +161,21 @@ const DamageOverlay = styled.div`
   animation: ${pulseAnimation} 0.5s ease-in-out;
 `;
 
+const KOScreen = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000; // 다른 요소들보다 위에 표시
+  font-size: 20rem;
+  color: red;
+  font-weight: bold;
+  text-shadow: 4px 4px 8px black;
+`;
+
 const preloadImages = () => {
   return new Promise((resolve, reject) => {
     const imageUrls = Array.from({ length: 10 }, (_, i) => `/images/count/${i}.png`);
@@ -204,8 +219,8 @@ export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
   const router = useRouter();
   const socket = useSocketStore(state => state.socket);
-  const [count, setCount] = useState(90);
-  const [pausedCount, setPausedCount] = useState(90); // 멈춘 시간 추적 상태
+  const [count, setCount] = useState(10);
+  const [pausedCount, setPausedCount] = useState(90);
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
   const { handleRoomInfo } = useGameLogic();
@@ -216,6 +231,8 @@ export default function StateBar() {
 
   const winAudioRef = useRef(null);
   const loseAudioRef = useRef(null);
+
+  const [showKO, setShowKO] = useState(false);
 
   const playDamageSound = useCallback(() => {
     if (damageAudio.current) {
@@ -341,17 +358,20 @@ export default function StateBar() {
   }, [gameStatus, count]);
 
   useEffect(() => {
+    let koTimeout;
     if (gameStatus === 'finished') {
-      if (winner === socket.id) {
-        saveGameResults(opponentEmail, true);
-        winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
-      } else {
-        saveGameResults(opponentEmail, false);
-        loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
-      }
+      setShowKO(true);
+      koTimeout = setTimeout(() => {
+        setShowKO(false);
+        if (winner === socket.id) {
+          winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
+        } else {
+          loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+        }
+      }, 2000);
     }
-
     return () => {
+      clearTimeout(koTimeout);
       if (winAudioRef.current) {
         winAudioRef.current.pause();
         winAudioRef.current.currentTime = 0;
@@ -361,6 +381,16 @@ export default function StateBar() {
         loseAudioRef.current.currentTime = 0;
       }
     };
+  }, [gameStatus, winner, socket.id]);
+
+  useEffect(() => {
+    if (gameStatus === 'finished') {
+      if (winner === socket.id) {
+        saveGameResults(roomInfo.opponentEmail, true);
+      } else {
+        saveGameResults(roomInfo.opponentEmail, false);
+      }
+    }
   }, [gameStatus, winner, socket.id]);
 
   const handleRestart = () => {
@@ -389,7 +419,12 @@ export default function StateBar() {
 
   return (
     <>
-      {gameStatus === 'finished' && winner === socket.id && (
+      {showKO && (
+        <KOScreen>
+          KO
+        </KOScreen>
+      )}
+      {!showKO && gameStatus === 'finished' && winner === socket.id && (
         <Confetti
           width={window.innerWidth}
           height={window.innerHeight}
@@ -398,7 +433,7 @@ export default function StateBar() {
           style={{ zIndex: 60 }}
         />
       )}
-      {gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
+      {!showKO && gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
       <div className='absolute z-40 w-full h-full'>
         <div className='absolute flex flex-row justify-between w-full h-full px-4'>
           <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
@@ -437,21 +472,45 @@ export default function StateBar() {
             </HealthBarContainer>
           </div>
         </div>
-        {gameStatus === 'finished' && (
-            <ResultModalContainer>
-              <ResultModal $isWinner={winner === socket.id}>
-                <ResultText $isWinner={winner === socket.id}>
-                  {winner === socket.id ? '승리!' : '패배!'}
-                </ResultText>
-                <NicknameText>{nickname}</NicknameText>
-                <ExitButton
-                    onClick={handleLobby}
-                    $isWinner={winner === socket.id}
-                >
-                  {winner === socket.id ? '나가기' : '나가기'}
-                </ExitButton>
-              </ResultModal>
-            </ResultModalContainer>
+        {!showKO && gameStatus === 'finished' && (
+          <div className="absolute inset-0 bg-black bg-opacity-70 flex justify-center items-center">
+            <div className="bg-white p-16 rounded-3xl text-center shadow-2xl w-1/5 mx-auto relative"
+                 style={{backgroundImage: 'url("/images/result_background.png")', backgroundSize: 'cover'}}>
+              <h2 className={`text-6xl font-extrabold mb-8 animate-pulse`}
+                style={{
+                  background: winner === socket.id
+                    ? 'linear-gradient(90deg, rgba(34,193,195,1) 0%, rgba(253,187,45,1) 100%)'
+                    : 'linear-gradient(90deg, rgba(255,0,150,1) 0%, rgba(0,204,255,1) 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textShadow: '2px 2px 5px rgba(0,0,0,0.5)', 
+                }}>
+                {winner === socket.id ? '승리!' : '패배!'}
+              </h2>
+              <h3
+                className="text-7xl mb-12"
+                style={{
+                  background: 'linear-gradient(to right, #32CD32, #ADFF2F)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textShadow: '2px 2px 5px rgba(0,0,0,0.5)',
+                  fontWeight: 'bold',
+                }}
+              >
+                {nickname}
+              </h3>
+              <button
+                onClick={handleLobby}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+                style={{
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
+                  transition: 'transform 0.2s ease-in-out'
+                }}
+              >
+                나가기
+              </button>
+            </div>
+          </div>
         )}
       </div>
       {showDamageOverlay && <DamageOverlay />}
