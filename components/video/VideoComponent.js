@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { videoContainerStyle, videoStyle, overlayStyle, nicknameStyle } from './videoStyles';
+import { videoContainerStyle, videoStyle, overlayStyle, nicknameStyle } from './VideoStyles';
 import VideoProcessor from "@/components/video/VideoProcessor";
 
 const VideoComponent = ({
