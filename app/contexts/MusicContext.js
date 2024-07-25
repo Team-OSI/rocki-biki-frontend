@@ -53,7 +53,7 @@ export const MusicProvider = ({ children }) => {
 
   const playGameBgm = () => {
     setCurrentTrack('game');
-    setVolume(1.0); // 게임 BGM 볼륨 설정
+    setVolume(0.5); // 게임 BGM 볼륨 설정
   };
 
   const playReadyBgm = () => {
