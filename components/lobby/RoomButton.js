@@ -1,4 +1,3 @@
-// components/lobby/RoomButton.js
 import React from 'react';
 
 export default function RoomButton({ onClick }) {

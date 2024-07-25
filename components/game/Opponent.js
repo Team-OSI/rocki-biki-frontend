@@ -10,9 +10,6 @@ import useGameStore from "@/store/gameStore";
 import {getAudioUrls} from "@/api/user/api";
 import PNGSequenceAnimation from './PNGSequence';
 
-
-
-
 // Opponent 전용 Head 컴포넌트
 const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield, shieldPer }, ref) => {
     const localRef = useRef()
