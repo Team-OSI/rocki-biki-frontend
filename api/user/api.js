@@ -222,3 +222,14 @@ export const saveGameResults = async (opponentEmail, win) => {
     throw error;
   }
 };
+
+export const countGameResult = async (userEmail) => {
+  try {
+    const response = await api.get('/api//game/recent-result/count', {
+      params: { userEmail }
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response.data;
+  }
+};
