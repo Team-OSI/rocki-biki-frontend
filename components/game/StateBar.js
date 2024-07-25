@@ -5,7 +5,7 @@ import useSocketStore from '@/store/socketStore';
 import useGameLogic from '@/hooks/useGameLogic';
 import Confetti from 'react-confetti';
 import { useRouter } from 'next/navigation';
-import {saveGameResults} from "@/api/user/api";
+import { saveGameResults } from "@/api/user/api";
 
 const scaleAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -30,6 +30,178 @@ const DigitImage = styled.img`
   ${props => props.$isOrange && css`
     filter: brightness(0) saturate(100%) invert(65%) sepia(91%) saturate(1766%) hue-rotate(360deg) brightness(103%) contrast(104%);
   `}
+`;
+
+const ResultModalContainer = styled.div`
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+`;
+
+const ResultModal = styled.div`
+  background-size: cover;
+  padding: 4rem;
+  border-radius: 1.5rem;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 30%;
+  position: relative;
+  overflow: hidden;
+`;
+
+const ResultText = styled.h2`
+  font-size: 4rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  animation: ${props => props.$isWinner ? pulseAnimation : shakeAnimation} 2s infinite;
+  background: ${props => props.$isWinner
+    ? 'linear-gradient(90deg, #FFD700, #FFA500)'
+    : 'linear-gradient(90deg, #A9A9A9, #696969)'};
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: ${props => props.$isWinner
+    ? '2px 2px 5px rgba(255,215,0,0.5)'
+    : '2px 2px 5px rgba(105,105,105,0.5)'};
+`;
+
+const NicknameText = styled.h3`
+  font-size: 3.5rem;
+  margin-bottom: 3rem;
+  background: linear-gradient(to right, #32CD32, #ADFF2F);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+  font-weight: bold;
+`;
+
+const ExitButton = styled.button`
+  background: ${props => props.$isWinner
+      ? 'linear-gradient(90deg, #4CAF50, #45a049)'
+      : 'linear-gradient(90deg, #f44336, #d32f2f)'};
+  color: white;
+  font-weight: bold;
+  padding: 1rem 2rem;
+  border-radius: 9999px;
+  transition: all 0.3s ease-in-out;
+  transform: scale(1);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  z-index: 2; 
+  
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+  }
+`;
+
+const pulseAnimation = keyframes`
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+`;
+
+const shakeAnimation = keyframes`
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+`;
+
+const HealthBarContainer = styled.div`
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  border-radius: 400px;
+`;
+
+const BaseHealthBar = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 400px;
+  transform-origin: left;
+`;
+
+const AnimatedHealthBar = styled(BaseHealthBar)`
+  background-color: ${props => props.$isplayer
+    ? 'rgba(252, 165, 165, 0.8)' // 연한 빨강 (player)
+    : 'rgba(147, 197, 253, 0.8)' // 연한 파랑 (opponent)
+};
+`;
+
+const CurrentHealthBar = styled(BaseHealthBar)`
+  background-color: ${props => props.$isplayer
+    ? 'rgba(220, 38, 38, 0.8)'
+    : 'rgba(37, 99, 235, 0.8)'
+};
+  transition: transform 0.5s ease-out;
+  z-index: 1;
+`;
+
+const DamageOverlay = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw;
+  height: 100vh;
+  background-image: url('/images/damage_overlay.webp');
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.5s ease-in-out;
+  animation: ${pulseAnimation} 0.5s ease-in-out;
+`;
+
+const waveAnimation = keyframes`
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+`;
+
+const WaveContainer = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 33%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+`;
+
+const Wave = styled.div`
+  position: absolute;
+  bottom: 0;
+  width: 200%;
+  height: 100px;
+  background: url(${props => props.$isWinner ? '/images/win_wave.svg' : '/images/wave.svg'}) repeat-x;
+  animation: ${waveAnimation} 5s linear infinite;
+  opacity: 0.5;
+`;
+
+const KOScreen = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000; // 다른 요소들보다 위에 표시
+  font-size: 20rem;
+  color: red;
+  font-weight: bold;
+  text-shadow: 4px 4px 8px black;
 `;
 
 const preloadImages = () => {
@@ -70,62 +242,6 @@ const Timer = ({ count }) => {
   );
 };
 
-const HealthBarContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-  border-radius: 400px;
-`;
-
-const BaseHealthBar = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 400px;
-  transform-origin: left;
-`;
-
-const AnimatedHealthBar = styled(BaseHealthBar)`
-  background-color: ${props => props.$isplayer
-    ? 'rgba(252, 165, 165, 0.8)' // 연한 빨강 (player)
-    : 'rgba(147, 197, 253, 0.8)' // 연한 파랑 (opponent)
-  };
-`;
-
-const CurrentHealthBar = styled(BaseHealthBar)`
-  background-color: ${props => props.$isplayer
-    ? 'rgba(220, 38, 38, 0.8)' 
-    : 'rgba(37, 99, 235, 0.8)' 
-  };
-  transition: transform 0.5s ease-out;
-  z-index: 1;
-`;
-
-const pulseAnimation = keyframes`
-  0% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
-  50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.7; }
-  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
-`;
-
-const DamageOverlay = styled.div`
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100vw;
-  height: 100vh;
-  background-image: url('/images/damage_overlay.webp');
-  background-size: cover;
-  background-position: center;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0;
-  transition: all 0.5s ease-in-out;
-  animation: ${pulseAnimation} 0.5s ease-in-out;
-`;
 
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
@@ -143,6 +259,8 @@ export default function StateBar() {
 
   const winAudioRef = useRef(null);
   const loseAudioRef = useRef(null);
+
+  const [showKO, setShowKO] = useState(false);
 
   const playDamageSound = useCallback(() => {
     if (damageAudio.current) {
@@ -268,17 +386,22 @@ export default function StateBar() {
   }, [gameStatus, count]);
 
   useEffect(() => {
+    let koTimeout;
     if (gameStatus === 'finished') {
-      if (winner === socket.id) {
-        saveGameResults(opponentEmail, true);
-        winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
-      } else {
-        saveGameResults(opponentEmail, false);
-        loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
-      }
+      setShowKO(true);
+      koTimeout = setTimeout(() => {
+        setShowKO(false);
+        if (winner === socket.id) {
+          winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
+        } else {
+          loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+        }
+      }, 2000);
     }
 
+
     return () => {
+      clearTimeout(koTimeout);
       if (winAudioRef.current) {
         winAudioRef.current.pause();
         winAudioRef.current.currentTime = 0;
@@ -288,6 +411,16 @@ export default function StateBar() {
         loseAudioRef.current.currentTime = 0;
       }
     };
+  }, [gameStatus, winner, socket.id]);
+
+  useEffect(() => {
+    if (gameStatus === 'finished') {
+      if (winner === socket.id) {
+        saveGameResults(roomInfo.opponentEmail, true);
+      } else {
+        saveGameResults(roomInfo.opponentEmail, false);
+      }
+    }
   }, [gameStatus, winner, socket.id]);
 
   const handleRestart = () => {
@@ -316,7 +449,12 @@ export default function StateBar() {
 
   return (
     <>
-      {gameStatus === 'finished' && winner === socket.id && (
+      {showKO && (
+        <KOScreen>
+          KO
+        </KOScreen>
+      )}
+      {!showKO && gameStatus === 'finished' && winner === socket.id && (
         <Confetti
           width={window.innerWidth}
           height={window.innerHeight}
@@ -325,7 +463,7 @@ export default function StateBar() {
           style={{ zIndex: 60 }}
         />
       )}
-      {gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
+      {!showKO && gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
       <div className='absolute z-40 w-full h-full'>
         <div className='absolute flex flex-row justify-between w-full h-full px-4'>
           <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
@@ -364,55 +502,21 @@ export default function StateBar() {
             </HealthBarContainer>
           </div>
         </div>
-        {gameStatus === 'finished' && (
-          <div className="absolute inset-0 bg-black bg-opacity-70 flex justify-center items-center">
-            <div className="bg-white p-16 rounded-3xl text-center shadow-2xl w-1/5 mx-auto relative"
-                 style={{backgroundImage: 'url("/images/result_background.png")', backgroundSize: 'cover'}}>
-              <h2 className={`text-6xl font-extrabold mb-8 animate-pulse`}
-                style={{
-                  background: winner === socket.id
-                    ? 'linear-gradient(90deg, rgba(34,193,195,1) 0%, rgba(253,187,45,1) 100%)'
-                    : 'linear-gradient(90deg, rgba(255,0,150,1) 0%, rgba(0,204,255,1) 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  textShadow: '2px 2px 5px rgba(0,0,0,0.5)', 
-                }}>
-                {winner === socket.id ? '승리!' : '패배!'}
-              </h2>
-              <h3
-                className="text-7xl mb-12"
-                style={{
-                  background: 'linear-gradient(to right, #32CD32, #ADFF2F)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  textShadow: '2px 2px 5px rgba(0,0,0,0.5)',
-                  fontWeight: 'bold',
-                }}
-              >
-                {nickname}
-              </h3>
-              {/* <button
-                onClick={handleRestart}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
-                style={{
-                  boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
-                  transition: 'transform 0.2s ease-in-out'
-                }}
-              >
-                재시작
-              </button> */}
-              <button
-                onClick={handleLobby}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
-                style={{
-                  boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
-                  transition: 'transform 0.2s ease-in-out'
-                }}
-              >
-                나가기
-              </button>
-            </div>
-          </div>
+        {!showKO && gameStatus === 'finished' && (
+            <ResultModalContainer>
+              <ResultModal $isWinner={winner === socket.id}>
+                <ResultText $isWinner={winner === socket.id}>
+                  {winner === socket.id ? '승리!' : '패배!'}
+                </ResultText>
+                <NicknameText>{nickname}</NicknameText>
+                <WaveContainer>
+                  <Wave $isWinner={winner === socket.id} />
+                </WaveContainer>
+                <ExitButton onClick={handleLobby} $isWinner={winner === socket.id}>
+                  {winner === socket.id ? '나가기' : '나가기'}
+                </ExitButton>
+              </ResultModal>
+            </ResultModalContainer>
         )}
       </div>
       {showDamageOverlay && <DamageOverlay />}

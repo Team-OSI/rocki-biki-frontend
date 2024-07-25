@@ -24,8 +24,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const [resultMessage, setResultMessage] = useState('');
   const [resultColor, setResultColor] = useState('');
   const [showResult, setShowResult] = useState(false);
-  const [showSkillInUseMessage, setShowSkillInUseMessage] = useState(false); // 스킬 사용 중 메시지 상태 추가
-  const [showOpponentSkillMessage, setShowOpponentSkillMessage] = useState(false); // 상대방 스킬 사용 중 메시지 상태 추가
+  const [showSkillInUseMessage, setShowSkillInUseMessage] = useState(false); 
+  const [showOpponentSkillMessage, setShowOpponentSkillMessage] = useState(false); 
   const emitCastSkill = useSocketStore(state => state.emitCastSkill);
   const emitUseSkill = useSocketStore(state => state.emitUseSkill);
   const gameStatus = useGameStore(state => state.gameStatus);

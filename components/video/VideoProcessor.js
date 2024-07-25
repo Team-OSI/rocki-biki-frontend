@@ -95,8 +95,8 @@ const VideoProcessor = forwardRef(function VideoProcessor({ onLandmarksUpdate, s
                 autoPlay
                 playsInline
             />
-            {!isVideoReady && <div>Loading video...</div>}
-            {isVideoReady && !isWorkerReady && <div>Initializing worker...</div>}
+            {/*{!isVideoReady && <div>Loading video...</div>}*/}
+            {/*{isVideoReady && !isWorkerReady && <div>Initializing worker...</div>}*/}
         </>
     );
 });
