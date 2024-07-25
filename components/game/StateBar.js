@@ -257,13 +257,13 @@ export default function StateBar() {
     }
   }, [gameStatus, count]);
 
-  useEffect(async () => {
+  useEffect(() => {
     if (gameStatus === 'finished') {
       if (winner === socket.id) {
-        await saveGameResults(roomInfo.opponentEmail, true);
+        saveGameResults(roomInfo.opponentEmail, true);
         winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
       } else {
-        await saveGameResults(roomInfo.opponentEmail, false);
+        saveGameResults(roomInfo.opponentEmail, false);
         loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
       }
     }
