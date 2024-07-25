@@ -1,8 +1,8 @@
 export const videoContainerStyle = (isLocal, isOpponentUsingSkill, gameStatus) => ({
     transition: 'all 0.5s ease-in-out',
     position: 'absolute',
-    width: isOpponentUsingSkill && !isLocal ? '60vw' : (['playing', 'finished', 'skillTime'].includes(gameStatus) ? '200px' : 'calc(40vw - 10px)'),
-    height: isOpponentUsingSkill && !isLocal ? '45vw' : (['playing', 'finished', 'skillTime'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)'),
+    width: isOpponentUsingSkill && !isLocal ? '45vw' : (['playing', 'finished', 'skillTime'].includes(gameStatus) ? '200px' : 'calc(40vw - 10px)'),
+    height: isOpponentUsingSkill && !isLocal ? '33.75vw' : (['playing', 'finished', 'skillTime'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)'),
     zIndex: isOpponentUsingSkill && !isLocal ? 40 : 30,
     ...(['playing', 'finished', 'skillTime'].includes(gameStatus)
         ? isOpponentUsingSkill && !isLocal
