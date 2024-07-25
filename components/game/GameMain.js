@@ -15,6 +15,7 @@ import GaugeUi from './GaugeUi';
 import VideoProcessor from "@/components/video/VideoProcessor";
 import { parseLandmarks } from "@/lib/utils/landmarkParser";
 import { useMusic } from '@/app/contexts/MusicContext';
+import VideoComponent from "@/components/video/VideoComponent";
 
 export default function GameMain() {
     const { sharedArray } = useWorkerStore();
@@ -133,61 +134,6 @@ export default function GameMain() {
         emitGameStart();
     };
 
-    const videoContainerStyle = (isLocal) => ({
-        transition: 'all 0.5s ease-in-out',
-        position: 'absolute',
-        width: isOpponentUsingSkill && !isLocal ? '60vw' : (['playing', 'finished', 'skillTime'].includes(gameStatus) ? '200px' : 'calc(40vw - 10px)'),
-        height: isOpponentUsingSkill && !isLocal ? '45vw' : (['playing', 'finished', 'skillTime'].includes(gameStatus) ? '150px' : 'calc((40vw - 10px) * 3/4)'),
-        zIndex: isOpponentUsingSkill && !isLocal ? 40 : 30,
-        ...(['playing', 'finished', 'skillTime'].includes(gameStatus)
-            ? isOpponentUsingSkill && !isLocal
-                ? {
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)'
-                }
-                : { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
-            : {
-                top: '50%',
-                left: isLocal ? 'calc(50% + 5px)' : 'calc(50% - 40vw - 5px)',
-                transform: 'translate(0, -50%)'
-            }),
-    });
-
-    const videoStyle = {
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        borderRadius: '25px',
-    };
-
-    const overlayStyle = {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        opacity: 0.5,
-        pointerEvents: 'none',
-        transition: 'opacity 0.5s ease-in-out',
-    };
-
-    const nicknameStyle = {
-        position: 'absolute',
-        bottom: '-38px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        fontSize: '24px',
-        color: 'white', 
-        backgroundColor: 'black', 
-        padding: '0px 40px',
-        borderRadius: '20px / 20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        whiteSpace: 'nowrap'
-    };
-
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
     const cameraRef = useRef(null);
 
@@ -226,70 +172,28 @@ export default function GameMain() {
     }, [gameStatus, playGameBgm, playReadyBgm]);
 
     return (
-        <div className="relative w-screen h-screen overflow-hidden" style={{ backgroundImage: 'url(/images/ready_background.png)', backgroundSize: 'cover' }}>
-            {gameStatus === 'playing' && <GaugeUi />}
-            <div style={videoContainerStyle(true)}>
-                <div className="relative w-full h-full">
-                    <VideoProcessor
-                        ref={videoRef}
-                        onLandmarksUpdate={handleLandmarksUpdate}
-                        style={videoStyle}
-                        gameStatus={gameStatus}
-                    />
-                    {!myReady && (
-                        <Image
-                            src="/images/ready_pose.webp"
-                            alt="Ready Pose"
-                            layout="fill"
-                            objectFit="cover"
-                            style={overlayStyle}
-                        />
-                    )}
-                    {myReady && (
-                        <img src="/images/ready_logo.png" className="absolute top-[-124px] right-0 transform -translate-x-1/2 w-1/2 h-auto" alt="Ready Logo" />
-                    )}
-                    <div style={nicknameStyle}>{myNickname}</div>
-                </div>
-            </div>
-            <div
-                style={videoContainerStyle(false)}
-                className={`${isOpponentUsingSkill ? 'z-40' : 'z-30'}`}
-            >
-                <div className="relative w-full h-full">
-                    {connectionState !== 'connected' && (
-                        <div
-                            className="bg-slate-400 mt-5 opacity-80 flex items-center justify-center text-white"
-                            style={videoStyle}
-                        >
-                            연결 대기 중...
-                        </div>
-                    )}
-                    <video
-                        className={`scale-x-[-1] opacity-80 mt-5 transition-transform ${
-                            (opponentReady && !['playing', 'finished', 'skillTime'].includes(gameStatus)) ? 'ring-green-400 ring-8' : ''
-                        }`}
-                        ref={remoteVideoRef}
-                        style={videoStyle}
-                        autoPlay
-                        playsInline
-                    />
-                    {!opponentReady && connectionState === 'connected' && (
-                        <Image
-                            src="/images/ready_pose.webp"
-                            alt="Ready Pose"
-                            layout="fill"
-                            objectFit="cover"
-                            style={overlayStyle}
-                        />
-                    )}
-                    {opponentReady && (
-                        <img src="/images/ready_logo.png"
-                             className="absolute top-[-124px] right-0 transform -translate-x-1/2 w-1/2 h-auto"
-                             alt="Ready Logo"/>
-                    )}
-                    <div style={nicknameStyle}>{opponentNickname}</div>
-                </div>
-            </div>
+        <div className="relative w-screen h-screen overflow-hidden"
+             style={{backgroundImage: 'url(/images/ready_background.png)', backgroundSize: 'cover'}}>
+            {gameStatus === 'playing' && <GaugeUi/>}
+            <VideoComponent
+                isLocal={true}
+                isOpponentUsingSkill={false}
+                gameStatus={gameStatus}
+                ready={myReady}
+                nickname={myNickname}
+                videoRef={videoRef}
+                connectionState={connectionState}
+                handleLandmarksUpdate={handleLandmarksUpdate}
+            />
+            <VideoComponent
+                isLocal={false}
+                isOpponentUsingSkill={isOpponentUsingSkill}
+                gameStatus={gameStatus}
+                ready={opponentReady}
+                nickname={opponentNickname}
+                videoRef={remoteVideoRef}
+                connectionState={connectionState}
+            />
             <div className="absolute inset-0" ref={cameraRef}>
                 {gameStatus === 'waiting' || gameStatus === 'bothReady' ? (
                     <div className="absolute inset-0 z-40">
