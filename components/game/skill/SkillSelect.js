@@ -152,10 +152,10 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
             const healAudio = new Audio('./sounds/heal_sound.mp3');
             healAudio.play();
           }else if(activeSkill === "Shield"){
-            const shieldAudio = new Audio('./sounds/heal_sound.mp3');
+            const shieldAudio = new Audio('./sounds/shield_sound.mp3');
             shieldAudio.play();
           }else if(activeSkill === "Attack"){
-            const attackAudio = new Audio('./sounds/heal_sound.mp3');
+            const attackAudio = new Audio('./sounds/attack_sound.mp3');
             attackAudio.play();
           }
           triggerSkillUse(activeSkill);
