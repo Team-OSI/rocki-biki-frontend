@@ -207,8 +207,10 @@ export default function GameMain() {
             playReadyBgm();
         } else if (['playing', 'skillTime'].includes(gameStatus)) {
             playGameBgm();
+        } else if (gameStatus === 'finished') {
+            stopAllMusic();
         }
-    }, [gameStatus, playGameBgm, playReadyBgm]);
+    }, [gameStatus, playGameBgm, playReadyBgm, stopAllMusic]);
 
     return (
         <div className="relative w-screen h-screen overflow-hidden" style={{ backgroundImage: 'url(/images/ready_background.png)', backgroundSize: 'cover' }}>

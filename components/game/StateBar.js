@@ -147,7 +147,7 @@ export default function StateBar() {
   const router = useRouter();
   const socket = useSocketStore(state => state.socket);
   const [count, setCount] = useState(90);
-  const [pausedCount, setPausedCount] = useState(90); // 멈춘 시간 추적 상태
+  const [pausedCount, setPausedCount] = useState(90);
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
   const { handleRoomInfo } = useGameLogic();
