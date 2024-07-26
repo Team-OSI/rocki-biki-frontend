@@ -14,7 +14,6 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
     const localStream = useRef();
     const dataChannel = useRef();
     const intervalId = useRef();
-    const gainNode = useRef();
 
     const { isRecognizing, finalTranscript, startRecognition, stopRecognition, interimTranscript } = useSTT(
         ({ finalTranscript, interimTranscript }) => {
@@ -36,14 +35,6 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
                     if (localVideoRef.current) {
                         localVideoRef.current.srcObject = stream;
                     }
-                    // 볼륨 증폭을 위한 GainNode 설정
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const source = audioContext.createMediaStreamSource(stream);
-                    gainNode.current = audioContext.createGain();
-                    source.connect(gainNode.current);
-                    gainNode.current.connect(audioContext.destination);
-                    gainNode.current.gain.value = 1.5; // 볼륨을 1.5배로 설정
-
                     await startCall();
                 } catch (error) {
                     console.error('Error accessing media devices.', error);
@@ -109,6 +100,14 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         const pc = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
+
+        // pc.oniceconnectionstatechange = () => {
+        //     console.log('ICE connection state:', pc.iceConnectionState);
+        // };
+        //
+        // pc.onsignalingstatechange = () => {
+        //     console.log('Signaling state:', pc.signalingState);
+        // };
 
         dataChannel.current = pc.createDataChannel('dataChannel');
         dataChannel.current.onopen = startSendingData;
@@ -223,7 +222,7 @@ const useWebRTCConnection = (roomId, localVideoRef, remoteVideoRef, onDataReceiv
         }, 1000 / 30);
     };
 
-    return { connectionState, finalTranscript };
+    return { connectionState, finalTranscript};
 };
 
 export default useWebRTCConnection;
