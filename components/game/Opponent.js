@@ -10,8 +10,27 @@ import useGameStore from "@/store/gameStore";
 import {getAudioUrls} from "@/api/user/api";
 import PNGSequenceAnimation from './PNGSequence';
 
+const slowMotionFactor = 0.2; // 0.2배 속도로 슬로우모션
+
+function calculateSlowMotionFactor(time) {
+  // 초기 1초 동안 급격히 느려짐
+  if (time < 1) {
+    return 0.1 + 0.9 * (1 - time);
+  }
+  // 그 다음 1초 동안 서서히 원래 속도로 돌아감
+  else if (time < 2) {
+    return 0.1 + 0.9 * (time - 1);
+  }
+  // 2초 이후에는 원래 속도
+  else {
+    return 1;
+  }
+}
 // Opponent 전용 Head 컴포넌트
-const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield, shieldPer }, ref) => {
+const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield, shieldPer, isDead }, ref) => {
+    const [deathAnimation, setDeathAnimation] = useState({ velocity: new THREE.Vector3(), rotation: new THREE.Euler() });
+    const [deathTime, setDeathTime] = useState(null);
+    const hasStartedDeathAnimation = useRef(false);
     const localRef = useRef()
     const { scene, materials } = useGLTF('/models/opponent-head.glb')
     const opacity = 1
@@ -51,13 +70,16 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield,
         },
         position: localRef.current?.position,
         rotation: localRef.current?.rotation,
-        addHitImpulse: (impulse) => setHitImpulse(prev => prev.add(impulse)),
-      }),
+        addHitImpulse: (impulse) => {
+          if (!isDead) {
+            setHitImpulse(prev => prev.add(impulse))
+          }
+        },}),
       [localRef], 
     )
   
     useEffect(() => {
-      if (localRef.current) {
+      if (localRef.current && !isDead) {
         const newPos = new THREE.Vector3((position.x - 0.5) * 5, -(position.y - 0.5) * 5, -(position.z+0.01) * 15)
         localRef.current.position.copy(newPos)
         originalPosition.current.copy(newPos)
@@ -77,8 +99,39 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield,
       });
     }, [materials, currentTexture, hit]);
 
+    useEffect(() => {
+      if (isDead && deathTime === null) {
+        setDeathTime(Date.now());
+        // 죽음 애니메이션 초기화
+        setDeathAnimation({
+          velocity: new THREE.Vector3(Math.random() * 10 - 5, 15, Math.random() * 10 - 5),
+          rotation: new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI)
+        });
+      }
+    }, [isDead, deathTime]);
+
     useFrame((state, delta) => {
       if (localRef.current) {
+        if (isDead && isDead && deathTime !== null) {
+          const timeSinceDeath = (Date.now() - deathTime) / 1000; // 초 단위
+           // 시간에 따라 변하는 슬로우모션 팩터 계산
+          const slowMotionFactor = calculateSlowMotionFactor(timeSinceDeath);
+
+          // 슬로우모션 적용
+          const slowDelta = delta * slowMotionFactor;
+          // 죽음 애니메이션 적용
+          deathAnimation.velocity.y -= 9.8 * slowDelta; // 중력 적용
+          localRef.current.position.add(deathAnimation.velocity.clone().multiplyScalar(slowDelta));
+          localRef.current.rotation.x += deathAnimation.rotation.x * slowDelta;
+          localRef.current.rotation.y += deathAnimation.rotation.y * slowDelta;
+          localRef.current.rotation.z += deathAnimation.rotation.z * slowDelta;
+
+          // 부드러운 감속 추가
+          deathAnimation.velocity.multiplyScalar(0.99);
+          deathAnimation.rotation.x *= 0.99;
+          deathAnimation.rotation.y *= 0.99;
+          deathAnimation.rotation.z *= 0.99;
+        } else {
         // Apply hit impulse
         currentVelocity.current.add(hitImpulse)
         
@@ -95,6 +148,7 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield,
         
         // Reset hit impulse
         setHitImpulse(new THREE.Vector3())
+        }
       }
     })
 
@@ -103,7 +157,7 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield,
       <primitive object={scene} scale={adjustedScale} name={name} />
       {opponentHealth <= 50 && (
         <PNGSequenceAnimation
-          position={[-0.7, 1.4, 0]} 
+          position={[-0.75, 1.33, 0]} 
           health={opponentHealth}
         />
       )}
@@ -114,7 +168,8 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield,
 OpponentHead.displayName = "OpponentHead";
 
 // Opponent 전용 Hand 컴포넌트
-const OpponentHand = forwardRef(({ position, rotation, scale, name, isAttacking }, ref) => {
+const OpponentHand = forwardRef(({ position, rotation, scale, name, isAttacking, isDead }, ref) => {
+    const [deathAnimation, setDeathAnimation] = useState({ velocity: new THREE.Vector3(), rotation: new THREE.Euler() });
     const localRef = useRef()
     const { scene } = useGLTF(name === 'opponentLeftHand' ? '/models/left-hand.glb' : '/models/right-hand.glb')
 
@@ -126,15 +181,51 @@ const OpponentHand = forwardRef(({ position, rotation, scale, name, isAttacking 
         }
       });
     }, [scene]);
+    useFrame((state, delta) => {
+      if (localRef.current) {
+        if (isDead) {
+          // 슬로우모션 적용
+          const slowDelta = delta * slowMotionFactor;
+          // 죽음 애니메이션 적용
+          deathAnimation.velocity.y -= 9.8 * slowDelta; // 중력 적용
+          localRef.current.position.add(deathAnimation.velocity.clone().multiplyScalar(slowDelta));
+          localRef.current.rotation.x += deathAnimation.rotation.x * slowDelta;
+          localRef.current.rotation.y += deathAnimation.rotation.y * slowDelta;
+          localRef.current.rotation.z += deathAnimation.rotation.z * slowDelta;
+  
+          // 부드러운 감속 추가
+          deathAnimation.velocity.multiplyScalar(0.99);
+          deathAnimation.rotation.x *= 0.99;
+          deathAnimation.rotation.y *= 0.99;
+          deathAnimation.rotation.z *= 0.99;
+
+          // 바닥에 닿으면 멈춤
+          if (localRef.current.position.y < -7.5) {
+            localRef.current.position.y = 0;
+            deathAnimation.velocity.set(0, 0, 0);
+          }
+        }
+      }
+    });
+  
+    useEffect(() => {
+      if (isDead) {
+        // 죽음 애니메이션 초기화
+        setDeathAnimation({
+          velocity: new THREE.Vector3(Math.random() * 5 - 2.5, 10, Math.random() * 5 - 2.5),
+          rotation: new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI)
+        });
+      }
+    }, [isDead]);
 
     useEffect(() => {
-      if (localRef.current && position) {
+      if (localRef.current && position && !isDead) {
         if (rotation) {
           localRef.current.rotation.set(rotation[0],rotation[1],rotation[2])
         }
         localRef.current.position.set((position[0]-0.5)*4, -(position[1]-0.5)*4, -position[2]*30)
       }
-    }, [position, rotation])
+    }, [position, rotation, isDead])
   
     return (
       <group ref={localRef}>
@@ -173,6 +264,17 @@ export function Opponent({ position, landmarks, opponentData }) {
   const voiceSoundRef = useRef(null);
   const opponentInfo = useGameStore(state => state.opponentInfo);
   const [audioUrls, setAudioUrls] = useState([]);
+
+
+const [isDead, setIsDead] = useState(false);
+const opponentHealth = useGameStore(state => state.opponentHealth);
+
+useEffect(() => {
+  if (opponentHealth <= 0 && !isDead) {
+    setIsDead(true);
+    console.log('sadfasdfsadf',isDead)
+  }
+}, [opponentHealth, isDead]);
 
   useEffect(() => {
     if (opponentInfo && opponentInfo.email) {
@@ -306,6 +408,7 @@ export function Opponent({ position, landmarks, opponentData }) {
           hit={hit}
           shield={shieldActive}
           shieldPer={shieldPer}
+          isDead={isDead}
         />)}
         {opponentData.rightHand && (
           <OpponentHand
@@ -314,6 +417,7 @@ export function Opponent({ position, landmarks, opponentData }) {
             scale={0.33}
             name='opponentRightHand'
             isAttacking={isAttacking}
+            isDead={isDead}
           />
         )}
         {opponentData.leftHand && (
@@ -323,6 +427,7 @@ export function Opponent({ position, landmarks, opponentData }) {
             scale={0.33}
             name='opponentLeftHand'
             isAttacking={isAttacking}
+            isDead={isDead}
           />
         )}
     </group>
