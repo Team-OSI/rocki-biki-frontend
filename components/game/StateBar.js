@@ -509,8 +509,8 @@ export default function StateBar() {
       )}
       {!showKO && !showTimeout && gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
       <div className='absolute z-40 w-full h-full'>
-        <div className='absolute flex flex-row justify-between w-full h-full px-4'>
-          <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
+        <div className='absolute flex flex-row justify-between w-full mt-2 h-full px-4'>
+          <div className="w-2/5 bg-gray-200 rounded-full h-6 mb-4 dark:bg-gray-700">
             <HealthBarContainer>
               <CurrentHealthBar
                 style={{ transform: `scaleX(${currentOpponentHealth / 100})` }}
@@ -529,7 +529,7 @@ export default function StateBar() {
           <div className='font-custom text-lg'>
             <Timer count={count} showTimeout={showTimeout} />
           </div>
-          <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
+          <div className="w-2/5 bg-gray-200 rounded-full h-6 mb-4 dark:bg-gray-700">
             <HealthBarContainer>
               <CurrentHealthBar
                 style={{ transform: `scaleX(${currentPlayerHealth / 100})` }}

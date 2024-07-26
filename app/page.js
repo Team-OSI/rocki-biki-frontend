@@ -43,7 +43,7 @@ export default function App() {
             onClick={() => setShowLoginDiv(true)}
           >
             <Image
-              src="/images/login.webp"
+              src="/images/welcome.png"
               alt="ROCKI BIKI Logo"
               width={300}
               height={300}
