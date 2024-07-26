@@ -127,10 +127,15 @@ export default function GameMain() {
     const isLoadingImages = useGameStore(state => state.isLoadingImages);
     const opponentInfo = useGameStore(state => state.opponentInfo);
 
-    const handleReady = () => {
-        console.log('opInfo: ', opponentInfo);
-        emitGameStart();
-    };
+    const handleReady = useCallback(() => {
+        setIsLoadingImages(true);
+      }, [opponentInfo, setIsLoadingImages]);
+    
+      useEffect(() => {
+        if (isLoadingImages) {
+          emitGameStart();
+        }
+      }, [isLoadingImages, emitGameStart]);
 
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
     const cameraRef = useRef(null);
