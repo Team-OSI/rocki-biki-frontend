@@ -24,8 +24,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   const [resultMessage, setResultMessage] = useState('');
   const [resultColor, setResultColor] = useState('');
   const [showResult, setShowResult] = useState(false);
-  const [showSkillInUseMessage, setShowSkillInUseMessage] = useState(false);
-  const [showOpponentSkillMessage, setShowOpponentSkillMessage] = useState(false);
+  const [showSkillInUseMessage, setShowSkillInUseMessage] = useState(false); 
+  const [showOpponentSkillMessage, setShowOpponentSkillMessage] = useState(false); 
   const emitCastSkill = useSocketStore(state => state.emitCastSkill);
   const emitUseSkill = useSocketStore(state => state.emitUseSkill);
   const gameStatus = useGameStore(state => state.gameStatus);
@@ -64,6 +64,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       recognition.current.onresult = (event) => {
         const finalTranscript = event.results[0][0].transcript;
         transcriptRef.current = finalTranscript;
+        console.log(`Final Transcript: ${finalTranscript}`);
+        console.log(`Skill Text: ${skillTextRef.current}`);
         if (skillTextRef.current) {
           const similarity = stringSimilarity.compareTwoStrings(
             finalTranscript.toLowerCase(),
@@ -85,15 +87,21 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
   useEffect(() => {
     const shield_img = new Image();
     shield_img.src = '/images/skill/love.png';
-    shield_img.onload = () => {};
+    shield_img.onload = () => {
+      console.log('Heart image loaded successfully');
+    };
 
     const heal_img = new Image();
     heal_img.src = '/images/skill/crown.png';
-    heal_img.onload = () => {};
+    heal_img.onload = () => {
+      console.log('Crown image loaded successfully');
+    };
 
     const attack_img = new Image();
     attack_img.src = '/images/skill/tattoo.png';
-    attack_img.onload = () => {};
+    attack_img.onload = () => {
+      console.log('Tattoo image loaded successfully');
+    };
   }, []);
 
   useEffect(() => {
@@ -112,6 +120,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         setSkillTextColor(attackSkill.textColor);
       }
 
+      console.log(`New Skill Text: ${newSkillText}`);
       setSkillText(newSkillText);
       skillTextRef.current = newSkillText;
       setShowSkillText(true);
@@ -121,15 +130,20 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
 
       if (!recognitionActive.current && typeof window !== 'undefined') {
         recognition.current.start();
+        console.log("recog");
         recognitionActive.current = true;
 
         const recognitionTimeoutId = setTimeout(() => {
           recognitionActive.current = false;
+          console.log("stop");
           recognition.current.stop();
         }, 4000);
 
         const timeoutId = setTimeout(() => {
-          if (gameStatus !== 'finished') {
+          console.log(`Final transcript: ${transcriptRef.current}`);
+          console.log(`Skill text: ${newSkillText}`);
+          console.log(`Max similarity: ${maxSimilarityRef.current}`);
+          if (gameStatus !== 'finished'){
             emitUseSkill(activeSkill, maxSimilarityRef.current);
           }
           setShowSkillText(false);
@@ -137,10 +151,10 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           if (activeSkill === "Heal" && maxSimilarityRef.current > 0.2) {
             const healAudio = new Audio('./sounds/heal_sound.mp3');
             healAudio.play();
-          } else if (activeSkill === "Shield") {
+          }else if(activeSkill === "Shield"){
             const shieldAudio = new Audio('./sounds/shield_sound.mp3');
             shieldAudio.play();
-          } else if (activeSkill === "Attack") {
+          }else if(activeSkill === "Attack"){
             const attackAudio = new Audio('./sounds/attack_sound.mp3');
             attackAudio.play();
           }
@@ -215,7 +229,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     clearCanvas();
 
     if (maxSimilarityRef.current >= 0.70) {
-      setResultMessage('Excellent');
+      setResultMessage('Excelent🤮');
       setResultColor('green');
     } else if (maxSimilarityRef.current >= 0.5) {
       setResultMessage('Perfect!');
@@ -280,12 +294,9 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           const poseSimilarity = calculatePoseSimilarity(detectedPose, skill.targetPose);
           if (poseSimilarity >= similarityThreshold && skillCooldowns[skill.name] === 0 && gameStatus === 'playing') {
             if (activeSkill !== skill.name) {
-              if (playerSkills[0] !== null && playerSkills[1] !== null) {
-                setShowSkillInUseMessage(true);
-                setTimeout(() => setShowSkillInUseMessage(false), 2000);
-              } else if (opponentSkills[1] !== null && opponentSkills[0] === skill.name) { // 상대방이 스킬 시전 중일 때 메시지 표시
-                setShowOpponentSkillMessage(true);
-                setTimeout(() => setShowOpponentSkillMessage(false), 2000);
+              if(playerSkills[0] !== null && playerSkills[1] !== null){
+                setShowSkillInUseMessage(true); 
+                setTimeout(() => setShowSkillInUseMessage(false), 2000); 
               } else {
                 emitCastSkill(skill.name);
                 setActiveSkill(skill.name);
@@ -295,58 +306,35 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         });
       }
     }
-  }, [poseLandmarks, gameStatus, skillCooldowns, activeSkill, playerSkills, opponentSkills, emitCastSkill]);
+  }, [poseLandmarks, gameStatus, skillCooldowns, activeSkill, playerSkills, emitCastSkill]);
 
   const previousOpponentSkill = usePrevious(opponentSkills[0]);
 
   useEffect(() => {
-    if (opponentSkills[1] === null && opponentSkills[0] !== null) {
+    
+    if (opponentSkills[1] === null  && opponentSkills[0] !== null && gameStatus === 'skillTime') {
       setShowOpponentSkillMessage(true);
       const timeoutId = setTimeout(() => {
         setShowOpponentSkillMessage(false);
       }, 4000);
-
+  
       return () => {
         clearTimeout(timeoutId);
       };
     }
   }, [previousOpponentSkill, opponentSkills[0], gameStatus]);
-
+  
   useEffect(() => {
     if (showOpponentSkillMessage) {
       const timeoutId = setTimeout(() => {
         setShowOpponentSkillMessage(false);
       }, 4000);
-
+  
       return () => {
         clearTimeout(timeoutId);
       };
     }
   }, [showOpponentSkillMessage]);
-
-  useSocketStore((state) => ({
-    setOpponentCastingMessage: (message) => {
-      if (message === 'Opponent is casting a skill, please wait.') {
-        setShowOpponentSkillMessage(true);
-        setTimeout(() => setShowOpponentSkillMessage(false), 2000);
-      }
-    },
-  }));
-
-  useEffect(() => {
-    const socket = useSocketStore.getState().socket;
-    if (socket) {
-      socket.on('opponentCasting', (message) => {
-        useSocketStore.getState().setOpponentCastingMessage(message);
-      });
-    }
-
-    return () => {
-      if (socket) {
-        socket.off('opponentCasting');
-      }
-    };
-  }, []);
 
   const clearCanvas = () => {
     if (canvasRef.current) {
@@ -378,7 +366,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       {showSkillText && (
         <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
           <div className="p-6 rounded-lg shadow-lg bg-white" style={{ color: skillTextColor }}>
-            <span className="text-4xl">
+            <span className="text-4xl"> 
               {skillText}
             </span>
           </div>
@@ -393,7 +381,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           </div>
         </div>
       )}
-      {showSkillInUseMessage && (
+      {showSkillInUseMessage && ( 
         <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
           <div className="p-4 rounded-lg shadow-lg bg-white" style={{ color: 'red' }}>
             <span className="text-3xl">
@@ -402,8 +390,8 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
           </div>
         </div>
       )}
-      {showOpponentSkillMessage && (
-        <div className="absolute top-40 left-0 w-full h-full flex justify-center items-start">
+      {showOpponentSkillMessage && ( // 상대방 스킬 사용 중 메시지
+        <div className="absolute top-40 left-0 w-full h-full flex justify-center items-start"> 
           <div className="p-4 rounded-lg shadow-lg bg-white" style={{ color: 'red' }}>
             <span className="text-3xl">
               상대방이 스킬을 시전 중입니다!
@@ -413,4 +401,5 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
       )}
     </div>
   );
+  
 }
