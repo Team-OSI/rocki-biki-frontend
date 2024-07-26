@@ -193,9 +193,7 @@ export default function GameMain() {
     useEffect(() => {
         if (opponentSkills[1] === null  && opponentSkills[0] !== null && gameStatus === 'skillTime') {
             setIsOpponentUsingSkill(true);
-            console.log(1);
             const timeoutId = setTimeout(() => {
-                console.log(2);
                 setIsOpponentUsingSkill(false);
             }, 4000);
 
