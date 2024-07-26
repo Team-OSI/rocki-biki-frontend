@@ -114,23 +114,31 @@ const OpponentHead = forwardRef(({ position, rotation, scale, name, hit, shield,
       if (localRef.current) {
         if (isDead && isDead && deathTime !== null) {
           const timeSinceDeath = (Date.now() - deathTime) / 1000; // 초 단위
-           // 시간에 따라 변하는 슬로우모션 팩터 계산
           const slowMotionFactor = calculateSlowMotionFactor(timeSinceDeath);
-
-          // 슬로우모션 적용
           const slowDelta = delta * slowMotionFactor;
-          // 죽음 애니메이션 적용
-          deathAnimation.velocity.y -= 9.8 * slowDelta; // 중력 적용
-          localRef.current.position.add(deathAnimation.velocity.clone().multiplyScalar(slowDelta));
+
+          // 죽음 애니메이션에 기존 hit 애니메이션의 로직 적용
+          currentVelocity.current.add(deathAnimation.velocity.clone().multiplyScalar(slowDelta));
+          localRef.current.position.add(currentVelocity.current.clone().multiplyScalar(slowDelta));
+
+          // 회전 적용
           localRef.current.rotation.x += deathAnimation.rotation.x * slowDelta;
           localRef.current.rotation.y += deathAnimation.rotation.y * slowDelta;
           localRef.current.rotation.z += deathAnimation.rotation.z * slowDelta;
 
-          // 부드러운 감속 추가
-          deathAnimation.velocity.multiplyScalar(0.99);
-          deathAnimation.rotation.x *= 0.99;
-          deathAnimation.rotation.y *= 0.99;
-          deathAnimation.rotation.z *= 0.99;
+          // Spring force towards original position (약화된 버전)
+          const displacement = localRef.current.position.clone().sub(originalPosition.current);
+          const springForce = displacement.clone().multiplyScalar(-0.5); // 원래보다 약한 스프링 힘
+          currentVelocity.current.add(springForce.multiplyScalar(slowDelta));
+
+          // Damping (더 강한 감쇠)
+          currentVelocity.current.multiplyScalar(0.95);
+
+          // 중력 적용
+          currentVelocity.current.y -= 9.8 * slowDelta;
+
+          // z축 방향으로 밀어내기
+          currentVelocity.current.z -= 2 * slowDelta;
         } else {
         // Apply hit impulse
         currentVelocity.current.add(hitImpulse)
