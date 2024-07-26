@@ -38,6 +38,10 @@ export default function GameMain() {
     const [myNickname, setMyNickname] = useState('');
     const [opponentNickname, setOpponentNickname] = useState('');
     const [isOpponentUsingSkill, setIsOpponentUsingSkill] = useState(false);
+
+    const audioContext = useRef(null);
+    const gainNode = useRef(null);
+    const remoteAudioRef = useRef(null);
     
 
     useEffect(() => {
@@ -45,6 +49,7 @@ export default function GameMain() {
         const roomIdFromUrl = searchParams.get('roomId');
         roomId.current = roomIdFromUrl;
     }, []);
+
 
     const [receivedPoseData, setReceivedPoseData] = useState({});
     const [landmarks, setLandmarks] = useState({});
@@ -126,7 +131,22 @@ export default function GameMain() {
                 setReceivedPoseData(receivedData.pose);
             }
         },
-        () => landmarksRef.current
+        () => landmarksRef.current,
+        (stream) => {
+            if (audioContext.current && gainNode.current && remoteAudioRef.current) {
+                const source = audioContext.current.createMediaStreamSource(stream);
+                const biquadFilter = audioContext.current.createBiquadFilter();
+                biquadFilter.type = 'highpass';
+                biquadFilter.frequency.value = 100; // 100Hz 이하의 저주파 제거
+
+                source.connect(biquadFilter);
+                biquadFilter.connect(gainNode.current);
+                gainNode.current.connect(audioContext.current.destination);
+
+                remoteAudioRef.current.srcObject = stream;
+                remoteAudioRef.current.play();
+            }
+        }
     );
 
     const myReady = useGameStore(state => state.myReady);
@@ -208,6 +228,7 @@ export default function GameMain() {
         }
     }, [gameStatus, playGameBgm, playReadyBgm, stopAllMusic]);
 
+
     return (
         <div className="relative w-screen h-screen overflow-hidden"
              style={{backgroundImage: 'url(/images/ready_background.png)', backgroundSize: 'cover'}}>
@@ -261,6 +282,7 @@ export default function GameMain() {
                     </>
                 )}
             </div>
+            <audio ref={remoteAudioRef} autoPlay playsInline style={{display: 'none'}}/>
         </div>
     );
 }
