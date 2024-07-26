@@ -376,49 +376,49 @@ export default function StateBar() {
   useEffect(() => {
     let endTimeout;
     if (gameStatus === 'finished') {
-      if (count === 0) {
-        setShowTimeout(true);
-        timeoutAudioRef.current.play().catch(error => console.log('타임아웃 오디오 재생 실패:', error));
-        endTimeout = setTimeout(() => {
-          setShowTimeout(false);
-          timeoutAudioRef.current.pause();
-          timeoutAudioRef.current.currentTime = 0;
-        }, 2000);
-      } else {
-        setShowKO(true);
-        koAudioRef.current.play().catch(error => console.log('KO 오디오 재생 실패:', error));
-        endTimeout = setTimeout(() => {
-          setShowKO(false);
-          koAudioRef.current.pause();
-          koAudioRef.current.currentTime = 0;
-          if (winner === socket.id) {
-            winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
-          } else {
-            loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
-          }
-        }, 2000);
-      }
+        if (opponentHealth <= 0 || playerHealth <= 0) {
+            setShowKO(true);
+            koAudioRef.current.play().catch(error => console.log('KO 오디오 재생 실패:', error));
+            endTimeout = setTimeout(() => {
+                setShowKO(false);
+                koAudioRef.current.pause();
+                koAudioRef.current.currentTime = 0;
+                if (winner === socket.id) {
+                    winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
+                } else {
+                    loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+                }
+            }, 2000);
+        } else if (opponentHealth > 0 && playerHealth > 0) {
+            setShowTimeout(true);
+            timeoutAudioRef.current.play().catch(error => console.log('타임아웃 오디오 재생 실패:', error));
+            endTimeout = setTimeout(() => {
+                setShowTimeout(false);
+                timeoutAudioRef.current.pause();
+                timeoutAudioRef.current.currentTime = 0;
+            }, 2000);
+        }
     }
     return () => {
-      clearTimeout(endTimeout);
-      if (winAudioRef.current) {
-        winAudioRef.current.pause();
-        winAudioRef.current.currentTime = 0;
-      }
-      if (loseAudioRef.current) {
-        loseAudioRef.current.pause();
-        loseAudioRef.current.currentTime = 0;
-      }
-      if (koAudioRef.current) {
-        koAudioRef.current.pause();
-        koAudioRef.current.currentTime = 0;
-      }
-      if (timeoutAudioRef.current) {
-        timeoutAudioRef.current.pause();
-        timeoutAudioRef.current.currentTime = 0;
-      }
+        clearTimeout(endTimeout);
+        if (winAudioRef.current) {
+            winAudioRef.current.pause();
+            winAudioRef.current.currentTime = 0;
+        }
+        if (loseAudioRef.current) {
+            loseAudioRef.current.pause();
+            loseAudioRef.current.currentTime = 0;
+        }
+        if (koAudioRef.current) {
+            koAudioRef.current.pause();
+            koAudioRef.current.currentTime = 0;
+        }
+        if (timeoutAudioRef.current) {
+            timeoutAudioRef.current.pause();
+            timeoutAudioRef.current.currentTime = 0;
+        }
     };
-  }, [gameStatus, winner, socket.id, count]);
+    }, [gameStatus, winner, socket.id, opponentHealth, playerHealth]);
 
   useEffect(() => {
     if (gameStatus === 'finished') {
