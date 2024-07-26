@@ -15,12 +15,19 @@ import { parseLandmarks } from "@/lib/utils/landmarkParser";
 import { useMusic } from '@/app/contexts/MusicContext';
 import VideoComponent from "@/components/video/VideoComponent";
 
+const usePrevious = (value) => {
+    const ref = useRef();
+    useEffect(() => {
+        ref.current = value;
+    }, [value]);
+    return ref.current;
+};
+
 export default function GameMain() {
     const { sharedArray } = useWorkerStore();
     const roomInfo = useGameStore(state => state.roomInfo);
     const socket = useSocketStore(state => state.socket);
     const opponentSkills = useGameStore(state => state.opponentSkills);
-    const playerSkills = useGameStore(state => state.playerSkills);
     const videoRef = useRef(null);
     const roomId = useRef(null);
     const { playReadyBgm, playGameBgm, stopAllMusic } = useMusic();
@@ -31,6 +38,7 @@ export default function GameMain() {
     const [myNickname, setMyNickname] = useState('');
     const [opponentNickname, setOpponentNickname] = useState('');
     const [isOpponentUsingSkill, setIsOpponentUsingSkill] = useState(false);
+    
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -128,10 +136,15 @@ export default function GameMain() {
     const isLoadingImages = useGameStore(state => state.isLoadingImages);
     const opponentInfo = useGameStore(state => state.opponentInfo);
 
-    const handleReady = () => {
-        console.log('opInfo: ', opponentInfo);
-        emitGameStart();
-    };
+    const handleReady = useCallback(() => {
+        setIsLoadingImages(true);
+      }, [opponentInfo, setIsLoadingImages]);
+    
+      useEffect(() => {
+        if (isLoadingImages) {
+          emitGameStart();
+        }
+      }, [isLoadingImages, emitGameStart]);
 
     const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
     const cameraRef = useRef(null);
@@ -155,14 +168,35 @@ export default function GameMain() {
         return () => window.removeEventListener('resize', updateCanvasSize);
     }, []);
 
-    useEffect(() => {
-        if (opponentSkills[0] !== null && gameStatus === 'skillTime') {
-            setIsOpponentUsingSkill(true);
-            setTimeout(() => setIsOpponentUsingSkill(false), 4000);
-        }
-    }, [opponentSkills, gameStatus]);
+    const previousOpponentSkill = usePrevious(opponentSkills[0]);
 
-    const amIUsingSkill = playerSkills[0] !== null && gameStatus === 'skillTime';
+    useEffect(() => {
+        if (previousOpponentSkill === null && opponentSkills[0] !== null && gameStatus === 'skillTime') {
+            setIsOpponentUsingSkill(true);
+            console.log(1);
+            const timeoutId = setTimeout(() => {
+                console.log(2);
+                setIsOpponentUsingSkill(false);
+            }, 4000);
+
+            return () => {
+                clearTimeout(timeoutId);
+            };
+        }
+    }, [previousOpponentSkill, opponentSkills[0], gameStatus]);
+
+    useEffect(() => {
+        if (isOpponentUsingSkill) {
+          const timeoutId = setTimeout(() => {
+            setIsOpponentUsingSkill(false);
+          }, 4000);
+      
+          return () => {
+            clearTimeout(timeoutId);
+          };
+        }
+    }, [isOpponentUsingSkill]);
+    
 
     useEffect(() => {
         if (['waiting', 'bothReady'].includes(gameStatus)) {
@@ -190,7 +224,7 @@ export default function GameMain() {
             />
             <VideoComponent
                 isLocal={false}
-                isOpponentUsingSkill={isOpponentUsingSkill && !amIUsingSkill}
+                isOpponentUsingSkill={isOpponentUsingSkill}
                 gameStatus={gameStatus}
                 ready={opponentReady}
                 nickname={opponentNickname}
