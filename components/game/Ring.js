@@ -11,4 +11,4 @@ export function Ring({scale}) {
   )
 }
 
-useGLTF.preload('/models/bg.glb')
+useGLTF.preload('/models/background.glb')
