@@ -262,7 +262,7 @@ export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
   const router = useRouter();
   const socket = useSocketStore(state => state.socket);
-  const [count, setCount] = useState(10);
+  const [count, setCount] = useState(9999);
   const [pausedCount, setPausedCount] = useState(90); // 멈춘 시간 추적 상태
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
