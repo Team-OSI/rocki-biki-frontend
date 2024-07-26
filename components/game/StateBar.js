@@ -189,24 +189,28 @@ const Wave = styled.div`
   opacity: 0.5;
 `;
 
-const KOScreen = styled.div`
+const KOImage = styled.img`
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000; // 다른 요소들보다 위에 표시
-  font-size: 20rem;
-  color: red;
-  font-weight: bold;
-  text-shadow: 4px 4px 8px black;
+  z-index: 10000;
+  width: 40%;
+`;
+
+const TimeoutImage = styled.img`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+  width: 40%;
 `;
 
 const preloadImages = () => {
   return new Promise((resolve, reject) => {
     const imageUrls = Array.from({ length: 10 }, (_, i) => `/images/count/${i}.png`);
+    imageUrls.push('/images/timeout.png', '/images/ko.png');
     let loadedCount = 0;
 
     imageUrls.forEach((url) => {
@@ -223,7 +227,7 @@ const preloadImages = () => {
   });
 };
 
-const Timer = ({ count }) => {
+const Timer = ({ count, showTimeout }) => {
   const [tens, setTens] = useState(0);
   const [ones, setOnes] = useState(0);
   const isRed = count <= 10;
@@ -236,12 +240,17 @@ const Timer = ({ count }) => {
 
   return (
     <TimerContainer>
-      <DigitImage src={`/images/count/${tens}.png`} $isRed={isRed} $isOrange={isOrange} />
-      <DigitImage src={`/images/count/${ones}.png`} $isRed={isRed} $isOrange={isOrange} />
+      {showTimeout ? (
+        <DigitImage src="/images/timeout.png" />
+      ) : (
+        <>
+          <DigitImage src={`/images/count/${tens}.png`} $isRed={isRed} $isOrange={isOrange} />
+          <DigitImage src={`/images/count/${ones}.png`} $isRed={isRed} $isOrange={isOrange} />
+        </>
+      )}
     </TimerContainer>
   );
 };
-
 
 export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
@@ -259,8 +268,11 @@ export default function StateBar() {
 
   const winAudioRef = useRef(null);
   const loseAudioRef = useRef(null);
+  const koAudioRef = useRef(null);  // KO 오디오 참조 추가
+  const timeoutAudioRef = useRef(null);  // 타임아웃 오디오 참조 추가
 
   const [showKO, setShowKO] = useState(false);
+  const [showTimeout, setShowTimeout] = useState(false);  // 타임아웃 상태 추가
 
   const playDamageSound = useCallback(() => {
     if (damageAudio.current) {
@@ -274,6 +286,10 @@ export default function StateBar() {
     winAudioRef.current.loop = false;
     loseAudioRef.current = new Audio('./sounds/defeat.mp3');
     loseAudioRef.current.loop = false;
+    koAudioRef.current = new Audio('./sounds/ko.mp3');  // KO 오디오 파일 설정
+    koAudioRef.current.loop = false;
+    timeoutAudioRef.current = new Audio('./sounds/timeout.mp3');  // 타임아웃 오디오 파일 설정
+    timeoutAudioRef.current.loop = false;
   }, []);
 
   useEffect(() => {
@@ -386,32 +402,53 @@ export default function StateBar() {
   }, [gameStatus, count]);
 
   useEffect(() => {
-    let koTimeout;
+    let endTimeout;
     if (gameStatus === 'finished') {
-      setShowKO(true);
-      koTimeout = setTimeout(() => {
-        setShowKO(false);
-        if (winner === socket.id) {
-          winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
-        } else {
-          loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+        if (opponentHealth <= 0 || playerHealth <= 0) {
+            setShowKO(true);
+            koAudioRef.current.play().catch(error => console.log('KO 오디오 재생 실패:', error));
+            endTimeout = setTimeout(() => {
+                setShowKO(false);
+                koAudioRef.current.pause();
+                koAudioRef.current.currentTime = 0;
+                if (winner === socket.id) {
+                    winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
+                } else {
+                    loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+                }
+            }, 2000);
+        } else if (opponentHealth > 0 && playerHealth > 0) {
+            setShowTimeout(true);
+            timeoutAudioRef.current.play().catch(error => console.log('타임아웃 오디오 재생 실패:', error));
+            endTimeout = setTimeout(() => {
+                setShowTimeout(false);
+                timeoutAudioRef.current.pause();
+                timeoutAudioRef.current.currentTime = 0;
+            }, 2000);
         }
-      }, 2000);
     }
 
 
     return () => {
-      clearTimeout(koTimeout);
-      if (winAudioRef.current) {
-        winAudioRef.current.pause();
-        winAudioRef.current.currentTime = 0;
-      }
-      if (loseAudioRef.current) {
-        loseAudioRef.current.pause();
-        loseAudioRef.current.currentTime = 0;
-      }
+        clearTimeout(endTimeout);
+        if (winAudioRef.current) {
+            winAudioRef.current.pause();
+            winAudioRef.current.currentTime = 0;
+        }
+        if (loseAudioRef.current) {
+            loseAudioRef.current.pause();
+            loseAudioRef.current.currentTime = 0;
+        }
+        if (koAudioRef.current) {
+            koAudioRef.current.pause();
+            koAudioRef.current.currentTime = 0;
+        }
+        if (timeoutAudioRef.current) {
+            timeoutAudioRef.current.pause();
+            timeoutAudioRef.current.currentTime = 0;
+        }
     };
-  }, [gameStatus, winner, socket.id]);
+    }, [gameStatus, winner, socket.id, opponentHealth, playerHealth]);
 
   useEffect(() => {
     if (gameStatus === 'finished') {
@@ -450,11 +487,12 @@ export default function StateBar() {
   return (
     <>
       {showKO && (
-        <KOScreen>
-          KO
-        </KOScreen>
+        <KOImage src="/images/ko.png" />
       )}
-      {!showKO && gameStatus === 'finished' && winner === socket.id && (
+      {showTimeout && (
+        <TimeoutImage src="/images/timeout.png" />
+      )}
+      {!showKO && !showTimeout && gameStatus === 'finished' && winner === socket.id && (
         <Confetti
           width={window.innerWidth}
           height={window.innerHeight}
@@ -463,7 +501,7 @@ export default function StateBar() {
           style={{ zIndex: 60 }}
         />
       )}
-      {!showKO && gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
+      {!showKO && !showTimeout && gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
       <div className='absolute z-40 w-full h-full'>
         <div className='absolute flex flex-row justify-between w-full h-full px-4'>
           <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
@@ -483,7 +521,7 @@ export default function StateBar() {
             </HealthBarContainer>
           </div>
           <div className='font-custom text-lg'>
-            <Timer count={count} />
+            <Timer count={count} showTimeout={showTimeout} />
           </div>
           <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
             <HealthBarContainer>
@@ -502,7 +540,7 @@ export default function StateBar() {
             </HealthBarContainer>
           </div>
         </div>
-        {!showKO && gameStatus === 'finished' && (
+        {!showKO && !showTimeout && gameStatus === 'finished' && (
             <ResultModalContainer>
               <ResultModal $isWinner={winner === socket.id}>
                 <ResultText $isWinner={winner === socket.id}>
