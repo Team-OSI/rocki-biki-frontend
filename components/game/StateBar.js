@@ -262,7 +262,7 @@ export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
   const router = useRouter();
   const socket = useSocketStore(state => state.socket);
-  const [count, setCount] = useState(90);
+  const [count, setCount] = useState(20);
   const [pausedCount, setPausedCount] = useState(90); // 멈춘 시간 추적 상태
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
@@ -288,13 +288,13 @@ export default function StateBar() {
   }, []);
 
   useEffect(() => {
-    winAudioRef.current = new Audio('./sounds/victory.mp3');
-    winAudioRef.current.loop = false;
-    loseAudioRef.current = new Audio('./sounds/defeat.mp3');
-    loseAudioRef.current.loop = false;
-    koAudioRef.current = new Audio('./sounds/ko.mp3');  // KO 오디오 파일 설정
+    winAudioRef.current = new Audio('./sounds/win_sound.mp3');
+    winAudioRef.current.loop = true;
+    loseAudioRef.current = new Audio('./sounds/lose_sound.mp3');
+    loseAudioRef.current.loop = true;
+    koAudioRef.current = new Audio('./sounds/ko.mp3');  
     koAudioRef.current.loop = false;
-    timeoutAudioRef.current = new Audio('./sounds/timeout.mp3');  // 타임아웃 오디오 파일 설정
+    timeoutAudioRef.current = new Audio('./sounds/timeout.mp3');  
     timeoutAudioRef.current.loop = false;
   }, []);
 
@@ -430,6 +430,11 @@ export default function StateBar() {
                 setShowTimeout(false);
                 timeoutAudioRef.current.pause();
                 timeoutAudioRef.current.currentTime = 0;
+                if (winner === socket.id) {
+                  winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
+              } else {
+                  loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+              }
             }, 2000);
         }
     }
