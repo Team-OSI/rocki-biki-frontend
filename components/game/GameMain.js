@@ -191,7 +191,7 @@ export default function GameMain() {
     const previousOpponentSkill = usePrevious(opponentSkills[0]);
 
     useEffect(() => {
-        if (previousOpponentSkill === null && opponentSkills[0] !== null && gameStatus === 'skillTime') {
+        if (opponentSkills[1] === null  && opponentSkills[0] !== null && gameStatus === 'skillTime') {
             setIsOpponentUsingSkill(true);
             console.log(1);
             const timeoutId = setTimeout(() => {
