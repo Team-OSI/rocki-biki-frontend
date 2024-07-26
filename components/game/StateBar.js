@@ -57,7 +57,7 @@ const ResultText = styled.h2`
   font-size: 4rem;
   font-weight: 800;
   margin-bottom: 2rem;
-  animation: ${props => props.$isWinner ? pulseAnimation : shakeAnimation} 2s infinite;
+  animation: ${props => props.$isWinner ? pulseResultAnimation : shakeAnimation} 2s infinite;
   background: ${props => props.$isWinner
     ? 'linear-gradient(90deg, #FFD700, #FFA500)'
     : 'linear-gradient(90deg, #A9A9A9, #696969)'};
@@ -97,9 +97,15 @@ const ExitButton = styled.button`
   }
 `;
 
-const pulseAnimation = keyframes`
+const pulseResultAnimation = keyframes`
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
+`;
+
+const pulseAnimation = keyframes`
+  0% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
 `;
 
 const shakeAnimation = keyframes`
