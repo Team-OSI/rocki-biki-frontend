@@ -51,6 +51,7 @@ const ResultModal = styled.div`
   width: 30%;
   position: relative;
   overflow: hidden;
+  border: 1px solid #000; 
 `;
 
 const ResultText = styled.h2`
@@ -84,7 +85,8 @@ const ExitButton = styled.button`
       : 'linear-gradient(90deg, #f44336, #d32f2f)'};
   color: white;
   font-weight: bold;
-  padding: 1rem 2rem;
+  padding: 0.5rem 2rem;
+  font-size: 2.5rem;
   border-radius: 9999px;
   transition: all 0.3s ease-in-out;
   transform: scale(1);
@@ -96,6 +98,7 @@ const ExitButton = styled.button`
     box-shadow: 0 15px 30px rgba(0,0,0,0.3);
   }
 `;
+
 
 const pulseResultAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -262,7 +265,7 @@ export default function StateBar() {
   const { gameStatus, opponentHealth, playerHealth, winner, roomInfo } = useGameStore();
   const router = useRouter();
   const socket = useSocketStore(state => state.socket);
-  const [count, setCount] = useState(9999);
+  const [count, setCount] = useState(90);
   const [pausedCount, setPausedCount] = useState(90); // 멈춘 시간 추적 상태
   const [isLoading, setIsLoading] = useState(true);
   const damageAudio = useRef(null);
