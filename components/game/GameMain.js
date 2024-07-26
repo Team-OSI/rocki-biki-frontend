@@ -188,10 +188,8 @@ export default function GameMain() {
         return () => window.removeEventListener('resize', updateCanvasSize);
     }, []);
 
-    const previousOpponentSkill = usePrevious(opponentSkills[0]);
-
     useEffect(() => {
-        if (opponentSkills[1] === null  && opponentSkills[0] !== null && gameStatus === 'skillTime') {
+        if (opponentSkills[1] === null  && opponentSkills[0] !== null) {
             setIsOpponentUsingSkill(true);
             const timeoutId = setTimeout(() => {
                 setIsOpponentUsingSkill(false);
@@ -201,7 +199,7 @@ export default function GameMain() {
                 clearTimeout(timeoutId);
             };
         }
-    }, [previousOpponentSkill, opponentSkills[0], gameStatus]);
+    }, [opponentSkills[0], gameStatus]);
 
     useEffect(() => {
         if (isOpponentUsingSkill) {
