@@ -15,6 +15,14 @@ import { parseLandmarks } from "@/lib/utils/landmarkParser";
 import { useMusic } from '@/app/contexts/MusicContext';
 import VideoComponent from "@/components/video/VideoComponent";
 
+const usePrevious = (value) => {
+    const ref = useRef();
+    useEffect(() => {
+        ref.current = value;
+    }, [value]);
+    return ref.current;
+};
+
 export default function GameMain() {
     const { sharedArray } = useWorkerStore();
     const roomInfo = useGameStore(state => state.roomInfo);
@@ -30,6 +38,7 @@ export default function GameMain() {
     const [myNickname, setMyNickname] = useState('');
     const [opponentNickname, setOpponentNickname] = useState('');
     const [isOpponentUsingSkill, setIsOpponentUsingSkill] = useState(false);
+    
 
     useEffect(() => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -159,12 +168,35 @@ export default function GameMain() {
         return () => window.removeEventListener('resize', updateCanvasSize);
     }, []);
 
+    const previousOpponentSkill = usePrevious(opponentSkills[0]);
+
     useEffect(() => {
-        if (opponentSkills[0] !== null && gameStatus === 'skillTime') {
+        if (previousOpponentSkill === null && opponentSkills[0] !== null && gameStatus === 'skillTime') {
             setIsOpponentUsingSkill(true);
-            setTimeout(() => setIsOpponentUsingSkill(false), 4000); // 4초 후 원래 상태로 돌아갑니다
+            console.log(1);
+            const timeoutId = setTimeout(() => {
+                console.log(2);
+                setIsOpponentUsingSkill(false);
+            }, 4000);
+
+            return () => {
+                clearTimeout(timeoutId);
+            };
         }
-    }, [opponentSkills, gameStatus]);
+    }, [previousOpponentSkill, opponentSkills[0], gameStatus]);
+
+    useEffect(() => {
+        if (isOpponentUsingSkill) {
+          const timeoutId = setTimeout(() => {
+            setIsOpponentUsingSkill(false);
+          }, 4000);
+      
+          return () => {
+            clearTimeout(timeoutId);
+          };
+        }
+    }, [isOpponentUsingSkill]);
+    
 
     useEffect(() => {
         if (['waiting', 'bothReady'].includes(gameStatus)) {

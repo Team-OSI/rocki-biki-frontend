@@ -314,7 +314,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
     
     if (previousOpponentSkill === null && opponentSkills[0] !== null && gameStatus === 'skillTime') {
       setShowOpponentSkillMessage(true);
-      console.log(1);
       const timeoutId = setTimeout(() => {
         setShowOpponentSkillMessage(false);
       }, 4000);
