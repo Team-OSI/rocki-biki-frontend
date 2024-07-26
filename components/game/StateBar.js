@@ -51,6 +51,7 @@ const ResultModal = styled.div`
   width: 30%;
   position: relative;
   overflow: hidden;
+  border: 1px solid #000; 
 `;
 
 const ResultText = styled.h2`
@@ -84,7 +85,8 @@ const ExitButton = styled.button`
       : 'linear-gradient(90deg, #f44336, #d32f2f)'};
   color: white;
   font-weight: bold;
-  padding: 1rem 2rem;
+  padding: 0.5rem 2rem;
+  font-size: 2.5rem;
   border-radius: 9999px;
   transition: all 0.3s ease-in-out;
   transform: scale(1);
@@ -96,6 +98,7 @@ const ExitButton = styled.button`
     box-shadow: 0 15px 30px rgba(0,0,0,0.3);
   }
 `;
+
 
 const pulseResultAnimation = keyframes`
   0%, 100% { transform: scale(1); }
@@ -288,13 +291,13 @@ export default function StateBar() {
   }, []);
 
   useEffect(() => {
-    winAudioRef.current = new Audio('./sounds/victory.mp3');
-    winAudioRef.current.loop = false;
-    loseAudioRef.current = new Audio('./sounds/defeat.mp3');
-    loseAudioRef.current.loop = false;
-    koAudioRef.current = new Audio('./sounds/ko.mp3');  // KO 오디오 파일 설정
+    winAudioRef.current = new Audio('./sounds/win_sound.mp3');
+    winAudioRef.current.loop = true;
+    loseAudioRef.current = new Audio('./sounds/lose_sound.mp3');
+    loseAudioRef.current.loop = true;
+    koAudioRef.current = new Audio('./sounds/ko.mp3');  
     koAudioRef.current.loop = false;
-    timeoutAudioRef.current = new Audio('./sounds/timeout.mp3');  // 타임아웃 오디오 파일 설정
+    timeoutAudioRef.current = new Audio('./sounds/timeout.mp3');  
     timeoutAudioRef.current.loop = false;
   }, []);
 
@@ -430,6 +433,11 @@ export default function StateBar() {
                 setShowTimeout(false);
                 timeoutAudioRef.current.pause();
                 timeoutAudioRef.current.currentTime = 0;
+                if (winner === socket.id) {
+                  winAudioRef.current.play().catch(error => console.log('승리 오디오 재생 실패:', error));
+              } else {
+                  loseAudioRef.current.play().catch(error => console.log('패배 오디오 재생 실패:', error));
+              }
             }, 2000);
         }
     }
@@ -509,8 +517,8 @@ export default function StateBar() {
       )}
       {!showKO && !showTimeout && gameStatus === 'finished' && winner !== socket.id && renderRainEffect()}
       <div className='absolute z-40 w-full h-full'>
-        <div className='absolute flex flex-row justify-between w-full h-full px-4'>
-          <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
+        <div className='absolute flex flex-row justify-between w-full mt-2 h-full px-4'>
+          <div className="w-2/5 bg-gray-200 rounded-full h-6 mb-4 dark:bg-gray-700">
             <HealthBarContainer>
               <CurrentHealthBar
                 style={{ transform: `scaleX(${currentOpponentHealth / 100})` }}
@@ -529,7 +537,7 @@ export default function StateBar() {
           <div className='font-custom text-lg'>
             <Timer count={count} showTimeout={showTimeout} />
           </div>
-          <div className="w-2/5 bg-gray-200 rounded-full h-4 mb-4 dark:bg-gray-700">
+          <div className="w-2/5 bg-gray-200 rounded-full h-6 mb-4 dark:bg-gray-700">
             <HealthBarContainer>
               <CurrentHealthBar
                 style={{ transform: `scaleX(${currentPlayerHealth / 100})` }}

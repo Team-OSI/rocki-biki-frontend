@@ -11,7 +11,7 @@ export const videoContainerStyle = (isLocal, isOpponentUsingSkill, gameStatus) =
                 left: '50%',
                 transform: 'translate(-50%, -50%)'
             }
-            : { top: '10px', [isLocal ? 'right' : 'left']: '10px' }
+            : { top: '16px', [isLocal ? 'right' : 'left']: '10px' }
         : {
             top: '50%',
             left: isLocal ? 'calc(50% + 5px)' : 'calc(50% - 40vw - 5px)',

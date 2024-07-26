@@ -24,9 +24,7 @@ const GaugeBar = ({ hand }) => {
             key={index}
             className={`w-full h-[25px] ${
               index < filledBlocks
-                ? hand === 'left' 
-                  ? 'bg-red-500' 
-                  : 'bg-blue-500'
+                ? 'bg-red-500' 
                 : 'bg-transparent'
             } border-t border-gray-300`}
           />

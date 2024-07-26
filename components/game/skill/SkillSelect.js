@@ -351,16 +351,18 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         height={canvasSize.height}
         style={{ position: 'absolute', top: 0, left: 0 }}
       />
-      <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 flex space-x-8"> {/* Increased spacing */}
-        {['Shield', 'Heal', 'Attack'].map(skill => (
-          <SkillProgressBar
-            key={skill}
-            skillName={skill}
-            cooldown={skillCooldowns[skill]}
-            isActive={gameStatus === 'skillTime' && activeSkill === skill}
-          />
-        ))}
-      </div>
+      {gameStatus !== 'finished' && (
+        <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 flex space-x-8">
+          {['Shield', 'Heal', 'Attack'].map(skill => (
+            <SkillProgressBar
+              key={skill}
+              skillName={skill}
+              cooldown={skillCooldowns[skill]}
+              isActive={gameStatus === 'skillTime' && activeSkill === skill}
+            />
+          ))}
+        </div>
+      )}
       {showSkillText && (
         <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
           <div className="p-6 rounded-lg shadow-lg bg-white" style={{ color: skillTextColor }}>
@@ -389,7 +391,7 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         </div>
       )}
       {showOpponentSkillMessage && ( // 상대방 스킬 사용 중 메시지
-        <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+        <div className="absolute top-40 left-0 w-full h-full flex justify-center items-start"> 
           <div className="p-4 rounded-lg shadow-lg bg-white" style={{ color: 'red' }}>
             <span className="text-3xl">
               상대방이 스킬을 시전 중입니다!
@@ -398,5 +400,6 @@ export default function SkillSelect({ localVideoRef, landmarks, canvasSize, pose
         </div>
       )}
     </div>
-  )
+  );
+  
 }

@@ -130,7 +130,7 @@ export default function Lobby() {
         {/* 왼쪽 패널: 방 만들기 및 튜토리얼 */}
         <div className="w-1/3 flex flex-col gap-4 overflow-y-auto mb-1">
           {/* 상단 부분: 방 만들기 */}
-          <div className="p-6 bg-gray-100 bg-opacity-85 rounded-lg shadow-lg">
+          <div className="p-6 bg-gray-100 bg-opacity-85 rounded-lg shadow-lg h-50vh">
             <h2 className="text-gray-800 text-4xl text-center font-bold mb-4">Create a room</h2>
             <h3 className="text-gray-800 text-2xl text-center font-bold mb-4">Name Your Room</h3>
             <input
@@ -145,7 +145,7 @@ export default function Lobby() {
           </div>
 
           {/* 하단 부분: 튜토리얼 버튼 */}
-          <div className="p-6 bg-gray-100 bg-opacity-85 rounded-lg shadow-lg h-1/2">
+          <div className="p-6 bg-gray-100 bg-opacity-85 rounded-lg shadow-lg h-30vh">
             <h2 className="text-gray-800 text-4xl text-center font-bold mt-2 mb-3">New to the game?</h2>
             <button
               className={`py-3 w-full text-2xl text-white font-bold rounded-full shadow-md hover:scale-105 transition duration-300 mt-7 ${
